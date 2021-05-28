@@ -1,0 +1,28 @@
+modLoader = "javafml"
+loaderVersion = "[32,)"
+#issueTrackerURL = ""
+license = "GPL"
+
+[[mods]]
+modId = "civmodern"
+version = "${version}"
+displayName = "Civ Modern"
+authors = "Me!"
+description = '''
+Civ Modern
+'''
+#logoFile = ""
+
+[[dependencies.civmodern]]
+modId = "forge"
+mandatory = true
+versionRange = "[32,)"
+ordering = "NONE"
+side = "CLIENT"
+
+[[dependencies.civmodern]]
+modId = "minecraft"
+mandatory = true
+versionRange = "[1.16.1,)"
+ordering = "NONE"
+side = "CLIENT"
