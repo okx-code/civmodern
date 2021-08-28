@@ -201,34 +201,6 @@ public class RadarConfigScreen extends Screen {
     }));
     addButton(hsb);
 
-    /*addButton(new DoubleOptionUpdateableSliderWidget(this.width / 2 - 75, this.height / 6 + 24 + 150 + 48, 150, 20, 0, 1, 0.01, new DoubleValue() {
-      private final DecimalFormat format = new DecimalFormat("##%");
-
-      @Override
-      public double get() {
-        return config.getTransparency();
-      }
-
-      @Override
-      public void set(double value) {
-        config.setTransparency((float) value);
-      }
-
-      @Override
-      public Component getText(double value) {
-        return new TranslatableComponent("civmodern.screen.radar.transparency", format.format(value));
-      }
-    }));
-    DoubleOptionUpdateableSliderWidget redOption = new DoubleOptionUpdateableSliderWidget(this.width / 2 - 75, this.height / 6 + 24 + 172 + 4 + 48, 150, 20, 0, 1, 1f / 255,
-        new ColorValue("civmodern.configscreen.colour.red", 16, config::getRadarColour, config::setRadarColour));
-    addButton(redOption);
-    DoubleOptionUpdateableSliderWidget greenOption = new DoubleOptionUpdateableSliderWidget(this.width / 2 - 75, this.height / 6 + 24 + 196 + 4 + 48, 150, 20, 0, 1, 1f / 255,
-        new ColorValue("civmodern.configscreen.colour.green", 8, config::getRadarColour, config::setRadarColour));
-    addButton(greenOption);
-    DoubleOptionUpdateableSliderWidget blueOption = new DoubleOptionUpdateableSliderWidget(this.width / 2 - 75, this.height / 6 + 24 + 220 + 4 + 48, 150, 20, 0, 1, 1f / 255,
-        new ColorValue("civmodern.configscreen.colour.blue", 0, config::getRadarColour, config::setRadarColour));
-    addButton(blueOption);*/
-
     addButton(new Button(centre, this.height / 6 + 24 + 265 + 48, 98, 20, CommonComponents.GUI_DONE, button -> {
       Minecraft.getInstance().setScreen(parent);
     }));

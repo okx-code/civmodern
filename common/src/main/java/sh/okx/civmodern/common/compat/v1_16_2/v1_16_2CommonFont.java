@@ -1,15 +1,15 @@
-package sh.okx.civmodern.common.compat.v1_16_5;
+package sh.okx.civmodern.common.compat.v1_16_2;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.gui.Font;
 import net.minecraft.network.chat.Component;
 import sh.okx.civmodern.common.compat.CommonFont;
 
-public class v1_16_5CommonFont implements CommonFont {
+public class v1_16_2CommonFont implements CommonFont {
 
   private final Font font;
 
-  public v1_16_5CommonFont(Font font) {
+  public v1_16_2CommonFont(Font font) {
     this.font = font;
   }
 

@@ -12,6 +12,8 @@ import sh.okx.civmodern.common.events.ClientTickEvent;
 import sh.okx.civmodern.common.events.Event;
 import sh.okx.civmodern.common.events.EventBus;
 import sh.okx.civmodern.common.events.PostRenderGameOverlayEvent;
+import sh.okx.civmodern.common.events.ScrollEvent;
+import sh.okx.civmodern.common.events.WorldRenderEvent;
 
 public class FabricEventBus implements EventBus {
 
@@ -20,12 +22,15 @@ public class FabricEventBus implements EventBus {
   public FabricEventBus() {
     map.put(ClientTickEvent.class, new CopyOnWriteArraySet<>());
     map.put(PostRenderGameOverlayEvent.class, new CopyOnWriteArraySet<>());
+    map.put(WorldRenderEvent.class, new CopyOnWriteArraySet<>());
+    map.put(ScrollEvent.class, new CopyOnWriteArraySet<>());
 
     ClientTickEvents.START_CLIENT_TICK.register(client -> push(new ClientTickEvent()));
     HudRenderCallback.EVENT.register(((matrixStack, tickDelta) -> push(new PostRenderGameOverlayEvent(matrixStack, tickDelta))));
   }
 
-  private void push(Event event) {
+  @Override
+  public void push(Event event) {
     for (Consumer<Event> consumer : map.getOrDefault(event.getClass(), Collections.emptySet())) {
       consumer.accept(event);
     }

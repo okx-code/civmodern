@@ -21,8 +21,8 @@ public class CivMapConfig {
   private int x;
   private int y;
   private boolean iceRoadCardinalEnabled;
-
-  private String s = "hello".toUpperCase().toUpperCase();
+  private boolean iceRoadAutoEat;
+  private boolean iceRoadStop;
 
   public CivMapConfig(File file, Properties properties) {
     this.file = file;
@@ -39,6 +39,8 @@ public class CivMapConfig {
     this.radarEnabled = Boolean.parseBoolean(properties.getProperty("radar_enabled", "true"));
     this.pingEnabled = Boolean.parseBoolean(properties.getProperty("ping_enabled", "true"));
     this.iceRoadCardinalEnabled = Boolean.parseBoolean(properties.getProperty("ice_road_cardinal", "true"));
+    this.iceRoadAutoEat = Boolean.parseBoolean(properties.getProperty("ice_road_auto_eat", "false"));
+    this.iceRoadStop = Boolean.parseBoolean(properties.getProperty("ice_road_stop", "true"));
   }
 
   public void save() {
@@ -57,6 +59,8 @@ public class CivMapConfig {
       properties.setProperty("radar_enabled", Boolean.toString(radarEnabled));
       properties.setProperty("ping_enabled", Boolean.toString(pingEnabled));
       properties.setProperty("ice_road_cardinal", Boolean.toString(iceRoadCardinalEnabled));
+      properties.setProperty("ice_road_auto_eat", Boolean.toString(iceRoadAutoEat));
+      properties.setProperty("ice_road_stop", Boolean.toString(iceRoadStop));
 
       FileOutputStream output = new FileOutputStream(file);
       properties.store(output, null);
@@ -167,5 +171,21 @@ public class CivMapConfig {
 
   public boolean isIceRoadCardinalEnabled() {
     return iceRoadCardinalEnabled;
+  }
+
+  public void setIceRoadAutoEat(boolean iceRoadAutoEat) {
+    this.iceRoadAutoEat = iceRoadAutoEat;
+  }
+
+  public boolean isIceRoadAutoEat() {
+    return iceRoadAutoEat;
+  }
+
+  public void setIceRoadStop(boolean iceRoadStop) {
+    this.iceRoadStop = iceRoadStop;
+  }
+
+  public boolean isIceRoadStop() {
+    return iceRoadStop;
   }
 }

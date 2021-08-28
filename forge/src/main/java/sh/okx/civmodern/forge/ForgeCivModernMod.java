@@ -1,5 +1,6 @@
 package sh.okx.civmodern.forge;
 
+import net.minecraft.client.KeyMapping;
 import net.minecraftforge.fml.client.registry.ClientRegistry;
 import sh.okx.civmodern.common.AbstractCivModernMod;
 import sh.okx.civmodern.common.events.EventBus;
@@ -12,7 +13,7 @@ public class ForgeCivModernMod extends AbstractCivModernMod {
   }
 
   @Override
-  public void registerKeyBinding(net.minecraft.client.KeyMapping mapping) {
+  public void registerKeyBinding(KeyMapping mapping) {
     ClientRegistry.registerKeyBinding(mapping);
   }
 }

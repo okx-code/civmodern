@@ -6,8 +6,10 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.function.Consumer;
+import net.minecraft.client.renderer.debug.WorldGenAttemptRenderer;
 import net.minecraftforge.client.event.RenderGameOverlayEvent;
 import net.minecraftforge.client.event.RenderGameOverlayEvent.ElementType;
+import net.minecraftforge.client.event.RenderWorldLastEvent;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.TickEvent.Phase;
@@ -16,6 +18,8 @@ import sh.okx.civmodern.common.events.ClientTickEvent;
 import sh.okx.civmodern.common.events.Event;
 import sh.okx.civmodern.common.events.EventBus;
 import sh.okx.civmodern.common.events.PostRenderGameOverlayEvent;
+import sh.okx.civmodern.common.events.ScrollEvent;
+import sh.okx.civmodern.common.events.WorldRenderEvent;
 
 public class ForgeEventBus implements EventBus {
 
@@ -24,6 +28,8 @@ public class ForgeEventBus implements EventBus {
   public ForgeEventBus() {
     map.put(ClientTickEvent.class, new CopyOnWriteArraySet<>());
     map.put(PostRenderGameOverlayEvent.class, new CopyOnWriteArraySet<>());
+    map.put(WorldRenderEvent.class, new CopyOnWriteArraySet<>());
+    map.put(ScrollEvent.class, new CopyOnWriteArraySet<>());
 
     MinecraftForge.EVENT_BUS.register(this);
   }
@@ -42,7 +48,13 @@ public class ForgeEventBus implements EventBus {
     }
   }
 
-  private void push(Event event) {
+  @SubscribeEvent
+  public void onWorldRender(RenderWorldLastEvent event) {
+    push(new WorldRenderEvent(event.getMatrixStack(), event.getPartialTicks()));
+  }
+
+  @Override
+  public void push(Event event) {
     for (Consumer<Event> consumer : map.getOrDefault(event.getClass(), Collections.emptySet())) {
       consumer.accept(event);
     }

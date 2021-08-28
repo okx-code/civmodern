@@ -30,7 +30,6 @@ public class CustomItemRenderer extends ItemRenderer {
 
     // Steal all the fields from the old item renderer
     // This is necessary otherwise all the items render with the missing texture
-    System.out.println("OLD IR: " + old);
     for (Field field : ItemRenderer.class.getDeclaredFields()) {
       if (field.getType() == ItemModelShaper.class
           || field.getType() == ItemColors.class) {
@@ -45,19 +44,6 @@ public class CustomItemRenderer extends ItemRenderer {
     if (!stack.isEmpty()) {
       PoseStack matrixstack = new PoseStack();
       boolean compacted = isCompacted(stack);
-      if (stack.getCount() != 1 || label != null || compacted) {
-        matrixstack.translate(0.0D, 0.0D, this.blitOffset + 200.0F);
-        MultiBufferSource.BufferSource irendertypebuffer$impl = MultiBufferSource.immediate(
-            Tesselator.getInstance().getBuilder());
-
-        //int colour = compacted ? 0xffff58 : 0xffffff;
-        int colour = compacted ? config.getColour() : 0xffffff;
-        String s = label == null ? String.valueOf(stack.getCount()) : label;
-
-        renderer.drawInBatch(s, (float) (x + 19 - 2 - renderer.width(s)), (float) (y + 6 + 3),
-            colour, true, matrixstack.last().pose(), irendertypebuffer$impl, false, 0, 15728880);
-        irendertypebuffer$impl.endBatch();
-      }
 
       if (stack.isDamaged()) {
         RenderSystem.disableDepthTest();
@@ -77,6 +63,19 @@ public class CustomItemRenderer extends ItemRenderer {
         RenderSystem.enableAlphaTest();
         RenderSystem.enableTexture();
         RenderSystem.enableDepthTest();
+      }
+
+      if (stack.getCount() != 1 || label != null || compacted) {
+        matrixstack.translate(0.0D, 0.0D, this.blitOffset + 200.0F);
+        MultiBufferSource.BufferSource irendertypebuffer$impl = MultiBufferSource.immediate(
+            Tesselator.getInstance().getBuilder());
+
+        int colour = compacted ? config.getColour() : 0xffffff;
+        String s = label == null ? String.valueOf(stack.getCount()) : label;
+
+        renderer.drawInBatch(s, (float) (x + 19 - 2 - renderer.width(s)), (float) (y + 6 + 3),
+            colour, true, matrixstack.last().pose(), irendertypebuffer$impl, false, 0, 15728880);
+        irendertypebuffer$impl.endBatch();
       }
 
       LocalPlayer localPlayer = Minecraft.getInstance().player;

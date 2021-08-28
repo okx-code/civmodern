@@ -3,10 +3,12 @@ package sh.okx.civmodern.common.gui.screen;
 import com.mojang.blaze3d.vertex.PoseStack;
 import java.text.DecimalFormat;
 import java.util.regex.Pattern;
+import net.java.games.input.Component.Identifier;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.StringTag;
@@ -112,6 +114,17 @@ public class CompactedConfigScreen extends Screen {
     }
 
     super.render(matrices, mouseX, mouseY, delta);
+  }
+
+  @Override
+  public boolean mouseClicked(double mouseX, double mouseY, int button) {
+    LocalPlayer player = Minecraft.getInstance().player;
+    if (isCursorOverItem((int) mouseX, (int) mouseY) && button == 0 && player.isCreative()) {
+      player.addItem(ITEM.copy());
+      return true;
+    } else {
+      return super.mouseClicked(mouseX, mouseY, button);
+    }
   }
 
   @Override

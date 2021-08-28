@@ -8,29 +8,21 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Field;
 import java.nio.file.Path;
-import java.util.Iterator;
 import java.util.Properties;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.Options;
 import net.minecraft.client.gui.Gui;
-import net.minecraft.client.gui.screens.inventory.CreativeModeInventoryScreen;
 import net.minecraft.client.renderer.entity.ItemRenderer;
-import net.minecraft.core.NonNullList;
-import net.minecraft.core.Registry;
-import net.minecraft.world.item.CreativeModeTab;
-import net.minecraft.world.item.Item;
-import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.Items;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.lwjgl.glfw.GLFW;
-import org.lwjgl.system.CallbackI.I;
 import sh.okx.civmodern.common.compat.CompatProvider;
 import sh.okx.civmodern.common.compat.v1_16_1.v1_16_1CompatProvider;
-import sh.okx.civmodern.common.compat.v1_16_5.v1_16_5CompatProvider;
+import sh.okx.civmodern.common.compat.v1_16_2.v1_16_2CompatProvider;
 import sh.okx.civmodern.common.events.ClientTickEvent;
 import sh.okx.civmodern.common.events.EventBus;
+import sh.okx.civmodern.common.events.ScrollEvent;
 import sh.okx.civmodern.common.gui.screen.MainConfigScreen;
 import sh.okx.civmodern.common.macro.HoldKeyMacro;
 import sh.okx.civmodern.common.macro.IceRoadMacro;
@@ -57,8 +49,8 @@ public abstract class AbstractCivModernMod {
 
     public AbstractCivModernMod() {
         int version = Minecraft.getInstance().getGame().getVersion().getProtocolVersion();
-        if (version == 754) {
-            this.compat = new v1_16_5CompatProvider();
+        if (version >= 751 && version <= 754) {
+            this.compat = new v1_16_2CompatProvider();
         } else {
             this.compat = new v1_16_1CompatProvider();
         }
@@ -95,18 +87,21 @@ public abstract class AbstractCivModernMod {
         }
     }
 
-    public final void enable() {
+    public final void init() {
         this.eventBus = provideEventBus();
 
         registerKeyBinding(this.configBinding);
         registerKeyBinding(this.holdLeftBinding);
         registerKeyBinding(this.holdRightBinding);
         registerKeyBinding(this.iceRoadBinding);
+    }
 
+    public final void enable() {
         loadConfig();
         replaceItemRenderer();
 
         this.eventBus.listen(ClientTickEvent.class, e -> this.tick());
+        this.eventBus.listen(ScrollEvent.class, e -> this.onScroll());
 
         Options options = Minecraft.getInstance().options;
         this.leftMacro = new HoldKeyMacro(this, this.holdLeftBinding, options.keyAttack);
@@ -117,7 +112,7 @@ public abstract class AbstractCivModernMod {
     public abstract EventBus provideEventBus();
     public abstract void registerKeyBinding(KeyMapping mapping);
 
-    private void onScroll() {
+    public void onScroll() {
         if (this.leftMacro != null) this.leftMacro.onScroll();
         if (this.rightMacro != null) this.rightMacro.onScroll();
     }
@@ -198,9 +193,7 @@ public abstract class AbstractCivModernMod {
         return compat;
     }
 
-    public static void staticOnScroll() {
-      if (INSTANCE != null) {
-          INSTANCE.onScroll();
-      }
+    public static AbstractCivModernMod getInstance() {
+        return INSTANCE;
     }
 }

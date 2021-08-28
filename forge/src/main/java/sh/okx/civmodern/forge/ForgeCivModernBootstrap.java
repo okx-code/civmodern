@@ -20,6 +20,7 @@ public class ForgeCivModernBootstrap {
   }
 
   public void clientSetup(FMLClientSetupEvent event) {
+    this.mod.init();
     this.mod.enable();
   }
 }

@@ -151,6 +151,11 @@ public class Radar {
   }
 
   public void render(PoseStack matrices, float delta) {
+    RenderSystem.color4f(1.0F, 1.0F, 1.0F, 1);
+    RenderSystem.enableBlend();
+    RenderSystem.defaultBlendFunc();
+    RenderSystem.enableDepthTest();
+
     Minecraft client = Minecraft.getInstance();
     LocalPlayer player = client.player;
     glPushMatrix();
@@ -190,6 +195,9 @@ public class Radar {
 
     glPopMatrix();
     glColor4f(1.0F, 1.0F, 1.0F, 1);
+
+    RenderSystem.disableBlend();
+    RenderSystem.disableDepthTest();
   }
 
   private void renderRange() {

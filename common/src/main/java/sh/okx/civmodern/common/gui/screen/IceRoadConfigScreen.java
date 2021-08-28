@@ -32,6 +32,14 @@ public class IceRoadConfigScreen extends Screen {
       config.setIceRoadCardinalEnabled(cycl.getIndex() == 0);
     }, new TranslatableComponent("civmodern.screen.ice.cardinal.enable"), new TranslatableComponent("civmodern.screen.ice.cardinal.disable")));
 
+    addButton(new CyclicButton(this.width / 2 - 75, this.height / 6 + 48, 150, 20, config.isIceRoadAutoEat() ? 0 : 1, cycl -> {
+      config.setIceRoadAutoEat(cycl.getIndex() == 0);
+    }, new TranslatableComponent("civmodern.screen.ice.eat.enable"), new TranslatableComponent("civmodern.screen.ice.eat.disable")));
+
+    addButton(new CyclicButton(this.width / 2 - 75, this.height / 6 + 72, 150, 20, config.isIceRoadStop() ? 0 : 1, cycl -> {
+      config.setIceRoadStop(cycl.getIndex() == 0);
+    }, new TranslatableComponent("civmodern.screen.ice.stop.enable"), new TranslatableComponent("civmodern.screen.ice.stop.disable")));
+
     addButton(new Button(this.width / 2 - 49, this.height / 6 + 169, 98, 20, CommonComponents.GUI_DONE, button -> {
       Minecraft.getInstance().setScreen(parent);
     }));

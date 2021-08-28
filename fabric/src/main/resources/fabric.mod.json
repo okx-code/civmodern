@@ -11,7 +11,7 @@
   "icon": "assets/civmodern/icon.png",
   "environment": "client",
   "entrypoints": {
-    "main": [
+    "client": [
       "sh.okx.civmodern.fabric.FabricCivModernBootstrap"
     ]
   },
