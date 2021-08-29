@@ -52,20 +52,21 @@ public class IceRoadMacro {
 
     if (enabled) {
       if (!jump) {
+        AUTO_EAT:
         if (config.isIceRoadAutoEat()) {
           if (this.eating != null) {
             if (!mc.player.isUsingItem() || !this.eating.equals(mc.player.getUseItem())) {
               this.eating = null;
               mc.options.keyUse.setDown(false);
             } else {
-              return;
+              break AUTO_EAT;
             }
           }
 
           ItemStack mainhand = mc.player.getMainHandItem();
           if (tryEat(mainhand)) {
             this.eating = mainhand;
-            mc.options.keyUp.setDown(false);
+            mc.options.keyUse.setDown(true);
             return;
           }
         }
@@ -95,7 +96,6 @@ public class IceRoadMacro {
     FoodProperties food = item.getItem().getFoodProperties();
     if (food != null && food.getNutrition() > 0) {
       if (mc.player.getFoodData().getFoodLevel() + food.getNutrition() <= 20) {
-        mc.options.keyUse.setDown(true);
         return true;
       }
     }
