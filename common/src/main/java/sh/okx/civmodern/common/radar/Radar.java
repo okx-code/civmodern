@@ -13,8 +13,6 @@ import java.util.Set;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Gui;
-import net.minecraft.client.gui.screens.ChatScreen;
-import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.multiplayer.PlayerInfo;
 import net.minecraft.client.player.LocalPlayer;
@@ -36,7 +34,6 @@ import sh.okx.civmodern.common.compat.CompatProvider;
 import sh.okx.civmodern.common.events.ClientTickEvent;
 import sh.okx.civmodern.common.events.EventBus;
 import sh.okx.civmodern.common.events.PostRenderGameOverlayEvent;
-import sh.okx.civmodern.common.gui.screen.RadarConfigScreen;
 
 public class Radar {
 
@@ -134,16 +131,12 @@ public class Radar {
   }
 
   public void onRender(PostRenderGameOverlayEvent event) {
-    Screen screen = Minecraft.getInstance().screen;
-    if (screen == null
-        || screen instanceof RadarConfigScreen
-        || screen instanceof ChatScreen
-      //|| screen instanceof IngameMenuScreen
-    ) {
-      if (config.isRadarEnabled()) {
-        render(event.getPoseStack(), event.getDelta());
-      }
-    }
+		Minecraft mc = Minecraft.getInstance();
+		if (mc.options.hideGui || mc.options.renderDebug) return;
+
+		if (config.isRadarEnabled()) {
+			render(event.getPoseStack(), event.getDelta());
+		}
   }
 
   private int radius() {
