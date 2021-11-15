@@ -9,7 +9,9 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.Tesselator;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Random;
 import java.util.Set;
+import java.util.UUID;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Gui;
@@ -25,6 +27,7 @@ import net.minecraft.network.chat.Style;
 import net.minecraft.network.chat.TextComponent;
 import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.vehicle.Boat;
 import net.minecraft.world.entity.vehicle.Minecart;
@@ -98,7 +101,7 @@ public class Radar {
                           new TranslatableComponent("civmodern.radar.hover",
                               new KeybindComponent("key.civmodern.highlight"))))),
               false);
-
+          playPlayerSound("pling", player.getUUID());
         }
       }
     }
@@ -128,6 +131,14 @@ public class Radar {
     }
 
     this.playersInRange = newPlayersInRange;
+  }
+
+  public static void playPlayerSound(String soundName, UUID playerKey) {
+    if ("none".equalsIgnoreCase(soundName)) return;
+
+    float playerPitch = .5f + 1.5f * new Random(playerKey.hashCode()).nextFloat();
+
+    Minecraft.getInstance().player.playSound(new SoundEvent(new ResourceLocation("block.note." + soundName)), 1, playerPitch);
   }
 
   public void onRender(PostRenderGameOverlayEvent event) {
