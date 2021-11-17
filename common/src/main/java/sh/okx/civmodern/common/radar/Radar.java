@@ -19,7 +19,9 @@ import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.multiplayer.PlayerInfo;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.player.RemotePlayer;
+import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Registry;
 import net.minecraft.network.chat.ClickEvent;
 import net.minecraft.network.chat.HoverEvent;
 import net.minecraft.network.chat.KeybindComponent;
@@ -135,10 +137,12 @@ public class Radar {
 
   public static void playPlayerSound(String soundName, UUID playerKey) {
     if ("none".equalsIgnoreCase(soundName)) return;
+    SoundEvent soundEvent = Registry.SOUND_EVENT.get(new ResourceLocation("block.note_block." + soundName));
+    if (soundEvent == null) return;
 
-    float playerPitch = .5f + 1.5f * new Random(playerKey.hashCode()).nextFloat();
-
-    Minecraft.getInstance().player.playSound(new SoundEvent(new ResourceLocation("block.note." + soundName)), 1, playerPitch);
+    float pitch = .5f + 1.5f * new Random(playerKey.hashCode()).nextFloat();
+    float volume = 1;
+    Minecraft.getInstance().getSoundManager().play(SimpleSoundInstance.forUI(soundEvent, pitch, volume));
   }
 
   public void onRender(PostRenderGameOverlayEvent event) {
