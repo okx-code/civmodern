@@ -45,7 +45,9 @@ public class HoldKeyMacro {
   }
 
   public void onScroll() {
-    set(false);
+    if (this.down) {
+      set(false);
+    }
   }
 
   private void set(boolean down) {
