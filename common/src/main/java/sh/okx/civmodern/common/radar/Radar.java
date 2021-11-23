@@ -74,16 +74,14 @@ public class Radar {
 
   public void onWorldTickPing(ClientTickEvent event) {
     ClientLevel world = Minecraft.getInstance().level;
-    if (world == null || !config.isPingEnabled()) {
-      return;
-    }
+    if (world == null) return;
 
     Set<RemotePlayer> newPlayersInRange = new HashSet<>();
     for (Entity entity : world.entitiesForRendering()) {
       if (entity instanceof RemotePlayer) {
         RemotePlayer player = (RemotePlayer) entity;
         newPlayersInRange.add(player);
-        if (!playersInRange.contains(player)) {
+        if (config.isPingEnabled() && !playersInRange.contains(player)) {
           BlockPos pos = player.blockPosition();
           lastWaypointCommand =
               "/newWaypoint x:" + pos.getX() + ",y:" + pos.getY() + ",z:" + pos.getZ() + ",name:"
@@ -108,27 +106,29 @@ public class Radar {
       }
     }
 
-    for (RemotePlayer player : playersInRange) {
-      if (!newPlayersInRange.contains(player)) {
-        BlockPos pos = player.blockPosition();
-        lastWaypointCommand =
-            "/newWaypoint x:" + pos.getX() + ",y:" + pos.getY() + ",z:" + pos.getZ() + ",name:"
-                + player.getScoreboardName();
-        Minecraft.getInstance().player.displayClientMessage(
-            new TranslatableComponent("civmodern.radar.leave",
-                player.getName(),
-                new TextComponent(Integer.toString(pos.getX()))
-                    .withStyle(s -> s.applyFormat(ChatFormatting.AQUA)),
-                new TextComponent(Integer.toString(pos.getY()))
-                    .withStyle(s -> s.applyFormat(ChatFormatting.AQUA)),
-                new TextComponent(Integer.toString(pos.getZ()))
-                    .withStyle(s -> s.applyFormat(ChatFormatting.AQUA)))
-                .setStyle(Style.EMPTY
-                    .withClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, lastWaypointCommand))
-                    .withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT,
-                        new TranslatableComponent("civmodern.radar.hover",
-                            new KeybindComponent("key.civmodern.highlight"))))),
-            false);
+    if (config.isPingEnabled()) {
+      for (RemotePlayer player : playersInRange) {
+        if (!newPlayersInRange.contains(player)) {
+          BlockPos pos = player.blockPosition();
+          lastWaypointCommand =
+              "/newWaypoint x:" + pos.getX() + ",y:" + pos.getY() + ",z:" + pos.getZ() + ",name:"
+                  + player.getScoreboardName();
+          Minecraft.getInstance().player.displayClientMessage(
+              new TranslatableComponent("civmodern.radar.leave",
+                  player.getName(),
+                  new TextComponent(Integer.toString(pos.getX()))
+                      .withStyle(s -> s.applyFormat(ChatFormatting.AQUA)),
+                  new TextComponent(Integer.toString(pos.getY()))
+                      .withStyle(s -> s.applyFormat(ChatFormatting.AQUA)),
+                  new TextComponent(Integer.toString(pos.getZ()))
+                      .withStyle(s -> s.applyFormat(ChatFormatting.AQUA)))
+                  .setStyle(Style.EMPTY
+                      .withClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, lastWaypointCommand))
+                      .withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT,
+                          new TranslatableComponent("civmodern.radar.hover",
+                              new KeybindComponent("key.civmodern.highlight"))))),
+              false);
+        }
       }
     }
 
