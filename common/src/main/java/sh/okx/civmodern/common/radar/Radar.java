@@ -22,12 +22,7 @@ import net.minecraft.client.player.RemotePlayer;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Registry;
-import net.minecraft.network.chat.ClickEvent;
-import net.minecraft.network.chat.HoverEvent;
-import net.minecraft.network.chat.KeybindComponent;
-import net.minecraft.network.chat.Style;
-import net.minecraft.network.chat.TextComponent;
-import net.minecraft.network.chat.TranslatableComponent;
+import net.minecraft.network.chat.*;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.entity.Entity;
@@ -146,12 +141,12 @@ public class Radar {
   }
 
   public void onRender(PostRenderGameOverlayEvent event) {
-		Minecraft mc = Minecraft.getInstance();
-		if (mc.options.hideGui || mc.options.renderDebug) return;
+    Minecraft mc = Minecraft.getInstance();
+    if (mc.options.hideGui || mc.options.renderDebug) return;
 
-		if (config.isRadarEnabled()) {
-			render(event.getPoseStack(), event.getDelta());
-		}
+    if (config.isRadarEnabled()) {
+      render(event.getPoseStack(), event.getDelta());
+    }
   }
 
   private int radius() {
@@ -364,8 +359,9 @@ public class Radar {
       matrices.pushPose();
       glDisable(GL_BLEND);
       matrices.scale(0.6f, 0.6f, 0);
-      TextComponent component = new TextComponent(
-          player.getScoreboardName() + " (" + ((int) player.getY() + ")"));
+      Component component = new TextComponent("")
+          .append(player.getDisplayName())
+          .append(" (" + ((int) player.getY() + ")"));
       this.cFont.draw(matrices, component, -minecraft.font.width(component) / 2f, 7, 0xffffff);
       matrices.popPose();
       matrices.popPose();
