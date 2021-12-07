@@ -45,12 +45,11 @@ public class HoldKeyMacro {
   }
 
   public void onScroll() {
-    if (this.down) {
-      set(false);
-    }
+    set(false);
   }
 
   private void set(boolean down) {
+    if (this.down == down) return;
     this.down = down;
     this.defaultBinding.setDown(down);
   }
