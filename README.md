@@ -10,7 +10,7 @@ The controls can also be modified in your controls screen.
 ## Installation instructions
 
 CivModern supports both the Forge and Fabric modloaders on 1.16.x.
-Download the version for your modloader at [Releases](https://github.com/okx-code/civmodern/releases/latest).
+Download the version for your modloader at [Releases](https://github.com/Gjum/civmodern/releases/latest).
 
 The Fabric version requires Fabric API.
 
