@@ -49,6 +49,9 @@ public class HoldKeyMacro {
   }
 
   private void set(boolean down) {
+    if (this.down == down) {
+      return;
+    }
     this.down = down;
     this.defaultBinding.setDown(down);
   }

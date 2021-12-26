@@ -9,17 +9,19 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.Tesselator;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Random;
 import java.util.Set;
+import java.util.UUID;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Gui;
-import net.minecraft.client.gui.screens.ChatScreen;
-import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.multiplayer.PlayerInfo;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.player.RemotePlayer;
+import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Registry;
 import net.minecraft.network.chat.ClickEvent;
 import net.minecraft.network.chat.HoverEvent;
 import net.minecraft.network.chat.KeybindComponent;
@@ -27,6 +29,7 @@ import net.minecraft.network.chat.Style;
 import net.minecraft.network.chat.TextComponent;
 import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.vehicle.Boat;
 import net.minecraft.world.entity.vehicle.Minecart;
@@ -72,7 +75,7 @@ public class Radar {
 
   public void onWorldTickPing(ClientTickEvent event) {
     ClientLevel world = Minecraft.getInstance().level;
-    if (world == null || !config.isPingEnabled()) {
+    if (world == null) {
       return;
     }
 
@@ -82,12 +85,44 @@ public class Radar {
         RemotePlayer player = (RemotePlayer) entity;
         newPlayersInRange.add(player);
         if (!playersInRange.contains(player)) {
+          if (config.isPingEnabled()) {
+            BlockPos pos = player.blockPosition();
+            lastWaypointCommand =
+                "/newWaypoint x:" + pos.getX() + ",y:" + pos.getY() + ",z:" + pos.getZ() + ",name:"
+                    + player.getScoreboardName();
+            Minecraft.getInstance().player.displayClientMessage(
+                new TranslatableComponent("civmodern.radar.enter",
+                    player.getName(),
+                    new TextComponent(Integer.toString(pos.getX()))
+                        .withStyle(s -> s.applyFormat(ChatFormatting.AQUA)),
+                    new TextComponent(Integer.toString(pos.getY()))
+                        .withStyle(s -> s.applyFormat(ChatFormatting.AQUA)),
+                    new TextComponent(Integer.toString(pos.getZ()))
+                        .withStyle(s -> s.applyFormat(ChatFormatting.AQUA)))
+                    .setStyle(Style.EMPTY
+                        .withClickEvent(
+                            new ClickEvent(ClickEvent.Action.RUN_COMMAND, lastWaypointCommand))
+                        .withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT,
+                            new TranslatableComponent("civmodern.radar.hover",
+                                new KeybindComponent("key.civmodern.highlight"))))),
+                false);
+          }
+          if (config.isPingSoundEnabled()) {
+            playPlayerSound("pling", player.getUUID());
+          }
+        }
+      }
+    }
+
+    if (config.isPingEnabled()) {
+      for (RemotePlayer player : playersInRange) {
+        if (!newPlayersInRange.contains(player)) {
           BlockPos pos = player.blockPosition();
           lastWaypointCommand =
               "/newWaypoint x:" + pos.getX() + ",y:" + pos.getY() + ",z:" + pos.getZ() + ",name:"
                   + player.getScoreboardName();
           Minecraft.getInstance().player.displayClientMessage(
-              new TranslatableComponent("civmodern.radar.enter",
+              new TranslatableComponent("civmodern.radar.leave",
                   player.getName(),
                   new TextComponent(Integer.toString(pos.getX()))
                       .withStyle(s -> s.applyFormat(ChatFormatting.AQUA)),
@@ -96,37 +131,13 @@ public class Radar {
                   new TextComponent(Integer.toString(pos.getZ()))
                       .withStyle(s -> s.applyFormat(ChatFormatting.AQUA)))
                   .setStyle(Style.EMPTY
-                      .withClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, lastWaypointCommand))
+                      .withClickEvent(
+                          new ClickEvent(ClickEvent.Action.RUN_COMMAND, lastWaypointCommand))
                       .withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT,
                           new TranslatableComponent("civmodern.radar.hover",
                               new KeybindComponent("key.civmodern.highlight"))))),
               false);
-
         }
-      }
-    }
-
-    for (RemotePlayer player : playersInRange) {
-      if (!newPlayersInRange.contains(player)) {
-        BlockPos pos = player.blockPosition();
-        lastWaypointCommand =
-            "/newWaypoint x:" + pos.getX() + ",y:" + pos.getY() + ",z:" + pos.getZ() + ",name:"
-                + player.getScoreboardName();
-        Minecraft.getInstance().player.displayClientMessage(
-            new TranslatableComponent("civmodern.radar.leave",
-                player.getName(),
-                new TextComponent(Integer.toString(pos.getX()))
-                    .withStyle(s -> s.applyFormat(ChatFormatting.AQUA)),
-                new TextComponent(Integer.toString(pos.getY()))
-                    .withStyle(s -> s.applyFormat(ChatFormatting.AQUA)),
-                new TextComponent(Integer.toString(pos.getZ()))
-                    .withStyle(s -> s.applyFormat(ChatFormatting.AQUA)))
-                .setStyle(Style.EMPTY
-                    .withClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, lastWaypointCommand))
-                    .withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT,
-                        new TranslatableComponent("civmodern.radar.hover",
-                            new KeybindComponent("key.civmodern.highlight"))))),
-            false);
       }
     }
 
@@ -134,15 +145,13 @@ public class Radar {
   }
 
   public void onRender(PostRenderGameOverlayEvent event) {
-    Screen screen = Minecraft.getInstance().screen;
-    if (screen == null
-        || screen instanceof RadarConfigScreen
-        || screen instanceof ChatScreen
-      //|| screen instanceof IngameMenuScreen
-    ) {
-      if (config.isRadarEnabled()) {
-        render(event.getPoseStack(), event.getDelta());
-      }
+    Minecraft mc = Minecraft.getInstance();
+    if (mc.options.hideGui || mc.options.renderDebug) {
+      return;
+    }
+
+    if (config.isRadarEnabled()) {
+      render(event.getPoseStack(), event.getDelta());
     }
   }
 
@@ -374,8 +383,8 @@ public class Radar {
     glEnable(GL_BLEND);
     glDisable(GL_TEXTURE_2D);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    glColor4f((config.getRadarColour() >> 16 & 0xFF) / 255f,
-        (config.getRadarColour() >> 8 & 0xFF) / 255f, (config.getRadarColour() & 0xFF) / 255f,
+    glColor4f((config.getRadarBgColour() >> 16 & 0xFF) / 255f,
+        (config.getRadarBgColour() >> 8 & 0xFF) / 255f, (config.getRadarBgColour() & 0xFF) / 255f,
         1 - config.getTransparency());
 
     Tesselator tessellator = Tesselator.getInstance();
@@ -458,5 +467,14 @@ public class Radar {
     glDisable(GL_BLEND);
     glDisable(GL_LINE_SMOOTH);
     glEnable(GL_TEXTURE_2D);
+  }
+
+  public static void playPlayerSound(String soundName, UUID playerKey) {
+    SoundEvent soundEvent = Registry.SOUND_EVENT.get(new ResourceLocation("block.note_block." + soundName));
+    if (soundEvent == null) return;
+
+    float pitch = .5f + 1.5f * new Random(playerKey.hashCode()).nextFloat();
+    float volume = 1;
+    Minecraft.getInstance().getSoundManager().play(SimpleSoundInstance.forUI(soundEvent, pitch, volume));
   }
 }

@@ -2,6 +2,8 @@ package sh.okx.civmodern.common.gui.screen;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import java.text.DecimalFormat;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
 import java.util.regex.Pattern;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.Button;
@@ -27,6 +29,9 @@ public class RadarConfigScreen extends Screen {
   private final Screen parent;
   private CommonFont cFont;
 
+  private int foregroundColourX;
+  private int backgroundColourX;
+
   public RadarConfigScreen(AbstractCivModernMod mod, CivMapConfig config, Screen parent) {
     super(new TranslatableComponent("civmodern.screen.radar.title"));
     this.mod = mod;
@@ -39,15 +44,23 @@ public class RadarConfigScreen extends Screen {
     this.cFont = mod.getCompat().provideFont(this.font);
 
     int centre = this.width / 2 - 98 / 2;
-    addButton(new Button(this.width / 2 - 75, this.height / 6 + 24, 150, 20, getRadarToggleMessage(), button -> {
+    int offset = 0;
+    addButton(new Button(this.width / 2 - 75, this.height / 6 + offset, 150, 20, getRadarToggleMessage(), button -> {
       config.setRadarEnabled(!config.isRadarEnabled());
       button.setMessage(getRadarToggleMessage());
     }));
-    addButton(new Button(this.width / 2 - 75, this.height / 6 + 48, 150, 20, getPingToggleMessage(), button -> {
+    offset += 24;
+    addButton(new Button(this.width / 2 - 75, this.height / 6 + offset, 150, 20, getPingToggleMessage(), button -> {
       config.setPingEnabled(!config.isPingEnabled());
       button.setMessage(getPingToggleMessage());
     }));
-    addButton(new DoubleOptionUpdateableSliderWidget(this.width / 2 - 75, this.height / 6 + 48 + 24, 150, 20, 1, 8, 1, new DoubleValue() {
+    offset += 24;
+    addButton(new Button(this.width / 2 - 75, this.height / 6 + offset, 150, 20, getPingSoundMessage(), button -> {
+      config.setPingSoundEnabled(!config.isPingSoundEnabled());
+      button.setMessage(getPingSoundMessage());
+    }));
+    offset += 24;
+    addButton(new DoubleOptionUpdateableSliderWidget(this.width / 2 - 75, this.height / 6 + offset, 150, 20, 1, 8, 1, new DoubleValue() {
       @Override
       public double get() {
         return config.getRadarCircles();
@@ -64,7 +77,8 @@ public class RadarConfigScreen extends Screen {
             Integer.toString((int) value));
       }
     }));
-    addButton(new DoubleOptionUpdateableSliderWidget(this.width / 2 - 75, this.height / 6 + 48 + 48, 150, 20, 50, 300, 1, new DoubleValue() {
+    offset += 24;
+    addButton(new DoubleOptionUpdateableSliderWidget(this.width / 2 - 75, this.height / 6 + offset, 150, 20, 50, 300, 1, new DoubleValue() {
       @Override
       public double get() {
         return config.getRadarSize();
@@ -81,7 +95,8 @@ public class RadarConfigScreen extends Screen {
             Integer.toString((int) value));
       }
     }));
-    addButton(new DoubleOptionUpdateableSliderWidget(this.width / 2 - 75, this.height / 6 + 48 + 72, 150, 20, 0.5, 2, 0.1, new DoubleValue() {
+    offset += 24;
+    addButton(new DoubleOptionUpdateableSliderWidget(this.width / 2 - 75, this.height / 6 + offset, 150, 20, 0.5, 2, 0.1, new DoubleValue() {
       private final DecimalFormat format = new DecimalFormat("#.#");
 
       @Override
@@ -99,11 +114,13 @@ public class RadarConfigScreen extends Screen {
         return new TranslatableComponent("civmodern.screen.radar.iconsize", format.format(value));
       }
     }));
-    addButton(new Button(this.width / 2 - 75, this.height / 6 + 48 + 96, 150, 20, new TranslatableComponent("civmodern.screen.radar.alignment", config.getAlignment().toString()), button -> {
+    offset += 24;
+    addButton(new Button(this.width / 2 - 75, this.height / 6 + offset, 150, 20, new TranslatableComponent("civmodern.screen.radar.alignment", config.getAlignment().toString()), button -> {
       config.setAlignment(config.getAlignment().next());
       button.setMessage(new TranslatableComponent("civmodern.screen.radar.alignment", config.getAlignment().toString()));
     }));
-    addButton(new DoubleOptionUpdateableSliderWidget(this.width / 2 - 75, this.height / 6 + 48 + 120, 150, 20, 20, 150, 1, new DoubleValue() {
+    offset += 24;
+    addButton(new DoubleOptionUpdateableSliderWidget(this.width / 2 - 75, this.height / 6 + offset, 150, 20, 20, 150, 1, new DoubleValue() {
 
       @Override
       public double get() {
@@ -120,7 +137,8 @@ public class RadarConfigScreen extends Screen {
         return new TranslatableComponent("civmodern.screen.radar.range", String.valueOf((int) value));
       }
     }));
-    addButton(new DoubleOptionUpdateableSliderWidget(this.width / 2 - 75, this.height / 6 + 48 + 144, 150, 20, 0, 300, 1, new DoubleValue() {
+    offset += 24;
+    addButton(new DoubleOptionUpdateableSliderWidget(this.width / 2 - 75, this.height / 6 + offset, 150, 20, 0, 300, 1, new DoubleValue() {
 
       @Override
       public double get() {
@@ -137,7 +155,8 @@ public class RadarConfigScreen extends Screen {
         return new TranslatableComponent("civmodern.screen.radar.x", String.valueOf((int) value));
       }
     }));
-    addButton(new DoubleOptionUpdateableSliderWidget(this.width / 2 - 75, this.height / 6 + 48 + 168, 150, 20, 0, 300, 1, new DoubleValue() {
+    offset += 24;
+    addButton(new DoubleOptionUpdateableSliderWidget(this.width / 2 - 75, this.height / 6 + offset, 150, 20, 0, 300, 1, new DoubleValue() {
 
       @Override
       public double get() {
@@ -154,8 +173,8 @@ public class RadarConfigScreen extends Screen {
         return new TranslatableComponent("civmodern.screen.radar.y", String.valueOf((int) value));
       }
     }));
-
-    addButton(new DoubleOptionUpdateableSliderWidget(this.width / 2 - 75, this.height / 6 + 168 + 48 + 24, 150, 20, 0, 1, 0.01, new DoubleValue() {
+    offset += 24;
+    addButton(new DoubleOptionUpdateableSliderWidget(this.width / 2 - 75, this.height / 6 + offset, 150, 20, 0, 1, 0.01, new DoubleValue() {
       private final DecimalFormat format = new DecimalFormat("##%");
 
       @Override
@@ -173,44 +192,65 @@ public class RadarConfigScreen extends Screen {
         return new TranslatableComponent("civmodern.screen.radar.transparency", format.format(value));
       }
     }));
+    offset += 24;
 
+    foregroundColourX = offset;
+    offset += 12;
+    addColourPicker(offset, config::getRadarColour, config::setColour);
+
+    offset += 24;
+    backgroundColourX = offset;
+    offset += 12;
+    addColourPicker(offset, config::getRadarBgColour, config::setRadarBgColour);
+
+    offset += 48;
+    addButton(new Button(centre, this.height / 6 + offset, 98, 20, CommonComponents.GUI_DONE, button -> {
+      Minecraft.getInstance().setScreen(parent);
+    }));
+  }
+
+  private void addColourPicker(int offset, Supplier<Integer> colourGet, Consumer<Integer> colourSet) {
     int left = width / 2 - (60 + 8 + 20 + 8 + 20) / 2;
-    EditBox widget = new EditBox(font, left, height / 6 + 48 + 48 + 168, 60, 20, TextComponent.EMPTY);
-    widget.setValue("#" + String.format("%06X", config.getRadarColour()));
+    EditBox widget = new EditBox(font, left, height / 6 + offset, 60, 20, TextComponent.EMPTY);
+    widget.setValue("#" + String.format("%06X", colourGet.get()));
     widget.setMaxLength(7);
     Pattern pattern = Pattern.compile("^(#[0-9A-F]{0,6})?$", Pattern.CASE_INSENSITIVE);
     widget.setFilter(string -> pattern.matcher(string).matches());
     widget.setResponder(val -> {
       if (val.length() == 7) {
         int rgb = Integer.parseInt(val.substring(1), 16);
-        config.setRadarColour(rgb);
+        colourSet.accept(rgb);
       }
     });
     addButton(widget);
 
-    HsbColourPicker hsb = new HsbColourPicker(left + 60 + 8, height / 6 + 48 + 48 + 168,
-        20, 20, config.getRadarColour(), colour -> {
+    HsbColourPicker hsb = new HsbColourPicker(left + 60 + 8, height / 6 + offset,
+        20, 20, colourGet.get(), colour -> {
       widget.setValue("#" + String.format("%06X", colour));
-      config.setRadarColour(colour);
+      colourSet.accept(colour);
     });
-    addButton(new ImageButton(left + 60 + 8 + 20 + 8, height / 6 + 48 + 48 + 168, 20, 20, new ResourceLocation("civmodern", "gui/rollback.png"), imbg -> {
+    addButton(new ImageButton(left + 60 + 8 + 20 + 8, height / 6 + offset, 20, 20, new ResourceLocation("civmodern", "gui/rollback.png"), imbg -> {
       int colour = 0x888888;
       widget.setValue("#888888");
-      config.setRadarColour(colour);
+      colourSet.accept(colour);
       hsb.close();
     }));
     addButton(hsb);
-
-    addButton(new Button(centre, this.height / 6 + 24 + 265 + 48, 98, 20, CommonComponents.GUI_DONE, button -> {
-      Minecraft.getInstance().setScreen(parent);
-    }));
   }
 
   private Component getPingToggleMessage() {
     if (config.isPingEnabled()) {
-      return new TextComponent("Pings: Enabled");
+      return new TranslatableComponent("civmodern.screen.radar.pings.enable");
     } else {
-      return new TextComponent("Pings: Disabled");
+      return new TranslatableComponent("civmodern.screen.radar.pings.disable");
+    }
+  }
+
+  private Component getPingSoundMessage() {
+    if (config.isPingSoundEnabled()) {
+      return new TranslatableComponent("civmodern.screen.radar.sound.enable");
+    } else {
+      return new TranslatableComponent("civmodern.screen.radar.sound.disable");
     }
   }
 
@@ -224,6 +264,9 @@ public class RadarConfigScreen extends Screen {
   public void render(PoseStack matrices, int mouseX, int mouseY, float delta) {
     //super.renderBackground(matrices);
     super.render(matrices, mouseX, mouseY, delta);
+
+    this.cFont.drawShadowCentred(matrices, new TextComponent("Line colour"), this.width / 2f, this.height / 6 + foregroundColourX, 0xffffff);
+    this.cFont.drawShadowCentred(matrices, new TextComponent("Background colour"), this.width / 2f, this.height / 6 + backgroundColourX, 0xffffff);
 
     this.cFont.drawShadowCentred(matrices, this.title, this.width / 2f, 40, 0xffffff);
   }

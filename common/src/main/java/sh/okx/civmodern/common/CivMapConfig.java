@@ -16,8 +16,10 @@ public class CivMapConfig {
   private double range;
   private float transparency;
   private int radarColour;
+  private int radarBgColour;
   private boolean radarEnabled;
   private boolean pingEnabled;
+  private boolean pingSoundEnabled;
   private int x;
   private int y;
   private boolean iceRoadCardinalEnabled;
@@ -34,10 +36,12 @@ public class CivMapConfig {
     this.range = Double.parseDouble(properties.getProperty("range", "64"));
     this.transparency = Float.parseFloat(properties.getProperty("transparency", "0.8"));
     this.radarColour = Integer.parseInt(properties.getProperty("radar_colour", "8947848"));
+    this.radarBgColour = Integer.parseInt(properties.getProperty("radar_background_colour", Integer.toString(radarColour)));
     this.x = Integer.parseInt(properties.getProperty("x", "100"));
     this.y = Integer.parseInt(properties.getProperty("y", "100"));
     this.radarEnabled = Boolean.parseBoolean(properties.getProperty("radar_enabled", "true"));
     this.pingEnabled = Boolean.parseBoolean(properties.getProperty("ping_enabled", "true"));
+    this.pingSoundEnabled = Boolean.parseBoolean(properties.getProperty("ping_sound_enabled", "true"));
     this.iceRoadCardinalEnabled = Boolean.parseBoolean(properties.getProperty("ice_road_cardinal", "true"));
     this.iceRoadAutoEat = Boolean.parseBoolean(properties.getProperty("ice_road_auto_eat", "false"));
     this.iceRoadStop = Boolean.parseBoolean(properties.getProperty("ice_road_stop", "true"));
@@ -54,10 +58,12 @@ public class CivMapConfig {
       properties.setProperty("range", Double.toString(range));
       properties.setProperty("transparency", Float.toString(transparency));
       properties.setProperty("radar_colour", Integer.toString(radarColour));
+      properties.setProperty("radar_background_colour", Integer.toString(radarBgColour));
       properties.setProperty("x", Integer.toString(x));
       properties.setProperty("y", Integer.toString(y));
       properties.setProperty("radar_enabled", Boolean.toString(radarEnabled));
       properties.setProperty("ping_enabled", Boolean.toString(pingEnabled));
+      properties.setProperty("ping_sound_enabled", Boolean.toString(pingEnabled));
       properties.setProperty("ice_road_cardinal", Boolean.toString(iceRoadCardinalEnabled));
       properties.setProperty("ice_road_auto_eat", Boolean.toString(iceRoadAutoEat));
       properties.setProperty("ice_road_stop", Boolean.toString(iceRoadStop));
@@ -187,5 +193,21 @@ public class CivMapConfig {
 
   public boolean isIceRoadStop() {
     return iceRoadStop;
+  }
+
+  public boolean isPingSoundEnabled() {
+    return pingSoundEnabled;
+  }
+
+  public void setPingSoundEnabled(boolean pingSoundEnabled) {
+    this.pingSoundEnabled = pingSoundEnabled;
+  }
+
+  public int getRadarBgColour() {
+    return radarBgColour;
+  }
+
+  public void setRadarBgColour(int radarBgColour) {
+    this.radarBgColour = radarBgColour;
   }
 }
