@@ -2,6 +2,7 @@
   "key.civmodern.left": "Hold left mouse button",
   "key.civmodern.right": "Hold right mouse button",
   "key.civmodern.ice": "Toggle ice road macro",
+  "key.civmodern.attack": "Toggle attack macro",
   "key.civmodern.config": "Open Civ Modern configuration",
   "key.civmodern.highlight": "Highlight waypoint",
   "category.civmodern": "Civ Modern",

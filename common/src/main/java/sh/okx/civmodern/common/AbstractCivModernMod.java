@@ -24,6 +24,7 @@ import sh.okx.civmodern.common.events.ClientTickEvent;
 import sh.okx.civmodern.common.events.EventBus;
 import sh.okx.civmodern.common.events.ScrollEvent;
 import sh.okx.civmodern.common.gui.screen.MainConfigScreen;
+import sh.okx.civmodern.common.macro.AttackMacro;
 import sh.okx.civmodern.common.macro.HoldKeyMacro;
 import sh.okx.civmodern.common.macro.IceRoadMacro;
 import sh.okx.civmodern.common.radar.Radar;
@@ -37,6 +38,7 @@ public abstract class AbstractCivModernMod {
     private final KeyMapping holdLeftBinding;
     private final KeyMapping holdRightBinding;
     private final KeyMapping iceRoadBinding;
+    private final KeyMapping attackBinding;
     private final CompatProvider compat;
     private CivMapConfig config;
     private Radar radar;
@@ -44,6 +46,7 @@ public abstract class AbstractCivModernMod {
     private HoldKeyMacro leftMacro;
     private HoldKeyMacro rightMacro;
     private IceRoadMacro iceRoadMacro;
+    private AttackMacro attackMacro;
 
     private EventBus eventBus;
 
@@ -79,6 +82,12 @@ public abstract class AbstractCivModernMod {
             GLFW.GLFW_KEY_BACKSPACE,
             "category.civmodern"
         );
+        this.attackBinding = new KeyMapping(
+            "key.civmodern.attack",
+            Type.KEYSYM,
+            GLFW.GLFW_KEY_0,
+            "category.civmodern"
+        );
 
         if (INSTANCE == null) {
             INSTANCE = this;
@@ -93,6 +102,7 @@ public abstract class AbstractCivModernMod {
         registerKeyBinding(this.configBinding);
         registerKeyBinding(this.holdLeftBinding);
         registerKeyBinding(this.holdRightBinding);
+        registerKeyBinding(attackBinding);
         registerKeyBinding(this.iceRoadBinding);
     }
 
@@ -107,6 +117,7 @@ public abstract class AbstractCivModernMod {
         this.leftMacro = new HoldKeyMacro(this, this.holdLeftBinding, options.keyAttack);
         this.rightMacro = new HoldKeyMacro(this, this.holdRightBinding, options.keyUse);
         this.iceRoadMacro = new IceRoadMacro(this, config, this.iceRoadBinding);
+        this.attackMacro = new AttackMacro(this, this.attackBinding, options.keyAttack);
     }
 
     public abstract EventBus provideEventBus();
@@ -115,6 +126,7 @@ public abstract class AbstractCivModernMod {
     public void onScroll() {
         if (this.leftMacro != null) this.leftMacro.onScroll();
         if (this.rightMacro != null) this.rightMacro.onScroll();
+        if (this.attackMacro != null) this.attackMacro.onScroll();
     }
 
     private void tick() {
@@ -124,7 +136,6 @@ public abstract class AbstractCivModernMod {
     }
 
     private void replaceItemRenderer() {
-        // Look man, it's this or mixins
         Minecraft minecraft = Minecraft.getInstance();
         for (Field field : Minecraft.class.getDeclaredFields()) {
             if (field.getType() == ItemRenderer.class) {
