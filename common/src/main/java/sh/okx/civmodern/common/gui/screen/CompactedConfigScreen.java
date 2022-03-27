@@ -3,7 +3,6 @@ package sh.okx.civmodern.common.gui.screen;
 import com.mojang.blaze3d.vertex.PoseStack;
 import java.text.DecimalFormat;
 import java.util.regex.Pattern;
-import net.java.games.input.Component.Identifier;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
@@ -20,7 +19,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 import sh.okx.civmodern.common.AbstractCivModernMod;
 import sh.okx.civmodern.common.CivMapConfig;
-import sh.okx.civmodern.common.compat.CommonFont;
+import sh.okx.civmodern.common.ColourProvider;
 import sh.okx.civmodern.common.gui.widget.HsbColourPicker;
 import sh.okx.civmodern.common.gui.widget.ImageButton;
 
@@ -49,7 +48,8 @@ public class CompactedConfigScreen extends Screen {
   private final AbstractCivModernMod mod;
   private final CivMapConfig config;
   private final Screen parent;
-  private CommonFont cFont;
+
+  private HsbColourPicker picker;
 
   public CompactedConfigScreen(AbstractCivModernMod mod, CivMapConfig config, Screen parent) {
     super(new TranslatableComponent("civmodern.screen.compacted.title"));
@@ -60,8 +60,6 @@ public class CompactedConfigScreen extends Screen {
 
   @Override
   protected void init() {
-    this.cFont = mod.getCompat().provideFont(this.font);
-
     itemX = this.width / 2 - 16 / 2;
     itemY = this.height / 6 - 24;
 
@@ -78,26 +76,29 @@ public class CompactedConfigScreen extends Screen {
         config.setColour(rgb);
       }
     });
-    addButton(widget);
+    addRenderableWidget(widget);
 
+    ColourProvider colourProvider = mod.getColourProvider();
     HsbColourPicker hsb = new HsbColourPicker(leftWidth + 60 + 8, height / 6, 20, 20, config.getColour(),
         colour -> {
           widget.setValue("#" + String.format("%06X", colour));
           config.setColour(colour);
-        });
+        }, d -> {
+      System.out.println(d);
+      colourProvider.setTemporaryCompactedColour(d);
+    }, () -> {});
 
-    addButton(new ImageButton(leftWidth + 60 + 8 + 20 + 8, height / 6, 20, 20, new ResourceLocation("civmodern", "gui/rollback.png"), imbg -> {
+    addRenderableWidget(new ImageButton(leftWidth + 60 + 8 + 20 + 8, height / 6, 20, 20, new ResourceLocation("civmodern", "gui/rollback.png"), imbg -> {
       int colour = 0xffff58;
       widget.setValue("#FFFF58");
       config.setColour(colour);
       hsb.close();
     }));
 
-    addButton(hsb);
+    addRenderableWidget(picker = hsb);
 
-
-    addButton(new Button(this.width / 2 - 49, this.height / 6 + 169, 98, 20, CommonComponents.GUI_DONE, button -> {
-      Minecraft.getInstance().setScreen(parent);
+    addRenderableWidget(new Button(this.width / 2 - 49, this.height / 6 + 169, 98, 20, CommonComponents.GUI_DONE, button -> {
+      minecraft.setScreen(parent);
     }));
   }
 
@@ -128,8 +129,17 @@ public class CompactedConfigScreen extends Screen {
   }
 
   @Override
+  public void mouseMoved(double d, double e) {
+    super.mouseMoved(d, e);
+    if (picker != null) {
+      picker.mouseMoved(d, e);
+    }
+  }
+
+  @Override
   public void onClose() {
     super.onClose();
+    mod.getColourProvider().setTemporaryCompactedColour(null);
     config.save();
   }
 
@@ -145,6 +155,6 @@ public class CompactedConfigScreen extends Screen {
   private void drawCentredText(PoseStack matrix, Component text, int xOffsetCentre, int yOffsetTop, int colour) {
     int width = Minecraft.getInstance().getWindow().getGuiScaledWidth();
     int centre = width / 2 - font.width(text) / 2;
-    this.cFont.drawShadow(matrix, text, centre + xOffsetCentre, yOffsetTop, colour);
+    this.font.drawShadow(matrix, text, centre + xOffsetCentre, yOffsetTop, colour);
   }
 }

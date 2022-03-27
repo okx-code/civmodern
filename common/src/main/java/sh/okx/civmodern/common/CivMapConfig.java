@@ -7,6 +7,9 @@ import java.util.Properties;
 import sh.okx.civmodern.common.gui.Alignment;
 
 public class CivMapConfig {
+
+  public static final int DEFAULT_RADAR_FG_COLOUR = 0x0D0202;
+  public static final int DEFAULT_RADAR_BG_COLOUR = 0xE8E3E3;
   private final File file;
   private int compactedColour;
   private int radarCircles;
@@ -30,15 +33,15 @@ public class CivMapConfig {
     this.file = file;
     this.compactedColour = Integer.parseInt(properties.getProperty("compacted_colour", "16777048"));
     this.radarCircles = Integer.parseInt(properties.getProperty("radar_circles", "4"));
-    this.radarSize = Integer.parseInt(properties.getProperty("radar_size", "50"));
+    this.radarSize = Integer.parseInt(properties.getProperty("radar_size", "80"));
     this.alignment = Alignment.valueOf(properties.getProperty("alignment", "top_left").toUpperCase());
     this.iconSize = Float.parseFloat(properties.getProperty("icon_size", "1"));
     this.range = Double.parseDouble(properties.getProperty("range", "64"));
-    this.transparency = Float.parseFloat(properties.getProperty("transparency", "0.8"));
-    this.radarColour = Integer.parseInt(properties.getProperty("radar_colour", "8947848"));
-    this.radarBgColour = Integer.parseInt(properties.getProperty("radar_background_colour", Integer.toString(radarColour)));
-    this.x = Integer.parseInt(properties.getProperty("x", "100"));
-    this.y = Integer.parseInt(properties.getProperty("y", "100"));
+    this.transparency = Float.parseFloat(properties.getProperty("transparency", "0.5"));
+    this.radarColour = Integer.parseInt(properties.getProperty("radar_colour", Integer.toString(DEFAULT_RADAR_FG_COLOUR)));
+    this.radarBgColour = Integer.parseInt(properties.getProperty("radar_background_colour", Integer.toString(DEFAULT_RADAR_BG_COLOUR)));
+    this.x = Integer.parseInt(properties.getProperty("x", "5"));
+    this.y = Integer.parseInt(properties.getProperty("y", "5"));
     this.radarEnabled = Boolean.parseBoolean(properties.getProperty("radar_enabled", "true"));
     this.pingEnabled = Boolean.parseBoolean(properties.getProperty("ping_enabled", "true"));
     this.pingSoundEnabled = Boolean.parseBoolean(properties.getProperty("ping_sound_enabled", "true"));

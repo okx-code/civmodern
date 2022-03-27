@@ -2,14 +2,18 @@ package sh.okx.civmodern.common;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.BufferBuilder;
+import com.mojang.blaze3d.vertex.BufferUploader;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.Tesselator;
+import com.mojang.blaze3d.vertex.VertexFormat.Mode;
 import java.lang.reflect.Field;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.color.item.ItemColors;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer;
+import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.ItemModelShaper;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.entity.ItemRenderer;
@@ -20,19 +24,20 @@ import net.minecraft.world.item.ItemStack;
 
 public class CustomItemRenderer extends ItemRenderer {
 
-  private final CivMapConfig config;
+  private final ColourProvider colourProvider;
 
-  public CustomItemRenderer(ItemRenderer old, CivMapConfig config) throws IllegalAccessException {
+  public CustomItemRenderer(ItemRenderer old, ColourProvider colourProvider) throws IllegalAccessException {
     // Placeholder values just so it doesn't NPE
     super(Minecraft.getInstance().getTextureManager(), Minecraft.getInstance().getModelManager(),
-        null);
-    this.config = config;
+        null, null);
+    this.colourProvider = colourProvider;
 
     // Steal all the fields from the old item renderer
     // This is necessary otherwise all the items render with the missing texture
     for (Field field : ItemRenderer.class.getDeclaredFields()) {
       if (field.getType() == ItemModelShaper.class
-          || field.getType() == ItemColors.class) {
+          || field.getType() == ItemColors.class
+          || field.getType() == BlockEntityWithoutLevelRenderer.class) {
         field.setAccessible(true);
         field.set(this, field.get(old));
       }
@@ -48,7 +53,7 @@ public class CustomItemRenderer extends ItemRenderer {
       if (stack.isDamaged()) {
         RenderSystem.disableDepthTest();
         RenderSystem.disableTexture();
-        RenderSystem.disableAlphaTest();
+        //RenderSystem.disableAlphaTest();
         RenderSystem.disableBlend();
         Tesselator tesselator = Tesselator.getInstance();
         BufferBuilder bufferBuilder = tesselator.getBuilder();
@@ -60,7 +65,7 @@ public class CustomItemRenderer extends ItemRenderer {
         this.fillRect(bufferBuilder, x + 2, y + 13, 13, 2, 0, 0, 0, 255);
         this.fillRect(bufferBuilder, x + 2, y + 13, k, 1, l >> 16 & 255, l >> 8 & 255, l & 255, 255);
         RenderSystem.enableBlend();
-        RenderSystem.enableAlphaTest();
+        //RenderSystem.enableAlphaTest();
         RenderSystem.enableTexture();
         RenderSystem.enableDepthTest();
       }
@@ -70,7 +75,7 @@ public class CustomItemRenderer extends ItemRenderer {
         MultiBufferSource.BufferSource irendertypebuffer$impl = MultiBufferSource.immediate(
             Tesselator.getInstance().getBuilder());
 
-        int colour = compacted ? config.getColour() : 0xffffff;
+        int colour = compacted ? colourProvider.getCompactedColour() : 0xffffff;
         String s = label == null ? String.valueOf(stack.getCount()) : label;
 
         renderer.drawInBatch(s, (float) (x + 19 - 2 - renderer.width(s)), (float) (y + 6 + 3),
@@ -96,12 +101,14 @@ public class CustomItemRenderer extends ItemRenderer {
 
   private void fillRect(BufferBuilder buffer, int a, int b, int c, int d, int e, int f, int g,
       int h) {
-    buffer.begin(7, DefaultVertexFormat.POSITION_COLOR);
+    RenderSystem.setShader(GameRenderer::getPositionColorShader);
+    buffer.begin(Mode.QUADS, DefaultVertexFormat.POSITION_COLOR);
     buffer.vertex(a, b, 0.0D).color(e, f, g, h).endVertex();
     buffer.vertex(a, b + d, 0.0D).color(e, f, g, h).endVertex();
     buffer.vertex(a + c, b + d, 0.0D).color(e, f, g, h).endVertex();
     buffer.vertex(a + c, b, 0.0D).color(e, f, g, h).endVertex();
-    Tesselator.getInstance().end();
+    buffer.end();
+    BufferUploader.end(buffer);
   }
 
   private boolean isCompacted(ItemStack item) {

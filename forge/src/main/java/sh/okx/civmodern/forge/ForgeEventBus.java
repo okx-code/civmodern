@@ -9,7 +9,7 @@ import java.util.function.Consumer;
 import net.minecraft.client.renderer.debug.WorldGenAttemptRenderer;
 import net.minecraftforge.client.event.RenderGameOverlayEvent;
 import net.minecraftforge.client.event.RenderGameOverlayEvent.ElementType;
-import net.minecraftforge.client.event.RenderWorldLastEvent;
+import net.minecraftforge.client.event.RenderLevelLastEvent;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.TickEvent.Phase;
@@ -49,8 +49,8 @@ public class ForgeEventBus implements EventBus {
   }
 
   @SubscribeEvent
-  public void onWorldRender(RenderWorldLastEvent event) {
-    push(new WorldRenderEvent(event.getMatrixStack(), event.getPartialTicks()));
+  public void onWorldRender(RenderLevelLastEvent event) {
+    push(new WorldRenderEvent(event.getPoseStack(), event.getPartialTick()));
   }
 
   @Override

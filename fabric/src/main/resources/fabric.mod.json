@@ -16,11 +16,11 @@
     ]
   },
   "depends": {
-    "fabricloader": ">=0.7.4",
+    "fabricloader": ">=0.12.0",
     "fabric": "*",
-    "minecraft": "1.16.x"
+    "minecraft": "1.18.x"
   },
   "mixins": [
-    "mixin.civmodern.json"
+    "civmodern.mixins.json"
   ]
 }

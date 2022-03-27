@@ -1,7 +1,7 @@
 package sh.okx.civmodern.forge;
 
 import net.minecraft.client.KeyMapping;
-import net.minecraftforge.fml.client.registry.ClientRegistry;
+import net.minecraftforge.client.ClientRegistry;
 import sh.okx.civmodern.common.AbstractCivModernMod;
 import sh.okx.civmodern.common.events.EventBus;
 

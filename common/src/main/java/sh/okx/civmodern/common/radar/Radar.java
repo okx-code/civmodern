@@ -7,6 +7,9 @@ import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.Tesselator;
+import com.mojang.blaze3d.vertex.VertexFormat.Mode;
+import com.mojang.math.Matrix4f;
+import com.mojang.math.Vector3f;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Random;
@@ -19,6 +22,7 @@ import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.multiplayer.PlayerInfo;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.player.RemotePlayer;
+import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Registry;
@@ -31,33 +35,36 @@ import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.vehicle.Boat;
 import net.minecraft.world.entity.vehicle.Minecart;
 import sh.okx.civmodern.common.CivMapConfig;
-import sh.okx.civmodern.common.compat.CommonFont;
-import sh.okx.civmodern.common.compat.CompatProvider;
+import sh.okx.civmodern.common.ColourProvider;
 import sh.okx.civmodern.common.events.ClientTickEvent;
 import sh.okx.civmodern.common.events.EventBus;
 import sh.okx.civmodern.common.events.PostRenderGameOverlayEvent;
-import sh.okx.civmodern.common.gui.screen.RadarConfigScreen;
 
 public class Radar {
 
-  private static final double COS_45 = 0.70710677D;
+  private static final double COS_45 = 0.7071067811865476D;
   private static final int PLAYER_RANGE = 70;
 
   private final EventBus eventBus;
+  private final ColourProvider colourProvider;
   private final CivMapConfig config;
-  private final CommonFont cFont;
 
   private Set<RemotePlayer> playersInRange = new HashSet<>();
   private String lastWaypointCommand;
 
+  private int translateX;
+  private int translateY;
+  private int bgColour;
+  private int fgColour;
 
-  public Radar(CivMapConfig config, EventBus eventBus, CompatProvider compatProvider) {
+  public Radar(CivMapConfig config, EventBus eventBus, ColourProvider colourProvider) {
     this.config = config;
     this.eventBus = eventBus;
-    this.cFont = compatProvider.provideFont(Minecraft.getInstance().font);
+    this.colourProvider = colourProvider;
   }
 
   public void init() {
@@ -160,173 +167,101 @@ public class Radar {
   }
 
   public void render(PoseStack matrices, float delta) {
-    RenderSystem.color4f(1.0F, 1.0F, 1.0F, 1);
+    bgColour = (colourProvider.getBackgroundColour() & 0xFF_FF_FF) | (int) ((1 - config.getTransparency()) * 255) << 24;
+    fgColour = (colourProvider.getForegroundColour() & 0xFF_FF_FF) | (int) ((1 - config.getTransparency()) * 255) << 24;
+
+    RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1);
     RenderSystem.enableBlend();
     RenderSystem.defaultBlendFunc();
     RenderSystem.enableDepthTest();
 
     Minecraft client = Minecraft.getInstance();
     LocalPlayer player = client.player;
-    glPushMatrix();
+    matrices.pushPose();
 
-    int offsetX = config.getX();
-    int offsetY = config.getY();
-    int z = 1000;
+    int offsetX = config.getX() + config.getRadarSize();
+    int offsetY = config.getY() + config.getRadarSize();
 
     int height = client.getWindow().getGuiScaledHeight();
     int width = client.getWindow().getGuiScaledWidth();
     switch (config.getAlignment()) {
-      case TOP_LEFT:
-        glTranslatef(offsetX, offsetY, z);
-        break;
-      case TOP_RIGHT:
-        glTranslatef(width - offsetX, offsetY, z);
-        break;
-      case BOTTOM_RIGHT:
-        glTranslatef(width - offsetX, height - offsetY, z);
-        break;
-      case BOTTOM_LEFT:
-        glTranslatef(offsetX, height - offsetY, z);
-        break;
+      case TOP_LEFT -> {
+        translateX = offsetX;
+        translateY = offsetY;
+      }
+      case TOP_RIGHT -> {
+        translateX = width - offsetX;
+        translateY = offsetY;
+      }
+      case BOTTOM_RIGHT -> {
+        translateX = width - offsetX;
+        translateY = height - offsetY;
+      }
+      case BOTTOM_LEFT -> {
+        translateX = offsetX;
+        translateY = height - offsetY;
+      }
     }
-    float yaw = player.getViewYRot(delta);
-    glRotatef(-yaw, 0, 0, 1);
-
-    renderCircleBackground();
+    matrices.translate(translateX, translateY, 100);
+    renderCircleBackground(matrices);
     for (int i = 1; i <= config.getRadarCircles(); i++) {
-      renderCircleBorder(radius() * (i / (double) config.getRadarCircles()));
+      renderCircleBorder(matrices, radius() * (i / (float) config.getRadarCircles()));
     }
-    //renderRange();
-    renderLines();
+    matrices.mulPose(Vector3f.ZP.rotationDegrees((-player.getViewYRot(delta)) % 360f));
+    renderLines(matrices);
 
     renderBoatsMinecarts(matrices, delta);
     renderPlayers(matrices, delta);
 
-    glPopMatrix();
-    glColor4f(1.0F, 1.0F, 1.0F, 1);
+    matrices.popPose();
+    RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1);
 
     RenderSystem.disableBlend();
     RenderSystem.disableDepthTest();
-  }
-
-  private void renderRange() {
-    glLineWidth(1f);
-    glEnable(GL_BLEND);
-    glDisable(GL_TEXTURE_2D);
-    glEnable(GL_LINE_SMOOTH);
-    glDisable(GL_LIGHTING);
-    glColor4f(1, 1, 1, 1);
-
-    // If config.range < 98, then cut off a bit
-    double len = PLAYER_RANGE * (config.getRadarSize() / config.getRange());
-    double corner = config.getRadarSize() * COS_45;
-    len = Math.min(len, corner);
-
-    Tesselator tessellator = Tesselator.getInstance();
-    BufferBuilder buffer = tessellator.getBuilder();
-    buffer.begin(GL_LINES, DefaultVertexFormat.POSITION);
-
-    buffer.vertex(-len, -len, 0f).endVertex();
-    buffer.vertex(-len, len, 0f).endVertex();
-
-    buffer.vertex(-len, len, 0f).endVertex();
-    buffer.vertex(len, len, 0f).endVertex();
-
-    buffer.vertex(len, len, 0f).endVertex();
-    buffer.vertex(len, -len, 0f).endVertex();
-
-    buffer.vertex(len, -len, 0f).endVertex();
-    buffer.vertex(-len, -len, 0f).endVertex();
-
-    tessellator.end();
-
-    glDisable(GL_BLEND);
-    glDisable(GL_LINE_SMOOTH);
-    glEnable(GL_TEXTURE_2D);
   }
 
   private void renderBoatsMinecarts(PoseStack matrices, float delta) {
     Minecraft minecraft = Minecraft.getInstance();
 
     for (Entity entity : minecraft.level.entitiesForRendering()) {
-      if (entity instanceof Boat) {
-        Boat boat = (Boat) entity;
-
-        double scale = config.getRadarSize() / config.getRange();
-
-        double px = minecraft.player.xOld
-            + (minecraft.player.getX() - minecraft.player.xOld) * delta;
-        double pz = minecraft.player.zOld
-            + (minecraft.player.getZ() - minecraft.player.zOld) * delta;
-        double x = boat.xOld + (boat.getX() - boat.xOld) * delta;
-        double z = boat.zOld + (boat.getZ() - boat.zOld) * delta;
-        double dx = px - x;
-        double dz = pz - z;
-        if (dx * dx + dz * dz > config.getRange() * config.getRange()) {
-          continue;
-        }
-        glEnable(GL_BLEND);
-        glColor4f(1.0F, 1.0F, 1.0F, 1);
-
-        glPushMatrix();
-        glTranslated(dx * scale, dz * scale, 0);
-        glRotatef(minecraft.player.getViewYRot(delta), 0, 0, 1);
-
-        glPushMatrix();
-        matrices.pushPose();
-        matrices.scale(config.getIconSize(), config.getIconSize(), 0);
-        minecraft.getTextureManager().bind(
-            new ResourceLocation("textures/item/" + boat.getBoatType().getName() + "_boat.png"));
-        RenderSystem.color4f(1.0F, 1.0F, 1.0F, 1.0F);
-        Gui.blit(matrices, -4, -4, 8, 8, 0, 0, 16, 16, 16, 16);
-        matrices.popPose();
-
-        glPopMatrix();
-        glPopMatrix();
-      } else if (entity instanceof Minecart) {
-        Minecart minecart = (Minecart) entity;
-
-        double scale = config.getRadarSize() / config.getRange();
-
-        double px =
-            minecraft.player.xOld + (minecraft.player.getX() - minecraft.player.xOld) * delta;
-        double pz =
-            minecraft.player.zOld + (minecraft.player.getZ() - minecraft.player.zOld) * delta;
-        double x = minecart.xOld + (minecart.getX() - minecart.xOld) * delta;
-        double z = minecart.zOld + (minecart.getZ() - minecart.zOld) * delta;
-        double dx = px - x;
-        double dz = pz - z;
-        if (dx * dx + dz * dz > config.getRange() * config.getRange()) {
-          continue;
-        }
-        glEnable(GL_BLEND);
-        glColor4f(1.0F, 1.0F, 1.0F, 1);
-
-        glPushMatrix();
-        glTranslated(dx * scale, dz * scale, 0);
-        glRotatef(minecraft.player.getViewYRot(delta), 0, 0, 1);
-
-        glPushMatrix();
-        RenderSystem.enableBlend();
-        RenderSystem.defaultBlendFunc();
-        matrices.pushPose();
-        matrices.scale(config.getIconSize(), config.getIconSize(), 0);
-        minecraft.getTextureManager().bind(new ResourceLocation("textures/item/minecart.png"));
-        RenderSystem.color4f(1.0F, 1.0F, 1.0F, 1.0F);
-        Gui.blit(matrices, -4, -4, 8, 8, 0, 0, 16, 16, 16, 16);
-        matrices.popPose();
-
-        glPopMatrix();
-        glDisable(GL_BLEND);
-        glPopMatrix();
+      if (entity instanceof Boat boat) {
+        renderEntity(matrices, minecraft.player, boat, delta, "textures/item/" + boat.getBoatType().getName() + "_boat.png");
+      } else if (entity instanceof Minecart minecart) {
+        renderEntity(matrices, minecraft.player, minecart, delta, "textures/item/minecart.png");
       }
     }
   }
 
+  private void renderEntity(PoseStack matrices, Player player, Entity entity, float delta, String texture) {
+    double scale = config.getRadarSize() / config.getRange();
+
+    double px = player.xOld + (player.getX() - player.xOld) * delta;
+    double pz =
+        player.zOld + (player.getZ() - player.zOld) * delta;
+    double x = entity.xOld + (entity.getX() - entity.xOld) * delta;
+    double z = entity.zOld + (entity.getZ() - entity.zOld) * delta;
+    double dx = px - x;
+    double dz = pz - z;
+    if (dx * dx + dz * dz > config.getRange() * config.getRange()) {
+      return;
+    }
+    RenderSystem.enableBlend();
+    RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1);
+
+    matrices.pushPose();
+    matrices.translate(dx * scale, dz * scale, 0);
+    matrices.mulPose(Vector3f.ZP.rotationDegrees(player.getViewYRot(delta)));
+    matrices.scale(config.getIconSize(), config.getIconSize(), 0);
+
+    RenderSystem.setShaderTexture(0, new ResourceLocation(texture));
+    RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
+    Gui.blit(matrices, -4, -4, 8, 8, 0, 0, 16, 16, 16, 16);
+
+    matrices.popPose();
+  }
+
   private void renderPlayers(PoseStack matrices, float delta) {
     Minecraft minecraft = Minecraft.getInstance();
-
-    glPushMatrix();
 
     for (RemotePlayer player : playersInRange) {
       if (!player.isAlive()) {
@@ -343,130 +278,118 @@ public class Radar {
       if (dx * dx + dz * dz > config.getRange() * config.getRange()) {
         continue;
       }
-      glEnable(GL_BLEND);
-      glColor4f(1.0F, 1.0F, 1.0F, 1);
-
-      glPushMatrix();
-      glTranslated(dx * v, dz * v, 0);
-      glRotatef(minecraft.player.getViewYRot(delta), 0, 0, 1);
-
-      PlayerInfo entry = minecraft.player.connection.getPlayerInfo(player.getUUID());
-      glPushMatrix();
       RenderSystem.enableBlend();
       RenderSystem.defaultBlendFunc();
+      RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1);
+
       matrices.pushPose();
+      matrices.translate(dx * v, dz * v, 0);
+
+      PlayerInfo entry = minecraft.player.connection.getPlayerInfo(player.getUUID());
       matrices.scale(config.getIconSize(), config.getIconSize(), 0);
+      matrices.mulPose(Vector3f.ZP.rotationDegrees(minecraft.player.getViewYRot(delta)));
       if (entry != null) {
-        minecraft.getTextureManager().bind(entry.getSkinLocation());
+        RenderSystem.setShaderTexture(0, entry.getSkinLocation());
       } else {
-        minecraft.getTextureManager().bind(new ResourceLocation("textures/entity/steve.png"));
+        RenderSystem.setShaderTexture(0, new ResourceLocation("textures/entity/steve.png"));
       }
       Gui.blit(matrices, -4, -4, 8, 8, 8.0F, 8, 8, 8, 64, 64);
-      matrices.pushPose();
-      glDisable(GL_BLEND);
+      RenderSystem.disableBlend();
       matrices.scale(0.6f, 0.6f, 0);
       TextComponent component = new TextComponent(
           player.getScoreboardName() + " (" + ((int) player.getY() + ")"));
-      this.cFont.draw(matrices, component, -minecraft.font.width(component) / 2f, 7, 0xffffff);
-      matrices.popPose();
-      matrices.popPose();
+      minecraft.font.draw(matrices, component, -minecraft.font.width(component) / 2f, 7, 0xffffff);
 
-      glPopMatrix();
-      glPopMatrix();
+      matrices.popPose();
     }
-
-    glPopMatrix();
   }
 
-  private void renderCircleBackground() {
-    glLineWidth(1);
-    glEnable(GL_BLEND);
-    glDisable(GL_TEXTURE_2D);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    glColor4f((config.getRadarBgColour() >> 16 & 0xFF) / 255f,
-        (config.getRadarBgColour() >> 8 & 0xFF) / 255f, (config.getRadarBgColour() & 0xFF) / 255f,
-        1 - config.getTransparency());
+  private void renderCircleBackground(PoseStack stack) {
+    RenderSystem.lineWidth(1);
+    RenderSystem.enableBlend();
+    RenderSystem.disableTexture();
+    RenderSystem.defaultBlendFunc();
+    RenderSystem.setShader(GameRenderer::getPositionColorShader);
 
     Tesselator tessellator = Tesselator.getInstance();
     BufferBuilder buffer = tessellator.getBuilder();
-    buffer.begin(GL_TRIANGLE_FAN, DefaultVertexFormat.POSITION);
+    buffer.begin(Mode.TRIANGLE_FAN, DefaultVertexFormat.POSITION_COLOR);
 
     for (int i = 0; i <= 360; i++) {
-      double x = Math.sin(i * Math.PI / 180.0D) * radius();
-      double y = Math.cos(i * Math.PI / 180.0D) * radius();
-      buffer.vertex(x, y, 0.0D).endVertex();
+      float x = (float) Math.sin(i * Math.PI / 180.0D) * radius();
+      float y = (float) Math.cos(i * Math.PI / 180.0D) * radius();
+      buffer.vertex(stack.last().pose(), x, y, 0).color(bgColour).endVertex();
     }
     tessellator.end();
 
-    glEnable(GL_TEXTURE_2D);
-    glDisable(GL_BLEND);
+    RenderSystem.disableBlend();
+    RenderSystem.enableTexture();
   }
 
-  private void renderCircleBorder(double radius) {
-    glEnable(GL_BLEND);
-    glDisable(GL_TEXTURE_2D);
+  private void renderCircleBorder(PoseStack stack, float radius) {
+    RenderSystem.enableBlend();
+    RenderSystem.disableTexture();
     glEnable(GL_POLYGON_SMOOTH);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    RenderSystem.defaultBlendFunc();
+    RenderSystem.setShader(GameRenderer::getPositionColorShader);
 
     Tesselator tessellator = Tesselator.getInstance();
     BufferBuilder buffer = tessellator.getBuilder();
-    buffer.begin(GL_TRIANGLE_STRIP, DefaultVertexFormat.POSITION);
+    buffer.begin(Mode.TRIANGLE_STRIP, DefaultVertexFormat.POSITION_COLOR);
 
-    double thicknesss = radius == radius() ? 1 : 0.5;
+    float thickness = radius == radius() ? 1 : 0.5f;
 
+    Matrix4f pose = stack.last().pose();
     for (int i = 0; i <= 360; i++) {
-      glColor4f((config.getRadarColour() >> 16 & 0xFF) / 255f,
-          (config.getRadarColour() >> 8 & 0xFF) / 255f, (config.getRadarColour() & 0xFF) / 255f, 1);
-      double x0 = Math.sin(i * Math.PI / 180.0D) * radius;
-      double y0 = Math.cos(i * Math.PI / 180.0D) * radius;
+      float x0 = (float) Math.sin(i * Math.PI / 180.0D) * radius;
+      float y0 = (float) Math.cos(i * Math.PI / 180.0D) * radius;
 
-      double x1 = Math.sin(i * Math.PI / 180.0D) * (radius + thicknesss);
-      double y1 = Math.cos(i * Math.PI / 180.0D) * (radius + thicknesss);
-      buffer.vertex(x0, y0, 0.0D).endVertex();
-      buffer.vertex(x1, y1, 0).endVertex();
+      float x1 = (float) Math.sin(i * Math.PI / 180.0D) * (radius + thickness);
+      float y1 = (float) Math.cos(i * Math.PI / 180.0D) * (radius + thickness);
+      buffer.vertex(pose, x0, y0, 0).color(fgColour).endVertex();
+      buffer.vertex(pose, x1, y1, 0).color(fgColour).endVertex();
     }
     tessellator.end();
 
     glDisable(GL_POLYGON_SMOOTH);
-    glEnable(GL_TEXTURE_2D);
-    glDisable(GL_BLEND);
+    RenderSystem.enableTexture();
+    RenderSystem.disableBlend();
   }
 
-  private void renderLines() {
+  private void renderLines(PoseStack matrixStack) {
     glLineWidth(1f);
-    glEnable(GL_BLEND);
-    glDisable(GL_TEXTURE_2D);
+    RenderSystem.enableBlend();
+    RenderSystem.disableTexture();
     glEnable(GL_LINE_SMOOTH);
-    glDisable(GL_LIGHTING);
-    glColor4f((config.getRadarColour() >> 16 & 0xFF) / 255f,
-        (config.getRadarColour() >> 8 & 0xFF) / 255f, (config.getRadarColour() & 0xFF) / 255f, 1);
+    RenderSystem.defaultBlendFunc();
+    RenderSystem.setShader(GameRenderer::getPositionColorShader);
 
-    int scale = 0;
     float radius = radius() + 0.5f;
-    double diagonalInner = COS_45;
-    double diagonalOuter = COS_45 * radius;
+    float diagonalOuter = (float) COS_45 * radius;
 
-    Tesselator tessellator = Tesselator.getInstance();
-    BufferBuilder buffer = tessellator.getBuilder();
-    buffer.begin(GL_LINES, DefaultVertexFormat.POSITION);
+    Tesselator tesselator = Tesselator.getInstance();
+    BufferBuilder buffer = tesselator.getBuilder();
+    buffer.begin(Mode.DEBUG_LINES, DefaultVertexFormat.POSITION_COLOR);
 
-    buffer.vertex(0, -radius, 0f).endVertex();
-    buffer.vertex(0, radius, 0f).endVertex();
+    Matrix4f last = matrixStack.last().pose();
 
-    buffer.vertex(-radius, 0, 0f).endVertex();
-    buffer.vertex(radius, 0, 0f).endVertex();
+    buffer.vertex(last, 0, -radius, 0f).color(fgColour).endVertex();
+    buffer.vertex(last, 0, radius, 0f).color(fgColour).endVertex();
 
-    buffer.vertex(-diagonalOuter, -diagonalOuter, 0f).endVertex();
-    buffer.vertex(diagonalOuter, diagonalOuter, 0f).endVertex();
+    buffer.vertex(last, -radius, 0, 0f).color(fgColour).endVertex();
+    buffer.vertex(last, radius, 0, 0f).color(fgColour).endVertex();
 
-    buffer.vertex(-diagonalOuter, diagonalOuter, 0f).endVertex();
-    buffer.vertex(diagonalOuter, -diagonalOuter, 0f).endVertex();
+    buffer.vertex(last, -diagonalOuter, -diagonalOuter, 0f).color(fgColour).endVertex();
+    buffer.vertex(last, diagonalOuter, diagonalOuter, 0f).color(fgColour).endVertex();
 
-    tessellator.end();
+    buffer.vertex(last, -diagonalOuter, diagonalOuter, 0f).color(fgColour).endVertex();
+    buffer.vertex(last, diagonalOuter, -diagonalOuter, 0f).color(fgColour).endVertex();
 
-    glDisable(GL_BLEND);
+    tesselator.end();
+
     glDisable(GL_LINE_SMOOTH);
-    glEnable(GL_TEXTURE_2D);
+    RenderSystem.disableBlend();
+    RenderSystem.enableTexture();
   }
 
   public static void playPlayerSound(String soundName, UUID playerKey) {

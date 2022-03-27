@@ -17,9 +17,6 @@ import net.minecraft.client.renderer.entity.ItemRenderer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.lwjgl.glfw.GLFW;
-import sh.okx.civmodern.common.compat.CompatProvider;
-import sh.okx.civmodern.common.compat.v1_16_1.v1_16_1CompatProvider;
-import sh.okx.civmodern.common.compat.v1_16_2.v1_16_2CompatProvider;
 import sh.okx.civmodern.common.events.ClientTickEvent;
 import sh.okx.civmodern.common.events.EventBus;
 import sh.okx.civmodern.common.events.ScrollEvent;
@@ -39,8 +36,8 @@ public abstract class AbstractCivModernMod {
     private final KeyMapping holdRightBinding;
     private final KeyMapping iceRoadBinding;
     private final KeyMapping attackBinding;
-    private final CompatProvider compat;
     private CivMapConfig config;
+    private ColourProvider colourProvider;
     private Radar radar;
 
     private HoldKeyMacro leftMacro;
@@ -51,13 +48,6 @@ public abstract class AbstractCivModernMod {
     private EventBus eventBus;
 
     public AbstractCivModernMod() {
-        int version = Minecraft.getInstance().getGame().getVersion().getProtocolVersion();
-        if (version >= 751 && version <= 754) {
-            this.compat = new v1_16_2CompatProvider();
-        } else {
-            this.compat = new v1_16_1CompatProvider();
-        }
-
         this.configBinding = new KeyMapping(
             "key.civmodern.config",
             Type.KEYSYM,
@@ -108,6 +98,7 @@ public abstract class AbstractCivModernMod {
 
     public final void enable() {
         loadConfig();
+        loadRadar();
         replaceItemRenderer();
 
         this.eventBus.listen(ClientTickEvent.class, e -> this.tick());
@@ -141,7 +132,7 @@ public abstract class AbstractCivModernMod {
             if (field.getType() == ItemRenderer.class) {
                 field.setAccessible(true);
                 try {
-                    field.set(minecraft, new CustomItemRenderer(minecraft.getItemRenderer(), config));
+                    field.set(minecraft, new CustomItemRenderer(minecraft.getItemRenderer(), colourProvider));
                     replaceGuiItemRenderer();
                     return;
                 } catch (IllegalAccessException e) {
@@ -192,16 +183,20 @@ public abstract class AbstractCivModernMod {
 
         this.config = config;
 
-        this.radar = new Radar(config, eventBus, compat);
+    }
+
+    private void loadRadar() {
+        this.colourProvider = new ColourProvider(config);
+        this.radar = new Radar(config, eventBus, colourProvider);
         this.radar.init();
+    }
+
+    public ColourProvider getColourProvider() {
+        return colourProvider;
     }
 
     public EventBus getEventBus() {
         return eventBus;
-    }
-
-    public CompatProvider getCompat() {
-        return compat;
     }
 
     public static AbstractCivModernMod getInstance() {

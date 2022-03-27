@@ -1,14 +1,18 @@
 plugins {
-    id "com.github.johnrengelman.shadow" version "5.0.0"
-}
-
-configurations {
-    shadowCommon
+    id "com.github.johnrengelman.shadow" version "7.1.2"
 }
 
 architectury {
     platformSetupLoomIde()
     fabric()
+}
+
+configurations {
+    common
+    shadowCommon // Don't use shadow from the shadow plugin because we don't want IDEA to index this.
+    compileClasspath.extendsFrom common
+    runtimeClasspath.extendsFrom common
+    developmentFabric.extendsFrom common
 }
 
 dependencies {
@@ -21,11 +25,12 @@ dependencies {
     developmentFabric(project(path: ":common")) {
         transitive = false
     }
+    common(project(path: ":common", configuration: "namedElements")) {
+        transitive = false
+    }
     shadowCommon(project(path: ":common", configuration: "transformProductionFabric")) {
         transitive = false
     }
-    minecraft "com.mojang:minecraft:${rootProject.minecraft_version}"
-    mappings loom.officialMojangMappings()
 }
 
 processResources {
@@ -49,10 +54,6 @@ remapJar {
 
 jar {
     classifier "dev"
-}
-
-java {
-    withSourcesJar()
 }
 
 sourcesJar {

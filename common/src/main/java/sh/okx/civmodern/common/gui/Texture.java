@@ -4,8 +4,8 @@ import static org.lwjgl.opengl.GL11.*;
 
 import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.platform.TextureUtil;
+import com.mojang.blaze3d.systems.RenderSystem;
 import java.util.Objects;
-import net.minecraft.client.Minecraft;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL12;
 
@@ -20,13 +20,13 @@ public class Texture {
 
   public Texture(int width, int height) {
     this.id = TextureUtil.generateTextureId();
-    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+    RenderSystem.pixelStore(GL_UNPACK_ALIGNMENT, 1);
     bind();
 
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+    RenderSystem.texParameter(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    RenderSystem.texParameter(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    RenderSystem.texParameter(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL12.GL_CLAMP_TO_EDGE);
+    RenderSystem.texParameter(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL12.GL_CLAMP_TO_EDGE);
     resize(width, height);
 
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL12.GL_UNSIGNED_INT_8_8_8_8, this.pixels);
@@ -48,19 +48,19 @@ public class Texture {
   public void update() {
     bind();
 
-    // If this is removed you will be fuckedd do not removed this
-    GL11.glPixelStorei(0xcf0, 0);
-    GL11.glPixelStorei(0xcf1, 0);
-    GL11.glPixelStorei(0xcf2, 0);
-    GL11.glPixelStorei(0xcf3, 0);
-    GL11.glPixelStorei(0xcf4, 0);
-    GL11.glPixelStorei(0xcf5, 4);
+    RenderSystem.pixelStore(0xcf0, 0);
+    RenderSystem.pixelStore(0xcf1, 0);
+    RenderSystem.pixelStore(0xcf2, 0);
+    RenderSystem.pixelStore(0xcf3, 0);
+    RenderSystem.pixelStore(0xcf4, 0);
+    RenderSystem.pixelStore(0xcf5, 4);
 
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL12.GL_UNSIGNED_INT_8_8_8_8, this.pixels);
   }
 
   public void bind() {
-    GlStateManager._bindTexture(id);
+    RenderSystem.setShaderTexture(0, id);
+    RenderSystem.bindTexture(id);
   }
 
   public void unbind() {
@@ -73,5 +73,9 @@ public class Texture {
 
   public int getWidth() {
     return width;
+  }
+
+  public int getId() {
+    return id;
   }
 }
