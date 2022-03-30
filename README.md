@@ -7,6 +7,8 @@ It highlights compacted items, making them easier to spot at a glance.
 These features can be configured in game by pressing R.
 The controls can also be modified in your controls screen.
 
+![The radar configuration screen](screenshot.png)
+
 ## Installation instructions
 
 CivModern supports both the Forge and Fabric modloaders on 1.18.2
