@@ -198,9 +198,9 @@ public class RadarConfigScreen extends Screen implements ScreenCloseable {
     offset += 12;
 
     ColourProvider colourProvider = mod.getColourProvider();
-    bgPicker = addColourPicker(right, offset, CivMapConfig.DEFAULT_RADAR_BG_COLOUR, config::getRadarBgColour, config::setRadarBgColour,
+    bgPicker = addColourPicker(left, offset, CivMapConfig.DEFAULT_RADAR_BG_COLOUR, config::getRadarBgColour, config::setRadarBgColour,
         colourProvider::setTemporaryRadarBackgroundColour);
-    fgPicker = addColourPicker(left, offset, CivMapConfig.DEFAULT_RADAR_FG_COLOUR, config::getRadarColour, config::setRadarColour,
+    fgPicker = addColourPicker(right, offset, CivMapConfig.DEFAULT_RADAR_FG_COLOUR, config::getRadarColour, config::setRadarColour,
         colourProvider::setTemporaryRadarForegroundColour);
 
     offset += 48;

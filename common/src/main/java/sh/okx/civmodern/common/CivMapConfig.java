@@ -4,9 +4,12 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.Properties;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import sh.okx.civmodern.common.gui.Alignment;
 
 public class CivMapConfig {
+  private static final Logger LOGGER = LogManager.getLogger(CivMapConfig.class);
 
   public static final int DEFAULT_RADAR_FG_COLOUR = 0x0D0202;
   public static final int DEFAULT_RADAR_BG_COLOUR = 0xE8E3E3;
@@ -71,8 +74,10 @@ public class CivMapConfig {
       properties.setProperty("ice_road_auto_eat", Boolean.toString(iceRoadAutoEat));
       properties.setProperty("ice_road_stop", Boolean.toString(iceRoadStop));
 
-      FileOutputStream output = new FileOutputStream(file);
-      properties.store(output, null);
+      try (FileOutputStream output = new FileOutputStream(file)) {
+        properties.store(output, null);
+        LOGGER.info("Saved config");
+      }
     } catch (IOException ex) {
       ex.printStackTrace();
     }

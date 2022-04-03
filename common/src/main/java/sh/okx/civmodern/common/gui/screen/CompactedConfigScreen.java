@@ -83,10 +83,7 @@ public class CompactedConfigScreen extends Screen {
         colour -> {
           widget.setValue("#" + String.format("%06X", colour));
           config.setColour(colour);
-        }, d -> {
-      System.out.println(d);
-      colourProvider.setTemporaryCompactedColour(d);
-    }, () -> {});
+        }, colourProvider::setTemporaryCompactedColour, () -> {});
 
     addRenderableWidget(new ImageButton(leftWidth + 60 + 8 + 20 + 8, height / 6, 20, 20, new ResourceLocation("civmodern", "gui/rollback.png"), imbg -> {
       int colour = 0xffff58;

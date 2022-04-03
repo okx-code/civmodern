@@ -1,7 +1,6 @@
 package sh.okx.civmodern.common.gui.screen;
 
 import com.mojang.blaze3d.vertex.PoseStack;
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.TranslatableComponent;
@@ -37,7 +36,7 @@ public class MainConfigScreen extends Screen {
   public void render(PoseStack matrices, int mouseX, int mouseY, float delta) {
     super.renderBackground(matrices);
 
-    font.drawShadow(matrices, this.title, this.width / 2f - this.font.width(this.title) / 2f, 40, 0xffffff);
+    font.drawShadow(matrices, this.title, this.width / 2f - this.font.width(this.title) / 2f, 15, 0xffffff);
     super.render(matrices, mouseX, mouseY, delta);
   }
 }

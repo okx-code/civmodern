@@ -315,9 +315,10 @@ public class Radar {
     BufferBuilder buffer = tessellator.getBuilder();
     buffer.begin(Mode.TRIANGLE_FAN, DefaultVertexFormat.POSITION_COLOR);
 
+    float radius = radius() + 0.5f;
     for (int i = 0; i <= 360; i++) {
-      float x = (float) Math.sin(i * Math.PI / 180.0D) * radius();
-      float y = (float) Math.cos(i * Math.PI / 180.0D) * radius();
+      float x = (float) Math.sin(i * Math.PI / 180.0D) * radius;
+      float y = (float) Math.cos(i * Math.PI / 180.0D) * radius;
       buffer.vertex(stack.last().pose(), x, y, 0).color(bgColour).endVertex();
     }
     tessellator.end();
@@ -337,7 +338,7 @@ public class Radar {
     BufferBuilder buffer = tessellator.getBuilder();
     buffer.begin(Mode.TRIANGLE_STRIP, DefaultVertexFormat.POSITION_COLOR);
 
-    float thickness = radius == radius() ? 1 : 0.5f;
+    float thickness = radius == radius() ? 1f : 0.5f;
 
     Matrix4f pose = stack.last().pose();
     for (int i = 0; i <= 360; i++) {
@@ -357,37 +358,38 @@ public class Radar {
   }
 
   private void renderLines(PoseStack matrixStack) {
-    glLineWidth(1f);
     RenderSystem.enableBlend();
     RenderSystem.disableTexture();
-    glEnable(GL_LINE_SMOOTH);
+    glEnable(GL_POLYGON_SMOOTH);
     RenderSystem.defaultBlendFunc();
     RenderSystem.setShader(GameRenderer::getPositionColorShader);
 
     float radius = radius() + 0.5f;
-    float diagonalOuter = (float) COS_45 * radius;
 
     Tesselator tesselator = Tesselator.getInstance();
     BufferBuilder buffer = tesselator.getBuilder();
-    buffer.begin(Mode.DEBUG_LINES, DefaultVertexFormat.POSITION_COLOR);
+    buffer.begin(Mode.QUADS, DefaultVertexFormat.POSITION_COLOR);
 
+    float thickness = 0.5f;
+    float left = -thickness / 2;
+    float right = thickness / 2;
+
+    matrixStack.pushPose();
     Matrix4f last = matrixStack.last().pose();
-
-    buffer.vertex(last, 0, -radius, 0f).color(fgColour).endVertex();
-    buffer.vertex(last, 0, radius, 0f).color(fgColour).endVertex();
-
-    buffer.vertex(last, -radius, 0, 0f).color(fgColour).endVertex();
-    buffer.vertex(last, radius, 0, 0f).color(fgColour).endVertex();
-
-    buffer.vertex(last, -diagonalOuter, -diagonalOuter, 0f).color(fgColour).endVertex();
-    buffer.vertex(last, diagonalOuter, diagonalOuter, 0f).color(fgColour).endVertex();
-
-    buffer.vertex(last, -diagonalOuter, diagonalOuter, 0f).color(fgColour).endVertex();
-    buffer.vertex(last, diagonalOuter, -diagonalOuter, 0f).color(fgColour).endVertex();
+    int numberOfLines = 4;
+    float rotationRadians = (float) Math.PI / numberOfLines;
+    for (int i = 0; i < numberOfLines; i++) {
+      buffer.vertex(last, left, -radius, 0f).color(fgColour).endVertex();
+      buffer.vertex(last, left, radius, 0f).color(fgColour).endVertex();
+      buffer.vertex(last, right, radius, 0f).color(fgColour).endVertex();
+      buffer.vertex(last, right, -radius, 0f).color(fgColour).endVertex();
+      last.multiply(Vector3f.ZP.rotation(rotationRadians));
+    }
+    matrixStack.popPose();
 
     tesselator.end();
 
-    glDisable(GL_LINE_SMOOTH);
+    glDisable(GL_POLYGON_SMOOTH);
     RenderSystem.disableBlend();
     RenderSystem.enableTexture();
   }

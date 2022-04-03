@@ -179,9 +179,8 @@ public abstract class AbstractCivModernMod {
         } catch (IOException ex) {
             ex.printStackTrace();
         }
-        CivMapConfig config = new CivMapConfig(configFile, properties);
 
-        this.config = config;
+        this.config = new CivMapConfig(configFile, properties);
 
     }
 

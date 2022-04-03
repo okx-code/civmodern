@@ -2,8 +2,8 @@ package sh.okx.civmodern.common.gui.widget;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
-import java.awt.Color;
 import java.util.function.Consumer;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Gui;
 import net.minecraft.client.gui.GuiComponent;
 import net.minecraft.client.gui.components.AbstractWidget;
@@ -27,8 +27,6 @@ public class HsbColourPicker extends AbstractWidget {
   //private int saturation = 0; // [0, 100]
   //private int brightness = 0; // [0, 100]
 
-  private int colour;
-
   private boolean mouseOverGrid = false;
 
   private boolean showPalette = false;
@@ -37,13 +35,13 @@ public class HsbColourPicker extends AbstractWidget {
 
   private final ScreenCloseable closeable;
 
+  private int renderY;
 
   public HsbColourPicker(int x, int y, int width, int height, int colour, Consumer<Integer> colourConsumer, Consumer<Integer> previewConsumer, ScreenCloseable closeable) {
     super(x, y, width, height, new TextComponent("HSB Colour Picker"));
 
     this.hue = getHue(colour);
 
-    this.colour = colour;
     this.closeable = closeable;
     this.hueSelector = getHueSelector();
     this.saturationBrightnessTexture = new Texture(128, 128);
@@ -53,6 +51,9 @@ public class HsbColourPicker extends AbstractWidget {
 
   @Override
   public void renderButton(PoseStack matrixStack, int mouseX, int mouseY, float partialTicks) {
+    // Render colour picker above button if it would exceed the screen height otherwise
+    this.renderY = (this.y + 101 > Minecraft.getInstance().getWindow().getGuiScaledHeight()) ? this.y - 101 - this.height : this.y;
+
     RenderSystem.setShaderTexture(0, COLOUR_PICKER_ICON);
     RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
     Gui.blit(matrixStack, this.x, this.y, this.getBlitOffset(), 0, isHoveredOrFocused() ? 20 : 0, this.width,
@@ -73,11 +74,11 @@ public class HsbColourPicker extends AbstractWidget {
       matrixStack.pushPose();
       matrixStack.translate(0, 0, 1000);
       // Saturation and brightness selector
-      Gui.blit(matrixStack, this.x, this.y + height, 0, 0, 0, 101, 101, 128, 128);
+      Gui.blit(matrixStack, this.x, renderY + height, 0, 0, 0, 101, 101, 128, 128);
 
       // Hue selector
       hueSelector.bind();
-      Gui.blit(matrixStack, this.x + 106, this.y + height, 10, 101, 0, 0, 1, 360, 1, 360);
+      Gui.blit(matrixStack, this.x + 106, renderY + height, 10, 101, 0, 0, 1, 360, 1, 360);
 
       RenderSystem.disableTexture();
       RenderSystem.disableBlend();
@@ -85,7 +86,7 @@ public class HsbColourPicker extends AbstractWidget {
       // Render cursor
       float hueOffset = (this.hue / 360f) * 100;
       int cursorX = this.x + 106;
-      int cursorY = (int) hueOffset + this.y + height;
+      int cursorY = (int) hueOffset + renderY + height;
       GuiComponent.fill(matrixStack, cursorX, cursorY, cursorX + 10, cursorY + 1, 0xFFFFFFFF);
       matrixStack.popPose();
     }
@@ -96,7 +97,7 @@ public class HsbColourPicker extends AbstractWidget {
     if (previewConsumer != null) {
       if (active && visible && showPalette && isOverGrid(mouseX, mouseY)) {
         int saturation = (int) (mouseX - this.x);
-        int brightness = (int) (mouseY - this.y - height);
+        int brightness = (int) (mouseY - renderY - height);
         mouseOverGrid = true;
         previewConsumer.accept(toRgb(hue, saturation, brightness));
       } else if (mouseOverGrid) {
@@ -135,8 +136,8 @@ public class HsbColourPicker extends AbstractWidget {
   private boolean selectColour(double mouseX, double mouseY, int button) {
     if (active && visible && button == 0 && showPalette && isOverGrid(mouseX, mouseY)) {
         int saturation = (int) (mouseX - this.x);
-        int brightness = (int) (mouseY - this.y - height);
-        colourConsumer.accept(colour = toRgb(hue, saturation, brightness));
+        int brightness = (int) (mouseY - renderY - height);
+        colourConsumer.accept(toRgb(hue, saturation, brightness));
         this.showPalette = false;
         return true;
       }
@@ -146,13 +147,13 @@ public class HsbColourPicker extends AbstractWidget {
   private boolean setHue(double mouseX, double mouseY, int button, boolean force) {
     // Cursor selector
     if (active && visible && button == 0 && showPalette) {
-      if (!force && !(mouseY >= this.y + height && mouseY <= this.y + height + 101)) {
+      if (!force && !(mouseY >= renderY + height && mouseY <= renderY + height + 101)) {
         return false;
       }
 
       if (force || (mouseX >= this.x + 106 && mouseX <= this.x + 106 + 10)) {
         this.hueMouseDown = true;
-        double yOffset = mouseY - (this.y + height);
+        double yOffset = mouseY - (renderY + height);
         int newHue = Mth.clamp((int) ((yOffset / 102) * 360), 0, 360);
         if (newHue != this.hue) {
           this.hue = newHue;
@@ -166,7 +167,7 @@ public class HsbColourPicker extends AbstractWidget {
 
   private boolean isOverGrid(double mouseX, double mouseY) {
     return mouseX >= this.x && mouseX < this.x + 101
-        && mouseY >= this.y + height && mouseY < this.y + height + 101;
+        && mouseY >= renderY + height && mouseY < renderY + height + 101;
   }
 
     private void updateTexture(Texture texture, int hue) {
