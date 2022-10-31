@@ -34,7 +34,9 @@ public class IceRoadMacro {
         mc.options.keyUp.setDown(false);
         if (jump) {
           jump = false;
-          mc.options.keyJump.setDown(false);
+          if (!mc.player.isPassenger()) {
+            mc.options.keyJump.setDown(false);
+          }
         }
         mc.options.keyUse.setDown(false);
         waitingForFood = false;
@@ -79,10 +81,14 @@ public class IceRoadMacro {
           waitingForFood = false;
         }
 
-        mc.options.keyJump.setDown(true);
+        if (!mc.player.isPassenger()) {
+          mc.options.keyJump.setDown(true);
+        }
         jump = true;
       } else {
-        mc.options.keyJump.setDown(false);
+        if (!mc.player.isPassenger()) {
+          mc.options.keyJump.setDown(false);
+        }
         jump = false;
       }
       mc.options.keySprint.setDown(true);
