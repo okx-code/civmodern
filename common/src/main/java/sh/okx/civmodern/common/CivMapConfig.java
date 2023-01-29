@@ -21,6 +21,7 @@ public class CivMapConfig {
   private Alignment alignment;
   private double range;
   private float transparency;
+  private float bgTransparency;
   private int radarColour;
   private int radarBgColour;
   private boolean radarEnabled;
@@ -31,6 +32,7 @@ public class CivMapConfig {
   private boolean iceRoadCardinalEnabled;
   private boolean iceRoadAutoEat;
   private boolean iceRoadStop;
+  private boolean showItems;
 
   public CivMapConfig(File file, Properties properties) {
     this.file = file;
@@ -51,6 +53,8 @@ public class CivMapConfig {
     this.iceRoadCardinalEnabled = Boolean.parseBoolean(properties.getProperty("ice_road_cardinal", "true"));
     this.iceRoadAutoEat = Boolean.parseBoolean(properties.getProperty("ice_road_auto_eat", "false"));
     this.iceRoadStop = Boolean.parseBoolean(properties.getProperty("ice_road_stop", "true"));
+    this.bgTransparency = Float.parseFloat(properties.getProperty("bg_transparency", String.valueOf(this.transparency)));
+    this.showItems = Boolean.parseBoolean(properties.getProperty("show_items", "true"));
   }
 
   public void save() {
@@ -63,6 +67,7 @@ public class CivMapConfig {
       properties.setProperty("icon_size", Float.toString(iconSize));
       properties.setProperty("range", Double.toString(range));
       properties.setProperty("transparency", Float.toString(transparency));
+      properties.setProperty("bg_transparency", Float.toString(bgTransparency));
       properties.setProperty("radar_colour", Integer.toString(radarColour));
       properties.setProperty("radar_background_colour", Integer.toString(radarBgColour));
       properties.setProperty("x", Integer.toString(x));
@@ -73,14 +78,23 @@ public class CivMapConfig {
       properties.setProperty("ice_road_cardinal", Boolean.toString(iceRoadCardinalEnabled));
       properties.setProperty("ice_road_auto_eat", Boolean.toString(iceRoadAutoEat));
       properties.setProperty("ice_road_stop", Boolean.toString(iceRoadStop));
+      properties.setProperty("show_items", Boolean.toString(showItems));
 
       try (FileOutputStream output = new FileOutputStream(file)) {
         properties.store(output, null);
-        LOGGER.info("Saved config");
+        LOGGER.info("Saved config to " + file.getAbsolutePath());
       }
     } catch (IOException ex) {
       ex.printStackTrace();
     }
+  }
+
+  public boolean isShowItems() {
+    return showItems;
+  }
+
+  public void setShowItems(boolean showItems) {
+    this.showItems = showItems;
   }
 
   public int getColour() {
@@ -137,6 +151,14 @@ public class CivMapConfig {
 
   public void setTransparency(float transparency) {
     this.transparency = transparency;
+  }
+
+  public float getBackgroundTransparency() {
+    return bgTransparency;
+  }
+
+  public void setBackgroundTransparency(float bgTransparency) {
+    this.bgTransparency = bgTransparency;
   }
 
   public int getRadarColour() {

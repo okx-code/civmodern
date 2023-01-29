@@ -37,6 +37,7 @@ public class IceRoadConfigScreen extends Screen {
     }, new TranslatableComponent("civmodern.screen.ice.stop.enable"), new TranslatableComponent("civmodern.screen.ice.stop.disable")));
 
     addRenderableWidget(new Button(this.width / 2 - 49, this.height / 6 + 169, 98, 20, CommonComponents.GUI_DONE, button -> {
+      config.save();
       minecraft.setScreen(parent);
     }));
   }

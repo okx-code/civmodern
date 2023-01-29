@@ -2,6 +2,9 @@ package sh.okx.civmodern.common.radar;
 
 import static org.lwjgl.opengl.GL11.*;
 
+import com.mojang.blaze3d.platform.GlStateManager;
+import com.mojang.blaze3d.platform.GlStateManager.DestFactor;
+import com.mojang.blaze3d.platform.Lighting;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
@@ -23,6 +26,14 @@ import net.minecraft.client.multiplayer.PlayerInfo;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.player.RemotePlayer;
 import net.minecraft.client.renderer.GameRenderer;
+import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.block.model.ItemTransforms;
+import net.minecraft.client.renderer.block.model.ItemTransforms.TransformType;
+import net.minecraft.client.renderer.entity.ItemRenderer;
+import net.minecraft.client.renderer.texture.OverlayTexture;
+import net.minecraft.client.renderer.texture.TextureAtlas;
+import net.minecraft.client.renderer.texture.TextureManager;
+import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Registry;
@@ -34,10 +45,17 @@ import net.minecraft.network.chat.TextComponent;
 import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvent;
+import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.vehicle.Boat;
 import net.minecraft.world.entity.vehicle.Minecart;
+import net.minecraft.world.inventory.InventoryMenu;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.item.MinecartItem;
 import sh.okx.civmodern.common.CivMapConfig;
 import sh.okx.civmodern.common.ColourProvider;
 import sh.okx.civmodern.common.events.ClientTickEvent;
@@ -95,14 +113,12 @@ public class Radar {
           if (config.isPingEnabled()) {
             BlockPos pos = player.blockPosition();
             lastWaypointCommand =
-                "/newWaypoint x:" + pos.getX() + ",y:" + pos.getY() + ",z:" + pos.getZ() + ",name:"
+                "/newWaypoint x:" + pos.getX() + ",y:64,z:" + pos.getZ() + ",name:"
                     + player.getScoreboardName();
             Minecraft.getInstance().player.displayClientMessage(
                 new TranslatableComponent("civmodern.radar.enter",
                     player.getName(),
                     new TextComponent(Integer.toString(pos.getX()))
-                        .withStyle(s -> s.applyFormat(ChatFormatting.AQUA)),
-                    new TextComponent(Integer.toString(pos.getY()))
                         .withStyle(s -> s.applyFormat(ChatFormatting.AQUA)),
                     new TextComponent(Integer.toString(pos.getZ()))
                         .withStyle(s -> s.applyFormat(ChatFormatting.AQUA)))
@@ -126,14 +142,12 @@ public class Radar {
         if (!newPlayersInRange.contains(player)) {
           BlockPos pos = player.blockPosition();
           lastWaypointCommand =
-              "/newWaypoint x:" + pos.getX() + ",y:" + pos.getY() + ",z:" + pos.getZ() + ",name:"
+              "/newWaypoint x:" + pos.getX() + ",y:64,z:" + pos.getZ() + ",name:"
                   + player.getScoreboardName();
           Minecraft.getInstance().player.displayClientMessage(
               new TranslatableComponent("civmodern.radar.leave",
                   player.getName(),
                   new TextComponent(Integer.toString(pos.getX()))
-                      .withStyle(s -> s.applyFormat(ChatFormatting.AQUA)),
-                  new TextComponent(Integer.toString(pos.getY()))
                       .withStyle(s -> s.applyFormat(ChatFormatting.AQUA)),
                   new TextComponent(Integer.toString(pos.getZ()))
                       .withStyle(s -> s.applyFormat(ChatFormatting.AQUA)))
@@ -167,7 +181,7 @@ public class Radar {
   }
 
   public void render(PoseStack matrices, float delta) {
-    bgColour = (colourProvider.getBackgroundColour() & 0xFF_FF_FF) | (int) ((1 - config.getTransparency()) * 255) << 24;
+    bgColour = (colourProvider.getBackgroundColour() & 0xFF_FF_FF) | (int) ((1 - config.getBackgroundTransparency()) * 255) << 24;
     fgColour = (colourProvider.getForegroundColour() & 0xFF_FF_FF) | (int) ((1 - config.getTransparency()) * 255) << 24;
 
     RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1);
@@ -210,6 +224,9 @@ public class Radar {
     matrices.mulPose(Vector3f.ZP.rotationDegrees((-player.getViewYRot(delta)) % 360f));
     renderLines(matrices);
 
+    if (config.isShowItems()) {
+      renderItems(matrices, delta);
+    }
     renderBoatsMinecarts(matrices, delta);
     renderPlayers(matrices, delta);
 
@@ -225,14 +242,24 @@ public class Radar {
 
     for (Entity entity : minecraft.level.entitiesForRendering()) {
       if (entity instanceof Boat boat) {
-        renderEntity(matrices, minecraft.player, boat, delta, "textures/item/" + boat.getBoatType().getName() + "_boat.png");
+        renderEntity(matrices, minecraft.player, boat, delta, boat.getPickResult(), 1.0f);
       } else if (entity instanceof Minecart minecart) {
-        renderEntity(matrices, minecraft.player, minecart, delta, "textures/item/minecart.png");
+        renderEntity(matrices, minecraft.player, minecart, delta, new ItemStack(Items.MINECART, 1), 1.1f);
       }
     }
   }
 
-  private void renderEntity(PoseStack matrices, Player player, Entity entity, float delta, String texture) {
+  private void renderItems(PoseStack matrices, float delta) {
+    Minecraft minecraft = Minecraft.getInstance();
+
+    for (Entity entity : minecraft.level.entitiesForRendering()) {
+      if (entity instanceof ItemEntity item) {
+        renderEntity(matrices, minecraft.player, item, delta, item.getItem(), 0f);
+      }
+    }
+  }
+
+  private void renderEntity(PoseStack matrices, Player player, Entity entity, float delta, ItemStack item, float blit) {
     double scale = config.getRadarSize() / config.getRange();
 
     double px = player.xOld + (player.getX() - player.xOld) * delta;
@@ -245,17 +272,24 @@ public class Radar {
     if (dx * dx + dz * dz > config.getRange() * config.getRange()) {
       return;
     }
-    RenderSystem.enableBlend();
-    RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1);
 
     matrices.pushPose();
-    matrices.translate(dx * scale, dz * scale, 0);
+    matrices.translate(dx * scale, dz * scale, 0f);
     matrices.mulPose(Vector3f.ZP.rotationDegrees(player.getViewYRot(delta)));
     matrices.scale(config.getIconSize(), config.getIconSize(), 0);
 
-    RenderSystem.setShaderTexture(0, new ResourceLocation(texture));
-    RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
-    Gui.blit(matrices, -4, -4, 8, 8, 0, 0, 16, 16, 16, 16);
+
+    PoseStack poseStack = RenderSystem.getModelViewStack();
+    poseStack.pushPose();
+    poseStack.mulPoseMatrix(matrices.last().pose());
+    poseStack.scale(0.5f, 0.5f, 1);
+    poseStack.translate(-8, -8, -blit);
+    RenderSystem.applyModelViewMatrix();
+
+    Minecraft.getInstance().getItemRenderer().renderAndDecorateItem(player, item, 0, 0, 0);
+    RenderSystem.setShader(GameRenderer::getPositionColorShader);
+    poseStack.popPose();
+    RenderSystem.applyModelViewMatrix();
 
     matrices.popPose();
   }
@@ -284,6 +318,7 @@ public class Radar {
 
       matrices.pushPose();
       matrices.translate(dx * v, dz * v, 0);
+      matrices.scale(0.9f, 0.9f, 0);
 
       PlayerInfo entry = minecraft.player.connection.getPlayerInfo(player.getUUID());
       matrices.scale(config.getIconSize(), config.getIconSize(), 0);
@@ -297,7 +332,7 @@ public class Radar {
       RenderSystem.disableBlend();
       matrices.scale(0.6f, 0.6f, 0);
       TextComponent component = new TextComponent(
-          player.getScoreboardName() + " (" + ((int) player.getY() + ")"));
+          player.getScoreboardName() + " (" + ((int) Math.round(Math.sqrt(dx * dx + dz * dz)) + ")"));
       minecraft.font.draw(matrices, component, -minecraft.font.width(component) / 2f, 7, 0xffffff);
 
       matrices.popPose();

@@ -48,7 +48,7 @@ public class RadarConfigScreen extends Screen implements ScreenCloseable {
     int left = this.width / 2 - 155;
     int centre = left + 80;
     int right = left + 160;
-    int offset = this.height / 6 - 12;
+    int offset = this.height / 6 - 18;
     addRenderableWidget(new Button(centre, offset, 150, 20, getRadarToggleMessage(), button -> {
       config.setRadarEnabled(!config.isRadarEnabled());
       button.setMessage(getRadarToggleMessage());
@@ -67,21 +67,45 @@ public class RadarConfigScreen extends Screen implements ScreenCloseable {
       config.setAlignment(config.getAlignment().next());
       button.setMessage(new TranslatableComponent("civmodern.screen.radar.alignment", config.getAlignment().toString()));
     }));
-    addRenderableWidget(new DoubleOptionUpdateableSliderWidget(right, offset, 150, 20, 1, 8, 1, new DoubleValue() {
+    addRenderableWidget(new Button(right, offset, 150, 20, getItemToggleMessage(), button -> {
+      config.setShowItems(!config.isShowItems());
+      button.setMessage(getItemToggleMessage());
+    }));
+    offset += 24;
+    addRenderableWidget(new DoubleOptionUpdateableSliderWidget(right, offset, 150, 20, 0, 1, 0.01, new DoubleValue() {
+      private final DecimalFormat format = new DecimalFormat("##%");
+
       @Override
       public double get() {
-        return config.getRadarCircles();
+        return config.getTransparency();
       }
 
       @Override
       public void set(double value) {
-        config.setRadarCircles((int) value);
+        config.setTransparency((float) value);
       }
 
       @Override
       public Component getText(double value) {
-        return new TranslatableComponent("civmodern.screen.radar.circles",
-            Integer.toString((int) value));
+        return new TranslatableComponent("civmodern.screen.radar.transparency", format.format(value));
+      }
+    }));
+    addRenderableWidget(new DoubleOptionUpdateableSliderWidget(left, offset, 150, 20, 0, 1, 0.01, new DoubleValue() {
+      private final DecimalFormat format = new DecimalFormat("##%");
+
+      @Override
+      public double get() {
+        return config.getBackgroundTransparency();
+      }
+
+      @Override
+      public void set(double value) {
+        config.setBackgroundTransparency((float) value);
+      }
+
+      @Override
+      public Component getText(double value) {
+        return new TranslatableComponent("civmodern.screen.radar.background_transparency", format.format(value));
       }
     }));
     offset += 24;
@@ -138,22 +162,21 @@ public class RadarConfigScreen extends Screen implements ScreenCloseable {
             Integer.toString((int) value));
       }
     }));
-    addRenderableWidget(new DoubleOptionUpdateableSliderWidget(right, offset, 150, 20, 0, 1, 0.01, new DoubleValue() {
-      private final DecimalFormat format = new DecimalFormat("##%");
-
+    addRenderableWidget(new DoubleOptionUpdateableSliderWidget(right, offset, 150, 20, 1, 8, 1, new DoubleValue() {
       @Override
       public double get() {
-        return config.getTransparency();
+        return config.getRadarCircles();
       }
 
       @Override
       public void set(double value) {
-        config.setTransparency((float) value);
+        config.setRadarCircles((int) value);
       }
 
       @Override
       public Component getText(double value) {
-        return new TranslatableComponent("civmodern.screen.radar.transparency", format.format(value));
+        return new TranslatableComponent("civmodern.screen.radar.circles",
+            Integer.toString((int) value));
       }
     }));
     offset += 24;
@@ -203,8 +226,9 @@ public class RadarConfigScreen extends Screen implements ScreenCloseable {
     fgPicker = addColourPicker(right, offset, CivMapConfig.DEFAULT_RADAR_FG_COLOUR, config::getRadarColour, config::setRadarColour,
         colourProvider::setTemporaryRadarForegroundColour);
 
-    offset += 48;
+    offset += 36;
     addRenderableWidget(new Button(centre, offset, 150, 20, CommonComponents.GUI_DONE, button -> {
+      config.save();
       Minecraft.getInstance().setScreen(parent);
     }));
   }
@@ -243,6 +267,14 @@ public class RadarConfigScreen extends Screen implements ScreenCloseable {
       return new TranslatableComponent("civmodern.screen.radar.pings.enable");
     } else {
       return new TranslatableComponent("civmodern.screen.radar.pings.disable");
+    }
+  }
+
+  private Component getItemToggleMessage() {
+    if (config.isShowItems()) {
+      return new TranslatableComponent("civmodern.screen.radar.items.enable");
+    } else {
+      return new TranslatableComponent("civmodern.screen.radar.items.disable");
     }
   }
 

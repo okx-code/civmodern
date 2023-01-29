@@ -18,11 +18,14 @@
   "civmodern.screen.radar.circles": "Circles: %s",
   "civmodern.screen.radar.size": "Size: %s",
   "civmodern.screen.radar.alignment": "Alignment: %s",
+  "civmodern.screen.radar.items.enable": "Items: Enabled",
+  "civmodern.screen.radar.items.disable": "Items: Disabled",
   "civmodern.screen.radar.iconsize": "Icon Size: %s",
   "civmodern.screen.radar.range": "Range: %s blocks",
   "civmodern.screen.radar.x": "X: %s",
   "civmodern.screen.radar.y": "Y: %s",
   "civmodern.screen.radar.transparency": "Transparency: %s",
+  "civmodern.screen.radar.background_transparency": "BG Transparency: %s",
   "civmodern.screen.compacted.title": "Civ Modern Config (Compacted Items)",
   "civmodern.screen.ice.title": "Civ Modern Config (Ice Road Macro)",
   "civmodern.screen.ice.cardinal.enable": "Snap to cardinal: Enabled",
@@ -31,7 +34,7 @@
   "civmodern.screen.ice.eat.disable": "Auto eat held item: Disabled",
   "civmodern.screen.ice.stop.enable": "Stop on low food: Enabled",
   "civmodern.screen.ice.stop.disable": "Stop on low food: Disabled",
-  "civmodern.radar.enter" : "§r%s §eappeared at §b[%s %s %s§b]",
+  "civmodern.radar.enter" : "§r%s §eappeared at §b[%s %s§b]",
   "civmodern.radar.hover" : "Click or press %s to highlight position\nControl click to add waypoint",
-  "civmodern.radar.leave" : "§r%s §edisappeared at §b[%s %s %s§b]"
+  "civmodern.radar.leave" : "§r%s §edisappeared at §b[%s %s§b]"
 }

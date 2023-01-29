@@ -95,6 +95,7 @@ public class CompactedConfigScreen extends Screen {
     addRenderableWidget(picker = hsb);
 
     addRenderableWidget(new Button(this.width / 2 - 49, this.height / 6 + 169, 98, 20, CommonComponents.GUI_DONE, button -> {
+      config.save();
       minecraft.setScreen(parent);
     }));
   }
