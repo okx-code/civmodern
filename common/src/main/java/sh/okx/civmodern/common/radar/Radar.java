@@ -2,9 +2,6 @@ package sh.okx.civmodern.common.radar;
 
 import static org.lwjgl.opengl.GL11.*;
 
-import com.mojang.blaze3d.platform.GlStateManager;
-import com.mojang.blaze3d.platform.GlStateManager.DestFactor;
-import com.mojang.blaze3d.platform.Lighting;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
@@ -26,36 +23,23 @@ import net.minecraft.client.multiplayer.PlayerInfo;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.player.RemotePlayer;
 import net.minecraft.client.renderer.GameRenderer;
-import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.block.model.ItemTransforms;
-import net.minecraft.client.renderer.block.model.ItemTransforms.TransformType;
-import net.minecraft.client.renderer.entity.ItemRenderer;
-import net.minecraft.client.renderer.texture.OverlayTexture;
-import net.minecraft.client.renderer.texture.TextureAtlas;
-import net.minecraft.client.renderer.texture.TextureManager;
-import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Registry;
 import net.minecraft.network.chat.ClickEvent;
 import net.minecraft.network.chat.HoverEvent;
-import net.minecraft.network.chat.KeybindComponent;
 import net.minecraft.network.chat.Style;
 import net.minecraft.network.chat.TextComponent;
 import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvent;
-import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.vehicle.Boat;
 import net.minecraft.world.entity.vehicle.Minecart;
-import net.minecraft.world.inventory.InventoryMenu;
-import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
-import net.minecraft.world.item.MinecartItem;
 import sh.okx.civmodern.common.CivMapConfig;
 import sh.okx.civmodern.common.ColourProvider;
 import sh.okx.civmodern.common.events.ClientTickEvent;
@@ -64,15 +48,11 @@ import sh.okx.civmodern.common.events.PostRenderGameOverlayEvent;
 
 public class Radar {
 
-  private static final double COS_45 = 0.7071067811865476D;
-  private static final int PLAYER_RANGE = 70;
-
   private final EventBus eventBus;
   private final ColourProvider colourProvider;
   private final CivMapConfig config;
 
   private Set<RemotePlayer> playersInRange = new HashSet<>();
-  private String lastWaypointCommand;
 
   private int translateX;
   private int translateY;
@@ -108,13 +88,15 @@ public class Radar {
     for (Entity entity : world.entitiesForRendering()) {
       if (entity instanceof RemotePlayer) {
         RemotePlayer player = (RemotePlayer) entity;
+
         newPlayersInRange.add(player);
         if (!playersInRange.contains(player)) {
           if (config.isPingEnabled()) {
             BlockPos pos = player.blockPosition();
-            lastWaypointCommand =
-                "/newWaypoint x:" + pos.getX() + ",y:64,z:" + pos.getZ() + ",name:"
+            String lastWaypointCommand =
+                "/newWaypoint x:" + pos.getX() + ",y:" + Minecraft.getInstance().player.getBlockY() + ",z:" + pos.getZ() + ",name:"
                     + player.getScoreboardName();
+
             Minecraft.getInstance().player.displayClientMessage(
                 new TranslatableComponent("civmodern.radar.enter",
                     player.getName(),
@@ -126,8 +108,7 @@ public class Radar {
                         .withClickEvent(
                             new ClickEvent(ClickEvent.Action.RUN_COMMAND, lastWaypointCommand))
                         .withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT,
-                            new TranslatableComponent("civmodern.radar.hover",
-                                new KeybindComponent("key.civmodern.highlight"))))),
+                            new TranslatableComponent("civmodern.radar.hover")))),
                 false);
           }
           if (config.isPingSoundEnabled()) {
@@ -141,8 +122,8 @@ public class Radar {
       for (RemotePlayer player : playersInRange) {
         if (!newPlayersInRange.contains(player)) {
           BlockPos pos = player.blockPosition();
-          lastWaypointCommand =
-              "/newWaypoint x:" + pos.getX() + ",y:64,z:" + pos.getZ() + ",name:"
+          String lastWaypointCommand =
+              "/newWaypoint x:" + pos.getX() + ",y:" + Minecraft.getInstance().player.getBlockY() + ",z:" + pos.getZ() + ",name:"
                   + player.getScoreboardName();
           Minecraft.getInstance().player.displayClientMessage(
               new TranslatableComponent("civmodern.radar.leave",
@@ -155,8 +136,7 @@ public class Radar {
                       .withClickEvent(
                           new ClickEvent(ClickEvent.Action.RUN_COMMAND, lastWaypointCommand))
                       .withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT,
-                          new TranslatableComponent("civmodern.radar.hover",
-                              new KeybindComponent("key.civmodern.highlight"))))),
+                          new TranslatableComponent("civmodern.radar.hover")))),
               false);
         }
       }
