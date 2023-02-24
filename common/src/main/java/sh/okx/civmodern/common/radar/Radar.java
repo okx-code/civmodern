@@ -78,6 +78,10 @@ public class Radar {
     }
   }
 
+  private boolean hideY() {
+    return false;
+  }
+
   public void onWorldTickPing(ClientTickEvent event) {
     ClientLevel world = Minecraft.getInstance().level;
     if (world == null) {
@@ -94,15 +98,13 @@ public class Radar {
           if (config.isPingEnabled()) {
             BlockPos pos = player.blockPosition();
             String lastWaypointCommand =
-                "/newWaypoint x:" + pos.getX() + ",y:" + Minecraft.getInstance().player.getBlockY() + ",z:" + pos.getZ() + ",name:"
+                "/newWaypoint x:" + pos.getX() + ",y:" + (hideY() ? Minecraft.getInstance().player.getBlockY() : pos.getY()) + ",z:" + pos.getZ() + ",name:"
                     + player.getScoreboardName();
 
             Minecraft.getInstance().player.displayClientMessage(
                 new TranslatableComponent("civmodern.radar.enter",
                     player.getName(),
-                    new TextComponent(Integer.toString(pos.getX()))
-                        .withStyle(s -> s.applyFormat(ChatFormatting.AQUA)),
-                    new TextComponent(Integer.toString(pos.getZ()))
+                    new TextComponent(hideY() ? (pos.getX() + " " + pos.getZ()) : (pos.getX() + " " + pos.getY() + " " + pos.getZ()))
                         .withStyle(s -> s.applyFormat(ChatFormatting.AQUA)))
                     .setStyle(Style.EMPTY
                         .withClickEvent(
@@ -123,14 +125,12 @@ public class Radar {
         if (!newPlayersInRange.contains(player)) {
           BlockPos pos = player.blockPosition();
           String lastWaypointCommand =
-              "/newWaypoint x:" + pos.getX() + ",y:" + Minecraft.getInstance().player.getBlockY() + ",z:" + pos.getZ() + ",name:"
+              "/newWaypoint x:" + pos.getX() + ",y:" + (hideY() ? Minecraft.getInstance().player.getBlockY() : pos.getY()) + ",z:" + pos.getZ() + ",name:"
                   + player.getScoreboardName();
           Minecraft.getInstance().player.displayClientMessage(
               new TranslatableComponent("civmodern.radar.leave",
                   player.getName(),
-                  new TextComponent(Integer.toString(pos.getX()))
-                      .withStyle(s -> s.applyFormat(ChatFormatting.AQUA)),
-                  new TextComponent(Integer.toString(pos.getZ()))
+                  new TextComponent(hideY() ? (pos.getX() + " " + pos.getZ()) : (pos.getX() + " " + pos.getY() + " " + pos.getZ()))
                       .withStyle(s -> s.applyFormat(ChatFormatting.AQUA)))
                   .setStyle(Style.EMPTY
                       .withClickEvent(
@@ -312,7 +312,7 @@ public class Radar {
       RenderSystem.disableBlend();
       matrices.scale(0.6f, 0.6f, 0);
       TextComponent component = new TextComponent(
-          player.getScoreboardName() + " (" + ((int) Math.round(Math.sqrt(dx * dx + dz * dz)) + ")"));
+          player.getScoreboardName() + " (" + (hideY() ? ((int) Math.round(Math.sqrt(dx * dx + dz * dz))) : (int) player.getY()) + ")");
       minecraft.font.draw(matrices, component, -minecraft.font.width(component) / 2f, 7, 0xffffff);
 
       matrices.popPose();

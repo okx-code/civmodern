@@ -33,7 +33,7 @@
   "civmodern.screen.ice.eat.disable": "Auto eat held item: Disabled",
   "civmodern.screen.ice.stop.enable": "Stop on low food: Enabled",
   "civmodern.screen.ice.stop.disable": "Stop on low food: Disabled",
-  "civmodern.radar.enter" : "§r%s §eappeared at §b[%s %s§b]",
+  "civmodern.radar.enter" : "§r%s §eappeared at §b[%s§b]",
   "civmodern.radar.hover" : "Click to highlight position\nControl click to add waypoint",
-  "civmodern.radar.leave" : "§r%s §edisappeared at §b[%s %s§b]"
+  "civmodern.radar.leave" : "§r%s §edisappeared at §b[%s§b]"
 }
