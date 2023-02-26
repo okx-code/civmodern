@@ -10,6 +10,9 @@ import com.mojang.blaze3d.vertex.Tesselator;
 import com.mojang.blaze3d.vertex.VertexFormat.Mode;
 import com.mojang.math.Matrix4f;
 import com.mojang.math.Vector3f;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Random;
@@ -48,6 +51,17 @@ import sh.okx.civmodern.common.events.PostRenderGameOverlayEvent;
 
 public class Radar {
 
+  private static boolean hideY;
+
+  static {
+    URL resource = Radar.class.getResource("/civmc");
+    if (resource != null) {
+      hideY = true;
+    } else {
+      hideY = false;
+    }
+  }
+
   private final EventBus eventBus;
   private final ColourProvider colourProvider;
   private final CivMapConfig config;
@@ -79,7 +93,7 @@ public class Radar {
   }
 
   private boolean hideY() {
-    return false;
+    return hideY;
   }
 
   public void onWorldTickPing(ClientTickEvent event) {

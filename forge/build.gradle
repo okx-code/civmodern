@@ -84,16 +84,26 @@ publishing {
     }
 }
 
+import net.fabricmc.loom.task.RemapJarTask
+
+task remapCivMc(type: RemapJarTask) {
+    inputFile.set shadowJar.archiveFile
+    dependsOn shadowJar
+    classifier "civmc-forge"
+    from sourceSets.main.output
+    from '../civmc'
+}
+
 task cleanJar(type: Delete) {
     delete fileTree('../dist') {
-        include "*-forge.jar"
+        include "*-forge*.jar"
     }
 }
 
 task copyJar(type: Copy) {
-    from remapJar
+    dependsOn cleanJar
+    from remapJar, remapCivMc
     into '../dist'
 }
 
 build.dependsOn copyJar
-copyJar.dependsOn cleanJar
