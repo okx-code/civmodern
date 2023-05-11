@@ -26,6 +26,7 @@ import sh.okx.civmodern.common.macro.AttackMacro;
 import sh.okx.civmodern.common.macro.HoldKeyMacro;
 import sh.okx.civmodern.common.macro.IceRoadMacro;
 import sh.okx.civmodern.common.map.MapCache;
+import sh.okx.civmodern.common.map.MapFile;
 import sh.okx.civmodern.common.map.MapScreen;
 import sh.okx.civmodern.common.radar.Radar;
 
@@ -51,6 +52,7 @@ public abstract class AbstractCivModernMod {
     private IceRoadMacro iceRoadMacro;
     private AttackMacro attackMacro;
 
+    private MapFile mapFile;
     private MapCache mapCache;
 
     private EventBus eventBus;
@@ -101,7 +103,13 @@ public abstract class AbstractCivModernMod {
     }
 
     public final void init() {
-        this.mapCache = new MapCache();
+        Path config = Minecraft.getInstance().gameDirectory.toPath()
+            .resolve("config");
+        this.mapFile = new MapFile(
+            config.resolve("civmodern_mapdata").toFile(),
+            config.resolve("civmodern_mapheader").toFile());
+        this.mapFile.loadHeader();
+        this.mapCache = new MapCache(this.mapFile);
 
         this.eventBus = provideEventBus();
 

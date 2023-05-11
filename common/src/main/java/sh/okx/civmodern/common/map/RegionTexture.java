@@ -1,6 +1,7 @@
 package sh.okx.civmodern.common.map;
 
 import com.mojang.blaze3d.platform.TextureUtil;
+import com.mojang.blaze3d.platform.Window;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.*;
 import com.mojang.math.Matrix4f;
@@ -32,6 +33,8 @@ public class RegionTexture {
         RenderSystem.bindTextureForSetup(this.indexTexture);
         RenderSystem.texParameter(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
         RenderSystem.texParameter(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+        this.update();
     }
 
     public void update() {
@@ -49,7 +52,7 @@ public class RegionTexture {
         return colours;
     }
 
-    public void draw(PoseStack poseStack) {
+    public synchronized void draw(PoseStack poseStack, int x, int y) {
         RenderSystem.setShaderTexture(0, this.indexTexture);
         RenderSystem.bindTexture(this.indexTexture);
         RenderSystem.pixelStore(0xcf0, 0);
@@ -72,9 +75,8 @@ public class RegionTexture {
 //        bufferBuilder.end();
 //        BufferUploader.end(bufferBuilder);
 
-        int height = Minecraft.getInstance().getWindow().getGuiScaledHeight();
-        int width = Minecraft.getInstance().getWindow().getGuiScaledWidth();
-        blit(poseStack, 0, 0, 0, 0, 0, 512, 512, 512, 512);
+        int scale = (int) Minecraft.getInstance().getWindow().getGuiScale();
+        blit(poseStack, x, y, 0, 0, 0, 512 / scale, 512 / scale, 512 / scale, 512 / scale);
     }
 
     public void delete() {
