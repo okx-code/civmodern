@@ -54,7 +54,7 @@ public class AttackMacro {
       if (down) {
         down = false;
         return;
-      } else if (lastAttack + 1000 > System.currentTimeMillis()) {
+      } else if (lastAttack + 200 > System.currentTimeMillis()) {
         return;
       }
 

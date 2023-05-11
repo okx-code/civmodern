@@ -13,6 +13,7 @@ public class CivMapConfig {
 
   public static final int DEFAULT_RADAR_FG_COLOUR = 0x0D0202;
   public static final int DEFAULT_RADAR_BG_COLOUR = 0xE8E3E3;
+  public static final int DEFAULT_CHEVRON_COLOUR = 0xFF0000;
   private final File file;
   private int compactedColour;
   private int radarCircles;
@@ -33,6 +34,12 @@ public class CivMapConfig {
   private boolean iceRoadAutoEat;
   private boolean iceRoadStop;
   private boolean showItems;
+  private int chevronColour;
+  private boolean minimapEnabled;
+  private int minimapX;
+  private int minimapY;
+  private Alignment minimapAlignment;
+  private int minimapSize;
 
   public CivMapConfig(File file, Properties properties) {
     this.file = file;
@@ -55,6 +62,12 @@ public class CivMapConfig {
     this.iceRoadStop = Boolean.parseBoolean(properties.getProperty("ice_road_stop", "true"));
     this.bgTransparency = Float.parseFloat(properties.getProperty("bg_transparency", String.valueOf(this.transparency)));
     this.showItems = Boolean.parseBoolean(properties.getProperty("show_items", "true"));
+    this.chevronColour = Integer.parseInt(properties.getProperty("chevron_colour", Integer.toString(DEFAULT_CHEVRON_COLOUR)));
+    this.minimapEnabled = Boolean.parseBoolean(properties.getProperty("minimap_enabled", "true"));
+    this.minimapX = Integer.parseInt(properties.getProperty("minimap_x", "5"));
+    this.minimapY = Integer.parseInt(properties.getProperty("minimap_y", "5"));
+    this.minimapAlignment = Alignment.valueOf(properties.getProperty("minimap_alignment", "top_right").toUpperCase());
+    this.minimapSize = Integer.parseInt(properties.getProperty("minimap_size", "100"));
   }
 
   public void save() {
@@ -79,6 +92,12 @@ public class CivMapConfig {
       properties.setProperty("ice_road_auto_eat", Boolean.toString(iceRoadAutoEat));
       properties.setProperty("ice_road_stop", Boolean.toString(iceRoadStop));
       properties.setProperty("show_items", Boolean.toString(showItems));
+      properties.setProperty("chevron_colour", Integer.toString(chevronColour));
+      properties.setProperty("minimap_enabled", Boolean.toString(minimapEnabled));
+      properties.setProperty("minimap_x", Integer.toString(minimapX));
+      properties.setProperty("minimap_y", Integer.toString(minimapY));
+      properties.setProperty("minimap_alignment", minimapAlignment.name().toLowerCase());
+      properties.setProperty("minimap_size", Integer.toString(minimapSize));
 
       try (FileOutputStream output = new FileOutputStream(file)) {
         properties.store(output, null);
@@ -239,5 +258,53 @@ public class CivMapConfig {
 
   public void setRadarBgColour(int radarBgColour) {
     this.radarBgColour = radarBgColour;
+  }
+
+  public void setChevronColour(int chevronColour) {
+    this.chevronColour = chevronColour;
+  }
+
+  public int getChevronColour() {
+    return chevronColour;
+  }
+
+  public boolean isMinimapEnabled() {
+    return minimapEnabled;
+  }
+
+  public void setMinimapEnabled(boolean minimapEnabled) {
+    this.minimapEnabled = minimapEnabled;
+  }
+
+  public Alignment getMinimapAlignment() {
+    return minimapAlignment;
+  }
+
+  public void setMinimapAlignment(Alignment minimapAlignment) {
+    this.minimapAlignment = minimapAlignment;
+  }
+
+  public int getMinimapSize() {
+    return minimapSize;
+  }
+
+  public void setMinimapSize(int minimapSize) {
+    this.minimapSize = minimapSize;
+  }
+
+  public int getMinimapX() {
+    return minimapX;
+  }
+
+  public void setMinimapX(int minimapX) {
+    this.minimapX = minimapX;
+  }
+
+  public int getMinimapY() {
+    return minimapY;
+  }
+
+  public void setMinimapY(int minimapY) {
+    this.minimapY = minimapY;
   }
 }

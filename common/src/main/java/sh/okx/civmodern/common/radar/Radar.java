@@ -3,15 +3,11 @@ package sh.okx.civmodern.common.radar;
 import static org.lwjgl.opengl.GL11.*;
 
 import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.vertex.BufferBuilder;
-import com.mojang.blaze3d.vertex.DefaultVertexFormat;
-import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.Tesselator;
+import com.mojang.blaze3d.vertex.*;
 import com.mojang.blaze3d.vertex.VertexFormat.Mode;
 import com.mojang.math.Matrix4f;
 import com.mojang.math.Vector3f;
-import java.io.IOException;
-import java.io.InputStream;
+
 import java.net.URL;
 import java.util.Collections;
 import java.util.HashSet;
@@ -36,6 +32,7 @@ import net.minecraft.network.chat.TextComponent;
 import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvent;
+import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
@@ -112,7 +109,7 @@ public class Radar {
           if (config.isPingEnabled()) {
             BlockPos pos = player.blockPosition();
             String lastWaypointCommand =
-                "/newWaypoint x:" + pos.getX() + ",y:" + (hideY() ? Minecraft.getInstance().player.getBlockY() : pos.getY()) + ",z:" + pos.getZ() + ",name:"
+                "/newWaypoint x:" + pos.getX() + ",z:" + (hideY() ? Minecraft.getInstance().player.getBlockY() : pos.getY()) + ",z:" + pos.getZ() + ",name:"
                     + player.getScoreboardName();
 
             Minecraft.getInstance().player.displayClientMessage(
@@ -139,7 +136,7 @@ public class Radar {
         if (!newPlayersInRange.contains(player)) {
           BlockPos pos = player.blockPosition();
           String lastWaypointCommand =
-              "/newWaypoint x:" + pos.getX() + ",y:" + (hideY() ? Minecraft.getInstance().player.getBlockY() : pos.getY()) + ",z:" + pos.getZ() + ",name:"
+              "/newWaypoint x:" + pos.getX() + ",z:" + (hideY() ? Minecraft.getInstance().player.getBlockY() : pos.getY()) + ",z:" + pos.getZ() + ",name:"
                   + player.getScoreboardName();
           Minecraft.getInstance().player.displayClientMessage(
               new TranslatableComponent("civmodern.radar.leave",
@@ -166,7 +163,7 @@ public class Radar {
     }
 
     if (config.isRadarEnabled()) {
-      render(event.getPoseStack(), event.getDelta());
+      render(event.poseStack(), event.delta());
     }
   }
 
@@ -211,6 +208,8 @@ public class Radar {
       }
     }
     matrices.translate(translateX, translateY, 100);
+
+
     renderCircleBackground(matrices);
     for (int i = 1; i <= config.getRadarCircles(); i++) {
       renderCircleBorder(matrices, radius() * (i / (float) config.getRadarCircles()));
@@ -254,6 +253,7 @@ public class Radar {
   }
 
   private void renderEntity(PoseStack matrices, Player player, Entity entity, float delta, ItemStack item, float blit) {
+    // tood instancing
     double scale = config.getRadarSize() / config.getRange();
 
     double px = player.xOld + (player.getX() - player.xOld) * delta;
@@ -271,7 +271,6 @@ public class Radar {
     matrices.translate(dx * scale, dz * scale, 0f);
     matrices.mulPose(Vector3f.ZP.rotationDegrees(player.getViewYRot(delta)));
     matrices.scale(config.getIconSize(), config.getIconSize(), 0);
-
 
     PoseStack poseStack = RenderSystem.getModelViewStack();
     poseStack.pushPose();
@@ -370,12 +369,12 @@ public class Radar {
     float thickness = radius == radius() ? 1f : 0.5f;
 
     Matrix4f pose = stack.last().pose();
-    for (int i = 0; i <= 360; i++) {
-      float x0 = (float) Math.sin(i * Math.PI / 180.0D) * radius;
-      float y0 = (float) Math.cos(i * Math.PI / 180.0D) * radius;
+    for (int i = 0; i <= 360; i += 2) {
+      float x0 = Mth.sin(i * Mth.PI / 180.0f) * radius;
+      float y0 = Mth.cos(i * Mth.PI / 180.0f) * radius;
 
-      float x1 = (float) Math.sin(i * Math.PI / 180.0D) * (radius + thickness);
-      float y1 = (float) Math.cos(i * Math.PI / 180.0D) * (radius + thickness);
+      float x1 = Mth.sin(i * Mth.PI / 180.0f) * (radius + thickness);
+      float y1 = Mth.cos(i * Mth.PI / 180.0f) * (radius + thickness);
       buffer.vertex(pose, x0, y0, 0).color(fgColour).endVertex();
       buffer.vertex(pose, x1, y1, 0).color(fgColour).endVertex();
     }

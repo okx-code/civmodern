@@ -30,6 +30,9 @@ public class MainConfigScreen extends Screen {
     addRenderableWidget(new Button(col0, this.height / 6 + 48, 150, 20, new TranslatableComponent("civmodern.screen.main.ice"), button -> {
       minecraft.setScreen(new IceRoadConfigScreen(mod, config, this));
     }));
+    addRenderableWidget(new Button(col0, this.height / 6 + 72, 150, 20, new TranslatableComponent("civmodern.screen.main.map"), button -> {
+      minecraft.setScreen(new MapConfigScreen(mod, config, this));
+    }));
   }
 
   @Override

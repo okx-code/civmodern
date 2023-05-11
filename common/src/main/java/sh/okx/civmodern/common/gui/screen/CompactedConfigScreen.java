@@ -24,7 +24,6 @@ import sh.okx.civmodern.common.gui.widget.HsbColourPicker;
 import sh.okx.civmodern.common.gui.widget.ImageButton;
 
 public class CompactedConfigScreen extends Screen {
-  private static final DecimalFormat FORMAT = new DecimalFormat("##%");
 
   private static final ItemStack ITEM;
 

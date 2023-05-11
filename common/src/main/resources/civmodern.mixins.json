@@ -5,7 +5,10 @@
   "mixins": [],
   "client": [
     "InventoryMixin",
-    "KeyMappingAccessor"
+    "KeyMappingAccessor",
+    "StorageSourceAccessor",
+    "RespawnMixin",
+    "BlockStateChangeMixin"
   ],
   "server": [],
   "injectors": {

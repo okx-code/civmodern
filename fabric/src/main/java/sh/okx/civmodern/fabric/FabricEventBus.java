@@ -6,14 +6,12 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.function.Consumer;
+
+import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientChunkEvents;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
+import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
-import sh.okx.civmodern.common.events.ClientTickEvent;
-import sh.okx.civmodern.common.events.Event;
-import sh.okx.civmodern.common.events.EventBus;
-import sh.okx.civmodern.common.events.PostRenderGameOverlayEvent;
-import sh.okx.civmodern.common.events.ScrollEvent;
-import sh.okx.civmodern.common.events.WorldRenderEvent;
+import sh.okx.civmodern.common.events.*;
 
 public class FabricEventBus implements EventBus {
 
@@ -24,9 +22,17 @@ public class FabricEventBus implements EventBus {
     map.put(PostRenderGameOverlayEvent.class, new CopyOnWriteArraySet<>());
     map.put(WorldRenderEvent.class, new CopyOnWriteArraySet<>());
     map.put(ScrollEvent.class, new CopyOnWriteArraySet<>());
+    map.put(ChunkLoadEvent.class, new CopyOnWriteArraySet<>());
+    map.put(JoinEvent.class, new CopyOnWriteArraySet<>());
+    map.put(LeaveEvent.class, new CopyOnWriteArraySet<>());
+    map.put(RespawnEvent.class, new CopyOnWriteArraySet<>());
+    map.put(BlockStateChangeEvent.class, new CopyOnWriteArraySet<>());
 
+    ClientPlayConnectionEvents.JOIN.register((handler, sender, client) -> push(new JoinEvent()));
+    ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> push(new LeaveEvent()));
     ClientTickEvents.START_CLIENT_TICK.register(client -> push(new ClientTickEvent()));
     HudRenderCallback.EVENT.register(((matrixStack, tickDelta) -> push(new PostRenderGameOverlayEvent(matrixStack, tickDelta))));
+    ClientChunkEvents.CHUNK_LOAD.register((level, chunk) -> push(new ChunkLoadEvent(level, chunk)));
   }
 
   @Override
