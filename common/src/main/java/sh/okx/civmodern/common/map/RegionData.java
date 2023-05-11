@@ -1,10 +1,11 @@
 package sh.okx.civmodern.common.map;
 
+import it.unimi.dsi.fastutil.ints.Int2IntMap;
+import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.Holder;
 import net.minecraft.core.Registry;
-import net.minecraft.util.Mth;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
@@ -12,6 +13,7 @@ import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.level.material.MaterialColor;
 import org.checkerframework.checker.nullness.qual.Nullable;
 
+import java.util.Arrays;
 import java.util.Set;
 
 public class RegionData {
@@ -21,7 +23,8 @@ public class RegionData {
 
     // 16 bits - block EXCEPT water
     // 4 bits - water depth, > 0 if water, unsigned
-    // 4 bits - y offset from previous block, signed
+    // 2 bits - west Y, 00 if equal, 01 if above, 10 if below, 11 if unknown (border)
+    // 2 bits - north Y, 00 if equal, 01 if above, 10 if below, 11 if unknown (border)
     // 8 bits - biome
     // TODO optimize for cache lines, currently we are using 64 cache lines per chunk when we can use 16
     private final int[] data = new int[512 * 512];
@@ -30,23 +33,19 @@ public class RegionData {
         int rx = chunk.getPos().getRegionLocalX() * 16;
         int rz = chunk.getPos().getRegionLocalZ() * 16;
 
-        int[] yValues = new int[16];
+        int[] westY = new int[16];
+        Arrays.fill(westY, Integer.MIN_VALUE);
+        int northY = Integer.MIN_VALUE;
         for (int x = rx; x < rx + 16; x++) {
-            BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos(x + chunk.getPos().getRegionX() * 512, chunk.getMaxBuildHeight(), chunk.getPos().getRegionZ() * 512);
-            iterateDown(chunk, pos);
-            yValues[x - rx] = pos.getY();
-        }
-        for (int x = rx; x < rx + 16; x++) {
+            BlockPos.MutableBlockPos pos = null;
             for (int z = rz; z < rz + 16; z++) {
-                BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos(x + chunk.getPos().getRegionX() * 512, chunk.getMaxBuildHeight(), z + chunk.getPos().getRegionZ() * 512);
+                pos = new BlockPos.MutableBlockPos(x + chunk.getPos().getRegionX() * 512, chunk.getMaxBuildHeight(), z + chunk.getPos().getRegionZ() * 512);
                 BlockState state = iterateDown(chunk, pos);
 
                 int dataValue = 0;
 
                 Block block;
                 int depth;
-
-                int yOffset = 0;
 
                 DepthResult depthResult = findDepthIfFluid(pos, state, chunk);
                 if (depthResult != null) {
@@ -55,15 +54,6 @@ public class RegionData {
                 } else {
                     block = state.getBlock();
                     depth = 0;
-                    yOffset = Mth.clamp(pos.getY() - yValues[x - rx], -8, 7);
-                    if (yOffset < 0) {
-                        yOffset = -yOffset - 1 ^ 0xF;
-                    }
-                    yValues[x - rx] = pos.getY();
-                }
-
-                if (yOffset > 15) {
-                    throw new IllegalArgumentException("y offset invalid " + yOffset);
                 }
 
                 int blockId = Registry.BLOCK.getId(block);
@@ -72,7 +62,28 @@ public class RegionData {
                 }
                 dataValue |= blockId << 16;
                 dataValue |= Math.min(depth, 0xF) << 12;
-                dataValue |= yOffset << 8; // y offset
+
+                if (westY[z - rz] != Integer.MIN_VALUE) {
+                    if (westY[z - rz] > pos.getY()) {
+                        dataValue |= 0b10 << 10;
+                    } else if (westY[z - rz] < pos.getY()) {
+                        dataValue |= 0b01 << 10;
+                    }
+                } else {
+                    dataValue |= 0b11 << 10;
+                }
+                westY[z - rz] = pos.getY();
+
+                if (northY != Integer.MIN_VALUE) {
+                    if (northY > pos.getY()) {
+                        dataValue |= 0b10 << 8;
+                    } else if (northY < pos.getY()) {
+                        dataValue |= 0b01 << 8;
+                    }
+                } else {
+                    dataValue |= 0b11 << 8;
+                }
+                northY = pos.getY();
 
                 int biomeId = chunk.getLevel().registryAccess().registry(Registry.BIOME_REGISTRY).get().getId(chunk.getLevel().getBiome(pos).value());
                 if (biomeId > 0xFF) {
@@ -82,6 +93,7 @@ public class RegionData {
 
                 data[z + x * 512] = dataValue;
             }
+            northY = Integer.MIN_VALUE;
         }
     }
 
@@ -123,40 +135,96 @@ public class RegionData {
     }
 
     public void render(RegionTexture texture) {
+        long f = System.nanoTime();
         int[] colours = texture.getColours();
 
-        for (int x = 0; x < 512; x++) {
-            for (int z = 0; z < 512; z++) {
-                int packedData = data[z + x * 512];
-                int blockId = (packedData >>> 16) & 0xFFFF;
-                int waterDepth = (packedData >>> 12) & 0xF;
-                int yOffset = (packedData >>> 8) & 0xF;
-                int biome = packedData & 0xFF;
 
-                Holder<Block> blockHolder = Registry.BLOCK.getHolder(blockId).get();
-                int color = ColoursConfig.BLOCK_COLOURS.getOrDefault(blockHolder.unwrapKey().get().location().toString(), blockHolder.value().defaultMaterialColor().col);
+        // TODO rewrite in zig
 
-                if (waterDepth > 0) {
-                    int blockColor = color;
-                    color = shade(ColoursConfig.BLOCK_COLOURS.get("minecraft:water"), 0.85F - (waterDepth * 0.01F));
-                    color = mix(color, blockColor, 0.2F / (waterDepth / 2.0F));
-                } else {
-                    int odd = (x + z & 1);
-                    double diffY = ((double) (yOffset > 7 ? -(yOffset ^ 0xF) - 1 : yOffset)) * 4.0D / (double) 4 + ((double) odd - 0.5D) * 0.4D;
-                    byte colorOffset = (byte) (diffY > 0.6D ? 2 : (diffY < -0.6D ? 0 : 1));
-                    if (yOffset != 0) {
-                        System.out.println(yOffset);
+        for (int j = 0; j < 10; j++) {
+            long a = System.nanoTime();
+            for (int i = 0; i < 100; i++) {
+                Int2IntMap blockCache = new Int2IntOpenHashMap();
+                int waterColour = ColoursConfig.BLOCK_COLOURS.get("minecraft:water");
+                for (int x = 0; x < 512; x++) {
+                    for (int z = 0; z < 512; z++) {
+                        int packedData = data[z + x * 512];
+                        int blockId = (packedData >>> 16) & 0xFFFF;
+                        int waterDepth = (packedData >>> 12) & 0xF;
+                        int westY = (packedData >>> 10) & 0x3;
+                        int northY = (packedData >>> 8) & 0x3;
+                        int biome = packedData & 0xFF;
+
+                        int color;
+                        if (!blockCache.containsKey(blockId)) {
+                            Holder.Reference<Block> blockHolder = (Holder.Reference<Block>) Registry.BLOCK.getHolder(blockId).get();
+                            color = ColoursConfig.BLOCK_COLOURS.getOrDefault(blockHolder.key().toString(), blockHolder.value().defaultMaterialColor().col);
+                            blockCache.put(blockId, color);
+                        } else {
+                            color = blockCache.get(blockId);
+                        }
+
+                        if (waterDepth > 0) {
+                            int blockColor = color;
+                            color = shade(waterColour, 0.85F - (waterDepth * 0.01F));
+                            color = mix(color, blockColor, 0.2F / (waterDepth / 2.0F));
+                        } else {
+                            int alpha = 0x22;
+                            if (westY == 0b10) {
+                                alpha = 0x44;
+                            } else if (westY == 0b01) {
+                                alpha = 0;
+                            }
+                            if (northY == 0b10) {
+                                alpha = Math.min(0x44, alpha + 0x22);
+                            } else if (northY == 0b01) {
+                                alpha = Math.max(0, alpha - 0x22);
+                            }
+
+                            color = blend(0, color, (double) alpha / 0xFF);
+                        }
+
+                        // rightmost 8 bits are alpha, representing water depth or y offset
+                        colours[z + x * 512] = color << 8;
                     }
-                    color = shade(color, colorOffset);
                 }
-
-                // rightmost 8 bits are alpha, representing water depth or y offset
-                colours[z + x * 512] = color << 8;
             }
+            long b = System.nanoTime();
+            System.out.println((b-a)/100000 + "us ." + j);
         }
 
+        long s = System.nanoTime();
         texture.update();
+        long n=  System.nanoTime();
+        System.out.println((s-f)/1000 + "ns process");
+        System.out.println((n-s)/1000 + "ns update");
     }
+
+    public static int blend(int color0, int color1, double a0) {
+        double a1 = 1;
+        double a = a0 + a1 * (1 - a0);
+        double r = (red(color0) * a0 + red(color1) * a1 * (1 - a0)) / a;
+        double g = (green(color0) * a0 + green(color1) * a1 * (1 - a0)) / a;
+        double b = (blue(color0) * a0 + blue(color1) * a1 * (1 - a0)) / a;
+        return rgb((int) r, (int) g, (int) b);
+    }
+
+    public static int red(int argb) {
+        return argb >> 16 & 0xFF;
+    }
+
+    public static int green(int argb) {
+        return argb >> 8 & 0xFF;
+    }
+
+    public static int blue(int argb) {
+        return argb & 0xFF;
+    }
+
+    public static int rgb(int red, int green, int blue) {
+        return red << 16 | green << 8 | blue;
+    }
+
 
     public static int shade(int color, float ratio) {
         int r = (int) ((color >> 16 & 0xFF) * ratio);
@@ -165,7 +233,7 @@ public class RegionData {
         return (r << 16) | (g << 8) | b;
     }
 
-    public static int shade(int color, int shade) {
+    public static int shade(int color, int shade) V get{
         final float ratio = switch (shade) {
             case 0 -> 180F / 255F;
             case 1 -> 220F / 255F;
