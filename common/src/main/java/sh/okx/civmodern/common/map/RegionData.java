@@ -23,8 +23,8 @@ public class RegionData {
 
     // 16 bits - block EXCEPT water
     // 4 bits - water depth, > 0 if water, unsigned
-    // 2 bits - west Y, 00 if equal, 01 if above, 10 if below, 11 if unknown (border)
-    // 2 bits - north Y, 00 if equal, 01 if above, 10 if below, 11 if unknown (border)
+    // 2 bits - west Y, 01 if equal, 11 if above, 00 if below, 10 if unknown (border)
+    // 2 bits - north Y, 01 if equal, 11 if above, 00 if below, 10 if unknown (border)
     // 8 bits - biome
     // TODO optimize for cache lines, currently we are using 64 cache lines per chunk when we can use 16
     private final int[] data = new int[512 * 512];
@@ -65,23 +65,23 @@ public class RegionData {
 
                 if (westY[z - rz] != Integer.MIN_VALUE) {
                     if (westY[z - rz] > pos.getY()) {
-                        dataValue |= 0b10 << 10;
-                    } else if (westY[z - rz] < pos.getY()) {
+                        dataValue |= 0b11 << 10;
+                    } else if (westY[z - rz] == pos.getY()) {
                         dataValue |= 0b01 << 10;
                     }
                 } else {
-                    dataValue |= 0b11 << 10;
+                    dataValue |= 0b10 << 10;
                 }
                 westY[z - rz] = pos.getY();
 
                 if (northY != Integer.MIN_VALUE) {
                     if (northY > pos.getY()) {
-                        dataValue |= 0b10 << 8;
-                    } else if (northY < pos.getY()) {
+                        dataValue |= 0b11 << 8;
+                    } else if (northY == pos.getY()) {
                         dataValue |= 0b01 << 8;
                     }
                 } else {
-                    dataValue |= 0b11 << 8;
+                    dataValue |= 0b10 << 8;
                 }
                 northY = pos.getY();
 
@@ -151,8 +151,6 @@ public class RegionData {
                         int packedData = data[z + x * 512];
                         int blockId = (packedData >>> 16) & 0xFFFF;
                         int waterDepth = (packedData >>> 12) & 0xF;
-                        int westY = (packedData >>> 10) & 0x3;
-                        int northY = (packedData >>> 8) & 0x3;
                         int biome = packedData & 0xFF;
 
                         int color;
@@ -169,19 +167,17 @@ public class RegionData {
                             color = shade(waterColour, 0.85F - (waterDepth * 0.01F));
                             color = mix(color, blockColor, 0.2F / (waterDepth / 2.0F));
                         } else {
-                            int alpha = 0x22;
-                            if (westY == 0b10) {
-                                alpha = 0x44;
-                            } else if (westY == 0b01) {
+                            int bt = Integer.bitCount((packedData >>> 8) & 0xF);
+                            int alpha;
+                            if (bt == 0 || bt == 1) {
                                 alpha = 0;
-                            }
-                            if (northY == 0b10) {
-                                alpha = Math.min(0x44, alpha + 0x22);
-                            } else if (northY == 0b01) {
-                                alpha = Math.max(0, alpha - 0x22);
+                            } else if (bt == 2) {
+                                alpha = 0x22;
+                            } else {
+                                alpha = 0x44;
                             }
 
-                            color = blend(0, color, (double) alpha / 0xFF);
+                            color = blend(color, (double) alpha / 0xFF);
                         }
 
                         // rightmost 8 bits are alpha, representing water depth or y offset
@@ -200,12 +196,10 @@ public class RegionData {
         System.out.println((n-s)/1000 + "ns update");
     }
 
-    public static int blend(int color0, int color1, double a0) {
-        double a1 = 1;
-        double a = a0 + a1 * (1 - a0);
-        double r = (red(color0) * a0 + red(color1) * a1 * (1 - a0)) / a;
-        double g = (green(color0) * a0 + green(color1) * a1 * (1 - a0)) / a;
-        double b = (blue(color0) * a0 + blue(color1) * a1 * (1 - a0)) / a;
+    public static int blend(int color1, double a0) {
+        double r = (red(color1) * (1 - a0));
+        double g = (green(color1) * (1 - a0));
+        double b = (blue(color1) * (1 - a0));
         return rgb((int) r, (int) g, (int) b);
     }
 
@@ -233,7 +227,7 @@ public class RegionData {
         return (r << 16) | (g << 8) | b;
     }
 
-    public static int shade(int color, int shade) V get{
+    public static int shade(int color, int shade) {
         final float ratio = switch (shade) {
             case 0 -> 180F / 255F;
             case 1 -> 220F / 255F;
