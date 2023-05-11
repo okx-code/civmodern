@@ -10,8 +10,7 @@ import com.mojang.blaze3d.vertex.Tesselator;
 import com.mojang.blaze3d.vertex.VertexFormat.Mode;
 import com.mojang.math.Matrix4f;
 import com.mojang.math.Vector3f;
-import java.io.IOException;
-import java.io.InputStream;
+
 import java.net.URL;
 import java.util.Collections;
 import java.util.HashSet;
@@ -166,7 +165,7 @@ public class Radar {
     }
 
     if (config.isRadarEnabled()) {
-      render(event.getPoseStack(), event.getDelta());
+      render(event.poseStack(), event.delta());
     }
   }
 

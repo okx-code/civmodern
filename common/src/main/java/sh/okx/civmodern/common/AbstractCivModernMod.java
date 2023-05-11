@@ -17,6 +17,7 @@ import net.minecraft.client.renderer.entity.ItemRenderer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.lwjgl.glfw.GLFW;
+import sh.okx.civmodern.common.events.ChunkLoadEvent;
 import sh.okx.civmodern.common.events.ClientTickEvent;
 import sh.okx.civmodern.common.events.EventBus;
 import sh.okx.civmodern.common.events.ScrollEvent;
@@ -24,6 +25,8 @@ import sh.okx.civmodern.common.gui.screen.MainConfigScreen;
 import sh.okx.civmodern.common.macro.AttackMacro;
 import sh.okx.civmodern.common.macro.HoldKeyMacro;
 import sh.okx.civmodern.common.macro.IceRoadMacro;
+import sh.okx.civmodern.common.map.MapCache;
+import sh.okx.civmodern.common.map.MapScreen;
 import sh.okx.civmodern.common.radar.Radar;
 
 public abstract class AbstractCivModernMod {
@@ -36,6 +39,9 @@ public abstract class AbstractCivModernMod {
     private final KeyMapping holdRightBinding;
     private final KeyMapping iceRoadBinding;
     private final KeyMapping attackBinding;
+
+    private final KeyMapping mapBinding;
+
     private CivMapConfig config;
     private ColourProvider colourProvider;
     private Radar radar;
@@ -44,6 +50,8 @@ public abstract class AbstractCivModernMod {
     private HoldKeyMacro rightMacro;
     private IceRoadMacro iceRoadMacro;
     private AttackMacro attackMacro;
+
+    private MapCache mapCache;
 
     private EventBus eventBus;
 
@@ -78,6 +86,12 @@ public abstract class AbstractCivModernMod {
             GLFW.GLFW_KEY_0,
             "category.civmodern"
         );
+        this.mapBinding = new KeyMapping(
+            "key.civmodern.map",
+            Type.KEYSYM,
+            GLFW.GLFW_KEY_M,
+            "category.civmodern"
+        );
 
         if (INSTANCE == null) {
             INSTANCE = this;
@@ -87,13 +101,16 @@ public abstract class AbstractCivModernMod {
     }
 
     public final void init() {
+        this.mapCache = new MapCache();
+
         this.eventBus = provideEventBus();
 
         registerKeyBinding(this.configBinding);
         registerKeyBinding(this.holdLeftBinding);
         registerKeyBinding(this.holdRightBinding);
-        registerKeyBinding(attackBinding);
+        registerKeyBinding(this.attackBinding);
         registerKeyBinding(this.iceRoadBinding);
+        registerKeyBinding(this.mapBinding);
     }
 
     public final void enable() {
@@ -103,6 +120,8 @@ public abstract class AbstractCivModernMod {
 
         this.eventBus.listen(ClientTickEvent.class, e -> this.tick());
         this.eventBus.listen(ScrollEvent.class, e -> this.onScroll());
+
+        this.eventBus.listen(ChunkLoadEvent.class, e -> this.mapCache.updateChunk(e.chunk()));
 
         Options options = Minecraft.getInstance().options;
         this.leftMacro = new HoldKeyMacro(this, this.holdLeftBinding, options.keyAttack);
@@ -123,6 +142,9 @@ public abstract class AbstractCivModernMod {
     private void tick() {
         while (configBinding.consumeClick()) {
             Minecraft.getInstance().setScreen(new MainConfigScreen(this, config));
+        }
+        while (mapBinding.consumeClick()) {
+            Minecraft.getInstance().setScreen(new MapScreen(this, mapCache));
         }
     }
 
