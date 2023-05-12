@@ -33,7 +33,7 @@ import sh.okx.civmodern.common.radar.Radar;
 public abstract class AbstractCivModernMod {
 
     private static AbstractCivModernMod INSTANCE;
-    private static final Logger LOGGER = LogManager.getLogger();
+    public static final Logger LOGGER = LogManager.getLogger();
 
     private final KeyMapping configBinding;
     private final KeyMapping holdLeftBinding;
@@ -106,9 +106,7 @@ public abstract class AbstractCivModernMod {
         Path config = Minecraft.getInstance().gameDirectory.toPath()
             .resolve("config");
         this.mapFile = new MapFile(
-            config.resolve("civmodern_mapdata").toFile(),
-            config.resolve("civmodern_mapheader").toFile());
-        this.mapFile.loadHeader();
+            config.resolve("civmodern_mapdata").toFile());
         this.mapCache = new MapCache(this.mapFile);
 
         this.eventBus = provideEventBus();

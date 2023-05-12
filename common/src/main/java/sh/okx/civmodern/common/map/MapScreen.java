@@ -12,14 +12,17 @@ public class MapScreen extends Screen {
   private final AbstractCivModernMod mod;
   private final MapCache mapCache;
 
-  private double x = -100;
-  private double y = -100;
+  private double x;
+  private double y;
 
   public MapScreen(AbstractCivModernMod mod, MapCache mapCache) {
     super(new TranslatableComponent("civmodern.screen.map.title"));
     this.mod = mod;
     this.mapCache = mapCache;
     Window window = Minecraft.getInstance().getWindow();
+
+    x = Minecraft.getInstance().player.getX();
+    y = Minecraft.getInstance().player.getZ();
 
     // TODO rendering algorithm
 /*
@@ -46,8 +49,8 @@ public class MapScreen extends Screen {
   public void render(PoseStack matrices, int mouseX, int mouseY, float delta) {
     Window window = Minecraft.getInstance().getWindow();
 
-    for (int screenX = 0; screenX < window.getGuiScaledWidth() + 512; screenX += 512) {
-      for (int screenY = 0; screenY < window.getGuiScaledHeight() + 512; screenY += 512) {
+    for (int screenX = 0; screenX < window.getWidth() + 512; screenX += 512) {
+      for (int screenY = 0; screenY < window.getHeight() + 512; screenY += 512) {
         int realX = (int) this.x + screenX;
         int realY = (int) this.y + screenY;
 
@@ -57,8 +60,8 @@ public class MapScreen extends Screen {
         RegionKey key = new RegionKey(Math.floorDiv(renderX, 512), Math.floorDiv(renderY, 512));
         RegionTexture texture = mapCache.getTexture(key);
         if (texture != null) {
-          int scale = (int) Minecraft.getInstance().getWindow().getGuiScale();
-          texture.draw(matrices, (int) ((renderX - this.x)) / scale, (int) ((renderY - this.y)) / scale);
+          float scale = (float) Minecraft.getInstance().getWindow().getGuiScale();
+          texture.draw(matrices, (float) ((renderX - this.x)) / scale, (float) ((renderY - this.y)) / scale);
         }
       }
     }

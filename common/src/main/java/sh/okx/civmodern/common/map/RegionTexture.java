@@ -17,11 +17,11 @@ import static org.lwjgl.opengl.GL33.*;
 public class RegionTexture {
     private static final int SIZE = 512;
 
-    private final int indexTexture;
+    private int indexTexture;
 
     private int[] colours = new int[SIZE * SIZE];
 
-    public RegionTexture() {
+    public void init() {
         this.indexTexture = TextureUtil.generateTextureId();
 
 //        for (int i = 0; i < 512; i++) {
@@ -33,8 +33,7 @@ public class RegionTexture {
         RenderSystem.bindTextureForSetup(this.indexTexture);
         RenderSystem.texParameter(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
         RenderSystem.texParameter(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-
-        this.update();
+        update();
     }
 
     public void update() {
@@ -52,7 +51,7 @@ public class RegionTexture {
         return colours;
     }
 
-    public synchronized void draw(PoseStack poseStack, int x, int y) {
+    public synchronized void draw(PoseStack poseStack, float x, float y) {
         RenderSystem.setShaderTexture(0, this.indexTexture);
         RenderSystem.bindTexture(this.indexTexture);
         RenderSystem.pixelStore(0xcf0, 0);
@@ -83,14 +82,14 @@ public class RegionTexture {
         RenderSystem.deleteTexture(this.indexTexture);
     }
 
-    private static void blit(PoseStack poseStack, int renderX, int renderY, int z, float textureXoffset, float texureYoffset, int renderWidth, int renderHeight, int textureWidth, int textureHeight) {
+    private static void blit(PoseStack poseStack, float renderX, float renderY, int z, float textureXoffset, float texureYoffset, int renderWidth, int renderHeight, int textureWidth, int textureHeight) {
 
         innerBlit(poseStack, renderX, renderX + renderWidth, renderY, renderY + renderHeight, z, renderWidth, renderHeight, textureXoffset, texureYoffset, textureWidth, textureHeight);
     }
-    private static void innerBlit(PoseStack poseStack, int i, int j, int k, int l, int m, int n, int o, float f, float g, int p, int q) {
+    private static void innerBlit(PoseStack poseStack, float i, float j, float k, float l, int m, int n, int o, float f, float g, int p, int q) {
         innerBlit(poseStack.last().pose(), i, j, k, l, m, (f + 0.0f) / (float)p, (f + (float)n) / (float)p, (g + 0.0f) / (float)q, (g + (float)o) / (float)q);
     }
-    private static void innerBlit(Matrix4f matrix4f, int i, int j, int k, int l, int m, float f, float g, float h, float n) {
+    private static void innerBlit(Matrix4f matrix4f, float i, float j, float k, float l, int m, float f, float g, float h, float n) {
         RenderSystem.setShader(ShaderManager::getMapShader);
         BufferBuilder bufferBuilder = Tesselator.getInstance().getBuilder();
         bufferBuilder.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX);

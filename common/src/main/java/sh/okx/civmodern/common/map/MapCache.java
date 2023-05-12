@@ -1,7 +1,7 @@
 package sh.okx.civmodern.common.map;
 
+import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.world.level.chunk.LevelChunk;
-import org.apache.commons.compress.compressors.zstandard.ZstdCompressorInputStream;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -10,8 +10,12 @@ import java.util.concurrent.Executors;
 
 public class MapCache {
 
-  private final Map<RegionKey, RegionTexture> textureCache = new HashMap<>(); // region -> texture ~60ms
-  private final Map<RegionKey, RegionData> cache = new HashMap<>(); // chunk -> data ~1ms
+  private static RegionTexture EMPTY_TEXTURE;
+
+  private final Set<RegionKey> getting = new HashSet<>();
+
+  private final Map<RegionKey, RegionTexture> textureCache = new ConcurrentHashMap<>(); // region -> texture ~60ms EDIT: now 4ms
+  private final Map<RegionKey, RegionData> cache = new ConcurrentHashMap<>(); // chunk -> data ~1ms EDIT: now 200us
 
   private final Set<RegionKey> dirtyRenderRegions = Collections.newSetFromMap(new ConcurrentHashMap<>());
   // TODO dirty save regions
@@ -32,7 +36,11 @@ public class MapCache {
     RegionData data = getData(region);
 
     // TODO post process neighbouring north and west chunks (if loaded) to finish height shading
-    RegionTexture texture = textureCache.computeIfAbsent(region, k -> new RegionTexture());
+    RegionTexture texture = textureCache.computeIfAbsent(region, k -> {
+      RegionTexture texture1 = new RegionTexture();
+      texture1.init();
+      return texture1;
+    });
 
     // Pretty sketchy in terms of race conditions but it works
     executor.submit(() -> {
@@ -41,7 +49,7 @@ public class MapCache {
     });
   }
 
-  public RegionData getData(RegionKey key) {
+  public RegionData getData(RegionKey key) { // todo fix bug here
     return cache.computeIfAbsent(key, k -> {
       RegionData region1 = mapFile.getRegion(k);
       return Objects.requireNonNullElseGet(region1, RegionData::new);
@@ -51,21 +59,31 @@ public class MapCache {
   public RegionTexture getTexture(RegionKey key) {
     RegionTexture texture = this.textureCache.get(key);
     if (texture == null) {
-      RegionData data = mapFile.getRegion(key);
-      if (data != null) {
-        RegionTexture newTexture = new RegionTexture();
-        this.textureCache.put(key, newTexture);
-        this.cache.put(key, data);
-        executor.submit(() -> data.render(newTexture));
-        texture = newTexture;
+      if (getting.add(key)) {
+        executor.submit(() -> {
+          RegionData data = mapFile.getRegion(key);
+          if (data != null) {
+            RegionTexture newTexture = new RegionTexture();
+            RenderSystem.recordRenderCall(() -> {
+              newTexture.init();
+              this.textureCache.put(key, newTexture);
+              this.cache.put(key, data);
+            });
+            data.render(newTexture);
+          }
+        });
       }
+      if (EMPTY_TEXTURE == null) {
+        EMPTY_TEXTURE = new RegionTexture();
+        EMPTY_TEXTURE.init();
+      }
+      return EMPTY_TEXTURE;
     } else if (dirtyRenderRegions.remove(key)) {
-      RegionTexture renderTexture = texture;
       executor.submit(() -> {
         RegionData data = getData(key);
         if (data != null) {
           // TODO debouncer 100ms
-          data.render(renderTexture);
+          data.render(texture);
         }
       });
     }

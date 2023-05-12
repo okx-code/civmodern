@@ -1,7 +1,8 @@
 package sh.okx.civmodern.common.map;
 
-import java.util.HashMap;
-import java.util.Map;
+import org.checkerframework.checker.nullness.qual.NonNull;
+
+import java.util.*;
 
 public class ColoursConfig {
   public static final Map<String, Integer> BLOCK_COLOURS = new HashMap<>() {{
@@ -936,69 +937,20 @@ public class ColoursConfig {
     put("minecraft:zombie_wall_head", 0x52763F);
   }};
 
-  public static final Map<String, Integer> BIOME_COLORS = new HashMap<>() {{
-    put("minecraft:badlands", 0xD94515);
-    put("minecraft:bamboo_jungle", 0x768E14);
-    put("minecraft:basalt_deltas", 0x403636);
-    put("minecraft:beach", 0xFADE55);
-    put("minecraft:birch_forest", 0x307444);
-    put("minecraft:cold_ocean", 0x202070);
-    put("minecraft:crimson_forest", 0xDD0808);
-    put("minecraft:dark_forest", 0x40511A);
-    put("minecraft:deep_cold_ocean", 0x202038);
-    put("minecraft:deep_dark", 0x0E252A);
-    put("minecraft:deep_frozen_ocean", 0x404090);
-    put("minecraft:deep_lukewarm_ocean", 0x000040);
-    put("minecraft:deep_ocean", 0x000030);
-    put("minecraft:desert", 0xFA9418);
-    put("minecraft:dripstone_caves", 0x888888);
-    put("minecraft:end_barrens", 0x8080FF);
-    put("minecraft:end_highlands", 0x8080FF);
-    put("minecraft:end_midlands", 0x8080FF);
-    put("minecraft:eroded_badlands", 0xFF6D3D);
-    put("minecraft:flower_forest", 0x2D8E49);
-    put("minecraft:forest", 0x056621);
-    put("minecraft:frozen_ocean", 0x7070D6);
-    put("minecraft:frozen_peaks", 0xA0A0A0);
-    put("minecraft:frozen_river", 0xA0A0FF);
-    put("minecraft:grove", 0x888888);
-    put("minecraft:ice_spikes", 0xB4DCDC);
-    put("minecraft:jagged_peaks", 0xA0A0A0);
-    put("minecraft:jungle", 0x537B09);
-    put("minecraft:lukewarm_ocean", 0x000090);
-    put("minecraft:lush_caves", 0x7BA331);
-    put("minecraft:mangrove_swamp", 0x67352B);
-    put("minecraft:meadow", 0x2C4205);
-    put("minecraft:mushroom_fields", 0xFF00FF);
-    put("minecraft:nether_wastes", 0xBF3B3B);
-    put("minecraft:ocean", 0x000070);
-    put("minecraft:old_growth_birch_forest", 0x307444);
-    put("minecraft:old_growth_pine_taiga", 0x596651);
-    put("minecraft:old_growth_spruce_taiga", 0x818E79);
-    put("minecraft:plains", 0x8DB360);
-    put("minecraft:river", 0x0000FF);
-    put("minecraft:savanna", 0xBDB25F);
-    put("minecraft:savanna_plateau", 0xA79D64);
-    put("minecraft:small_end_islands", 0x8080FF);
-    put("minecraft:snowy_beach", 0xFAF0C0);
-    put("minecraft:snowy_plains", 0xFFFFFF);
-    put("minecraft:snowy_slopes", 0xA0A0A0);
-    put("minecraft:snowy_taiga", 0x31554A);
-    put("minecraft:soul_sand_valley", 0x5E3830);
-    put("minecraft:sparse_jungle", 0x628B17);
-    put("minecraft:stony_peaks", 0x888888);
-    put("minecraft:stony_shore", 0xA2A284);
-    put("minecraft:sunflower_plains", 0xB5DB88);
-    put("minecraft:swamp", 0x07F9B2);
-    put("minecraft:taiga", 0x0B6659);
-    put("minecraft:the_end", 0x8080FF);
-    put("minecraft:the_void", 0x000000);
-    put("minecraft:warm_ocean", 0x0000AC);
-    put("minecraft:warped_forest", 0x49907B);
-    put("minecraft:windswept_forest", 0x589C6C);
-    put("minecraft:windswept_gravelly_hills", 0x789878);
-    put("minecraft:windswept_hills", 0x597D72);
-    put("minecraft:windswept_savanna", 0xE5DA87);
-    put("minecraft:wooded_badlands", 0xB09765);
+  public static Set<String> BLOCKS_GRASS = new HashSet<>() {{
+    add("minecraft:fern");
+    add("minecraft:grass");
+    add("minecraft:grass_block");
+    add("minecraft:large_fern");
+    add("minecraft:potted_fern");
+    add("minecraft:tall_grass");
+  }};
+
+  public static Set<String> BLOCKS_FOLIAGE = new HashSet<>() {{
+    add("minecraft:acacia_leaves");
+    add("minecraft:dark_oak_leaves");
+    add("minecraft:jungle_leaves");
+    add("minecraft:mangrove_leaves");
+    add("minecraft:oak_leaves");
   }};
 }
