@@ -15,12 +15,9 @@ import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.level.material.Fluids;
 import org.checkerframework.checker.nullness.qual.NonNull;
-import org.lwjgl.opengl.ATIMeminfo;
 import sh.okx.civmodern.common.AbstractCivModernMod;
 
-import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
-import java.io.IOException;
 import java.util.Arrays;
 
 public class RegionData {
@@ -124,7 +121,7 @@ public class RegionData {
         return data;
     }
 
-    public void render(RegionTexture texture) {
+    public void render(RegionAtlasTexture texture, int rx, int rz) {
         long f = System.nanoTime();
         short[] colours = new short[512 * 512];
 
@@ -194,9 +191,9 @@ public class RegionData {
         System.out.println("data - " + (l - f) / 1000 + "us");
 
         if (RenderSystem.isOnRenderThread()) {
-            texture.update(colours);
+            texture.update(colours, rx, rz);
         } else {
-            RenderSystem.recordRenderCall(() -> texture.update(colours));
+            RenderSystem.recordRenderCall(() -> texture.update(colours, rx, rz));
         }
     }
 

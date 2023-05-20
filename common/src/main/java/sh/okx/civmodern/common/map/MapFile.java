@@ -1,7 +1,9 @@
 package sh.okx.civmodern.common.map;
 
 import java.io.*;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
@@ -30,6 +32,17 @@ public class MapFile {
         ex.printStackTrace();
       }
     }
+  }
+
+  public Set<RegionKey> listRegions() {
+    Set<RegionKey> regions = new HashSet<>();
+    for (String file : this.folder.list()) {
+      String[] parts = file.split(",");
+      if (parts.length == 2) {
+        regions.add(new RegionKey(Integer.parseInt(parts[0]), Integer.parseInt(parts[1])));
+      }
+    }
+    return regions;
   }
 
   public RegionData getRegion(RegionKey key) {

@@ -1,6 +1,5 @@
 package sh.okx.civmodern.common.map;
 
-import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.platform.TextureUtil;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.*;
@@ -9,8 +8,8 @@ import net.minecraft.client.renderer.GameRenderer;
 
 import static org.lwjgl.opengl.GL33.*;
 
-public class RegionTexture {
-    private static final int SIZE = 512;
+public class RegionAtlasTexture {
+    private static final int SIZE = 4096;
     private static final short[] BLACK = new short[SIZE * SIZE];
 
     private int indexTexture;
@@ -18,19 +17,13 @@ public class RegionTexture {
     public void init() {
         this.indexTexture = TextureUtil.generateTextureId();
 
-//        for (int i = 0; i < 512; i++) {
-//            for (int j = 0; j < 512; j++) {
-//                this.colorIndexes[i * 512 + j] = MaterialColor.byId(ThreadLocalRandom.current().nextInt(62)).col << 8;
-//            }
-//        }
-
         RenderSystem.bindTextureForSetup(this.indexTexture);
         RenderSystem.texParameter(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST);
         RenderSystem.texParameter(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-        update(BLACK);
+        clear();
     }
 
-    public void update(short[] colours) {
+    private void clear() {
         RenderSystem.bindTexture(this.indexTexture);
         RenderSystem.pixelStore(0xcf0, 0);
         RenderSystem.pixelStore(0xcf1, 0);
@@ -38,7 +31,19 @@ public class RegionTexture {
         RenderSystem.pixelStore(0xcf3, 0);
         RenderSystem.pixelStore(0xcf4, 0);
         RenderSystem.pixelStore(0xcf5, 4);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, SIZE, SIZE, 0, GL_RGB, GL_UNSIGNED_SHORT_5_6_5, colours);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, SIZE, SIZE, 0, GL_RGB, GL_UNSIGNED_SHORT_5_6_5, BLACK);
+        glGenerateMipmap(GL_TEXTURE_2D);
+    }
+
+    public void update(short[] colours, int x, int z) {
+        RenderSystem.bindTexture(this.indexTexture);
+        RenderSystem.pixelStore(0xcf0, 0);
+        RenderSystem.pixelStore(0xcf1, 0);
+        RenderSystem.pixelStore(0xcf2, 0);
+        RenderSystem.pixelStore(0xcf3, 0);
+        RenderSystem.pixelStore(0xcf4, 0);
+        RenderSystem.pixelStore(0xcf5, 4);
+        glTexSubImage2D(GL_TEXTURE_2D, 0, x * 512, z * 512, 512, 512, GL_RGB, GL_UNSIGNED_SHORT_5_6_5, colours);
         glGenerateMipmap(GL_TEXTURE_2D);
     }
 
@@ -52,7 +57,7 @@ public class RegionTexture {
         RenderSystem.pixelStore(0xcf4, 0);
         RenderSystem.pixelStore(0xcf5, 4);
 
-        blit(poseStack, x / scale, y / scale, 0, 0, 0, 512 / scale, 512 / scale, 512 / scale, 512 / scale);
+        blit(poseStack, x / scale, y / scale, 0, 0, 0, SIZE / scale, SIZE / scale, SIZE / scale, SIZE / scale);
     }
 
     public void delete() {

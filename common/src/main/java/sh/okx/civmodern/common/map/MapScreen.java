@@ -1,6 +1,5 @@
 package sh.okx.civmodern.common.map;
 
-import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.platform.Window;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.*;
@@ -23,7 +22,6 @@ import java.util.List;
 import java.util.Queue;
 
 import static org.lwjgl.opengl.GL11.*;
-import static org.lwjgl.opengl.GL14.*;
 
 public class MapScreen extends Screen {
 
@@ -66,17 +64,19 @@ public class MapScreen extends Screen {
     glClearColor(0, 0, 0, 1);
     glClear(GL_COLOR_BUFFER_BIT);
 
-    for (int screenX = 0; screenX < (window.getWidth() * zoom) + 512; screenX += 512) {
-      for (int screenY = 0; screenY < (window.getHeight() * zoom) + 512; screenY += 512) {
+    int SIZE = 4096;
+
+    for (int screenX = 0; screenX < (window.getWidth() * zoom) + SIZE; screenX += SIZE) {
+      for (int screenY = 0; screenY < (window.getHeight() * zoom) + SIZE; screenY += SIZE) {
         int realX = (int) this.x + screenX;
         int realY = (int) this.y + screenY;
 
-        int renderX = realX - Math.floorMod(realX, 512);
-        int renderY = realY - Math.floorMod(realY, 512);
+        int renderX = realX - Math.floorMod(realX, SIZE);
+        int renderY = realY - Math.floorMod(realY, SIZE);
 
-        RegionKey key = new RegionKey(Math.floorDiv(renderX, 512), Math.floorDiv(renderY, 512));
+        RegionKey key = new RegionKey(Math.floorDiv(renderX, SIZE), Math.floorDiv(renderY, SIZE));
         // todo if loading at low zoom, only render downsampled version to save memory
-        RegionTexture texture = mapCache.getTexture(key);
+        RegionAtlasTexture texture = mapCache.getTexture(key);
         if (texture != null) {
           texture.draw(matrices, (float) ((renderX - this.x)), (float) ((renderY - this.y)), scale);
         }
