@@ -17,6 +17,7 @@ import net.minecraft.client.renderer.entity.ItemRenderer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.lwjgl.glfw.GLFW;
+import sh.okx.civmodern.common.boat.BoatNavigation;
 import sh.okx.civmodern.common.events.ChunkLoadEvent;
 import sh.okx.civmodern.common.events.ClientTickEvent;
 import sh.okx.civmodern.common.events.EventBus;
@@ -28,6 +29,7 @@ import sh.okx.civmodern.common.macro.IceRoadMacro;
 import sh.okx.civmodern.common.map.MapCache;
 import sh.okx.civmodern.common.map.MapFile;
 import sh.okx.civmodern.common.map.MapScreen;
+import sh.okx.civmodern.common.map.VoxelMapConverter;
 import sh.okx.civmodern.common.radar.Radar;
 
 public abstract class AbstractCivModernMod {
@@ -54,6 +56,7 @@ public abstract class AbstractCivModernMod {
 
     private MapFile mapFile;
     private MapCache mapCache;
+    private BoatNavigation boatNavigation;
 
     private EventBus eventBus;
 
@@ -109,6 +112,8 @@ public abstract class AbstractCivModernMod {
             config.resolve("civmodern_mapdata").toFile());
         this.mapCache = new MapCache(this.mapFile);
 
+        new VoxelMapConverter(mapFile).convert(); // todo remove
+
         this.eventBus = provideEventBus();
 
         registerKeyBinding(this.configBinding);
@@ -134,6 +139,8 @@ public abstract class AbstractCivModernMod {
         this.rightMacro = new HoldKeyMacro(this, this.holdRightBinding, options.keyUse);
         this.iceRoadMacro = new IceRoadMacro(this, config, this.iceRoadBinding);
         this.attackMacro = new AttackMacro(this, this.attackBinding, options.keyAttack);
+
+        this.boatNavigation = new BoatNavigation(this);
     }
 
     public abstract EventBus provideEventBus();
@@ -150,7 +157,7 @@ public abstract class AbstractCivModernMod {
             Minecraft.getInstance().setScreen(new MainConfigScreen(this, config));
         }
         while (mapBinding.consumeClick()) {
-            Minecraft.getInstance().setScreen(new MapScreen(this, mapCache));
+            Minecraft.getInstance().setScreen(new MapScreen(this, mapCache, boatNavigation));
         }
     }
 

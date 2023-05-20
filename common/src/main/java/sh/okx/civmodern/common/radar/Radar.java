@@ -3,10 +3,7 @@ package sh.okx.civmodern.common.radar;
 import static org.lwjgl.opengl.GL11.*;
 
 import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.vertex.BufferBuilder;
-import com.mojang.blaze3d.vertex.DefaultVertexFormat;
-import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.Tesselator;
+import com.mojang.blaze3d.vertex.*;
 import com.mojang.blaze3d.vertex.VertexFormat.Mode;
 import com.mojang.math.Matrix4f;
 import com.mojang.math.Vector3f;
@@ -210,6 +207,8 @@ public class Radar {
       }
     }
     matrices.translate(translateX, translateY, 100);
+
+
     renderCircleBackground(matrices);
     for (int i = 1; i <= config.getRadarCircles(); i++) {
       renderCircleBorder(matrices, radius() * (i / (float) config.getRadarCircles()));
@@ -270,7 +269,6 @@ public class Radar {
     matrices.translate(dx * scale, dz * scale, 0f);
     matrices.mulPose(Vector3f.ZP.rotationDegrees(player.getViewYRot(delta)));
     matrices.scale(config.getIconSize(), config.getIconSize(), 0);
-
 
     PoseStack poseStack = RenderSystem.getModelViewStack();
     poseStack.pushPose();

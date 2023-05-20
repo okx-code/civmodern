@@ -7,8 +7,6 @@
     "InventoryMixin",
     "KeyMappingAccessor",
     "ShaderRegisterMixin",
-    "ShaderProgramMixin",
-    "ShaderProgramImportProcessorMixin"
   ],
   "server": [],
   "injectors": {

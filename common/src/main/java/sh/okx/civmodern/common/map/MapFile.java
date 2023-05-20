@@ -13,6 +13,10 @@ public class MapFile {
     this.folder = folder;
   }
 
+  public File getFolder() {
+    return folder;
+  }
+
   public void save(Map<RegionKey, RegionData> dataMap) {
     this.folder.mkdir();
 
@@ -37,7 +41,7 @@ public class MapFile {
     try (InputStream in = new GZIPInputStream(new FileInputStream(file))) {
       RegionData region = new RegionData();
       byte[] buf = new byte[512 * 512 * 4];
-      int totalRead = 0;//in.readNBytes(512 * 512 * 4);
+      int totalRead = 0;
       while (totalRead < buf.length) {
         int read = in.read(buf, totalRead, buf.length - totalRead);
         if (read < 0) {
