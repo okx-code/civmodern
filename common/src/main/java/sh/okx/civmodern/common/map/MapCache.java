@@ -9,6 +9,9 @@ import java.util.concurrent.Executors;
 
 public class MapCache {
 
+  private static final int ATLAS_LENGTH = RegionAtlasTexture.SIZE / RegionData.SIZE;
+  private static final int ATLAS_BITS = Integer.numberOfTrailingZeros(RegionAtlasTexture.SIZE / RegionData.SIZE);
+
   private final Set<RegionKey> getting = new HashSet<>(); // todo remove this map; when update chunk should render entire atlas
   private final Set<RegionKey> gettingAtlas = new HashSet<>();
 
@@ -36,7 +39,7 @@ public class MapCache {
 
 
     // TODO post process neighbouring north and west chunks (if loaded) to finish height shading
-    RegionKey atlas = new RegionKey(regionX >> 3, regionZ >> 3);
+    RegionKey atlas = new RegionKey(regionX >> ATLAS_BITS, regionZ >> ATLAS_BITS);
     this.textureCache.computeIfAbsent(atlas, k -> {
       RegionAtlasTexture texture1 = new RegionAtlasTexture();
       texture1.init();
@@ -63,7 +66,7 @@ public class MapCache {
       return Objects.requireNonNullElseGet(region1, RegionData::new);
     });
     if (created[0]) {
-      dirtyRenderAltases.add(new RegionKey(key.x() >> 3, key.z() >> 3));
+      dirtyRenderAltases.add(new RegionKey(key.x() >> ATLAS_BITS, key.z() >> ATLAS_BITS));
     }
     return data;
   }
@@ -72,9 +75,9 @@ public class MapCache {
     RegionAtlasTexture texture = this.textureCache.get(atlas);
     if (texture == null) {
       if (gettingAtlas.add(atlas)) {
-        for (int x = 0; x < 8; x++) {
-          for (int z = 0; z < 8; z++) {
-            RegionKey region = new RegionKey(atlas.x() << 3 | x, atlas.z() << 3 | z);
+        for (int x = 0; x < ATLAS_LENGTH; x++) {
+          for (int z = 0; z < ATLAS_LENGTH; z++) {
+            RegionKey region = new RegionKey(atlas.x() << ATLAS_BITS | x, atlas.z() << ATLAS_BITS | z);
             if (availableRegions.contains(region) && getting.add(region)) {
               int fx = x;
               int fz = z;
@@ -96,12 +99,11 @@ public class MapCache {
       return null;
     } else if (dirtyRenderAltases.remove(atlas)) {
       executor.submit(() -> {
-        for (int x = 0; x < 8; x++) {
-          for (int z = 0; z < 8; z++) {
-            RegionData data = cache.get(new RegionKey(atlas.x() << 3 | x, atlas.z() << 3 | z));
+        for (int x = 0; x < ATLAS_LENGTH; x++) {
+          for (int z = 0; z < ATLAS_LENGTH; z++) {
+            RegionData data = cache.get(new RegionKey(atlas.x() << ATLAS_BITS | x, atlas.z() << ATLAS_BITS | z));
             if (data != null) {
               //System.out.println("dirty " + key);
-              // TODO debouncer 100ms
               data.render(texture, x, z);
             }
           }
@@ -109,7 +111,6 @@ public class MapCache {
       });
     }
 
-    // TODO texture pool
     // TODO reset texture on world unload
     return texture;
   }

@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Queue;
 
 import static org.lwjgl.opengl.GL11.*;
+import static sh.okx.civmodern.common.map.RegionAtlasTexture.SIZE;
 
 public class MapScreen extends Screen {
 
@@ -56,6 +57,9 @@ public class MapScreen extends Screen {
     }));
   }
 
+  private int rc = 0;
+  private long ns = 0;
+
   @Override
   public void render(PoseStack matrices, int mouseX, int mouseY, float delta) {
     float scale = (float) Minecraft.getInstance().getWindow().getGuiScale() * zoom;
@@ -64,8 +68,7 @@ public class MapScreen extends Screen {
     glClearColor(0, 0, 0, 1);
     glClear(GL_COLOR_BUFFER_BIT);
 
-    int SIZE = 4096;
-
+    long s = System.nanoTime();
     for (int screenX = 0; screenX < (window.getWidth() * zoom) + SIZE; screenX += SIZE) {
       for (int screenY = 0; screenY < (window.getHeight() * zoom) + SIZE; screenY += SIZE) {
         int realX = (int) this.x + screenX;
@@ -81,6 +84,18 @@ public class MapScreen extends Screen {
           texture.draw(matrices, (float) ((renderX - this.x)), (float) ((renderY - this.y)), scale);
         }
       }
+    }
+    long l = System.nanoTime();
+    ns += (l - s) / 1000;
+    rc++;
+    if (rc == 600) {
+      // 8192 = 60us
+      // 4096 = 300us
+      // 2048 = 1100us
+      // 1024 = 4800us
+      System.out.println("render " + (ns/rc) + "us");
+      rc = 0;
+      ns = 0;
     }
 
     Queue<Vec2> dests = navigation.getDestinations();

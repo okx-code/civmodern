@@ -9,7 +9,7 @@ import net.minecraft.client.renderer.GameRenderer;
 import static org.lwjgl.opengl.GL33.*;
 
 public class RegionAtlasTexture {
-    private static final int SIZE = 4096;
+    public static final int SIZE = 4096;
     private static final short[] BLACK = new short[SIZE * SIZE];
 
     private int indexTexture;

@@ -22,6 +22,8 @@ import java.util.Arrays;
 
 public class RegionData {
 
+    public static int SIZE = 512;
+
     // 16 bits - block EXCEPT water
     // 4 bits - water depth, > 0 if water, values map to: 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 11, 14, 18, 23, 29, 37
     // 2 bits - west Y, 01 if equal, 11 if above, 00 if below, 10 if unknown (border)
@@ -124,8 +126,6 @@ public class RegionData {
     public void render(RegionAtlasTexture texture, int rx, int rz) {
         long f = System.nanoTime();
         short[] colours = new short[512 * 512];
-
-        // TODO rewrite in zig
 
         Int2IntMap blockCache = new Int2IntOpenHashMap();
         Registry<Biome> registry = Minecraft.getInstance().player.getLevel().registryAccess().registry(Registry.BIOME_REGISTRY).get();
