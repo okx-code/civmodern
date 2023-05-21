@@ -35,7 +35,6 @@ public class MapScreen extends Screen {
   private double x;
   private double y;
   private float zoom = 1; // blocks per pixel
-  // TODO fix x and y when zooming based on cursor position
 
   private boolean boating = false;
 
@@ -93,6 +92,7 @@ public class MapScreen extends Screen {
       // 4096 = 300us
       // 2048 = 1100us
       // 1024 = 4800us
+      // 5126 = ~16000us - a whole frame at 60 FPS
       System.out.println("render " + (ns/rc) + "us");
       rc = 0;
       ns = 0;
@@ -150,12 +150,6 @@ public class MapScreen extends Screen {
   }
 
   @Override
-  public void onClose() {
-    super.onClose();
-    mapCache.save();
-  }
-
-  @Override
   public boolean mouseClicked(double mouseX, double mouseY, int button) {
     if (super.mouseClicked(mouseX, mouseY, button)) {
       return true;
@@ -203,7 +197,7 @@ public class MapScreen extends Screen {
       }
     } else {
       // zoom in
-      if (zoom > 0.0625) {
+      if (zoom > 0.03125) {
 
         Window window = Minecraft.getInstance().getWindow();
         float scale = (float) window.getGuiScale() * zoom;

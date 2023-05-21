@@ -6,22 +6,24 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 public class MapCache {
+  private static final ExecutorService SAVE = Executors.newSingleThreadExecutor();
 
   private static final int ATLAS_LENGTH = RegionAtlasTexture.SIZE / RegionData.SIZE;
   private static final int ATLAS_BITS = Integer.numberOfTrailingZeros(RegionAtlasTexture.SIZE / RegionData.SIZE);
 
-  private final Set<RegionKey> getting = new HashSet<>(); // todo remove this map; when update chunk should render entire atlas
   private final Set<RegionKey> gettingAtlas = new HashSet<>();
 
-  private final Map<RegionKey, RegionAtlasTexture> textureCache = new ConcurrentHashMap<>(); // region -> texture ~60ms EDIT: now 4ms
-  private final Map<RegionKey, RegionData> cache = new ConcurrentHashMap<>(); // chunk -> data ~1ms EDIT: now 200us
+  private final Map<RegionKey, RegionAtlasTexture> textureCache = new ConcurrentHashMap<>();
+  // todo fix memory leak here if someone just goes to every region, maybe just clear it when >100 regions?
+  private final Map<RegionKey, RegionData> cache = new ConcurrentHashMap<>();
 
-  private final Set<RegionKey> dirtyRenderAltases = Collections.newSetFromMap(new ConcurrentHashMap<>());
+  private final Set<RegionKey> dirtyRenderAtlases = Collections.newSetFromMap(new ConcurrentHashMap<>());
   private final Set<RegionKey> dirtySaveRegions = Collections.newSetFromMap(new ConcurrentHashMap<>());
 
-  private final ExecutorService executor = Executors.newSingleThreadExecutor();
+  private final ExecutorService executor = Executors.newFixedThreadPool(Math.min(16, Runtime.getRuntime().availableProcessors()));
 
   private final MapFile mapFile;
 
@@ -40,19 +42,29 @@ public class MapCache {
 
     // TODO post process neighbouring north and west chunks (if loaded) to finish height shading
     RegionKey atlas = new RegionKey(regionX >> ATLAS_BITS, regionZ >> ATLAS_BITS);
-    this.textureCache.computeIfAbsent(atlas, k -> {
+    RegionAtlasTexture tex = this.textureCache.computeIfAbsent(atlas, k -> {
       RegionAtlasTexture texture1 = new RegionAtlasTexture();
       texture1.init();
       return texture1;
     });
 
-
-    getting.add(region);
-    // Pretty sketchy in terms of race conditions but it works
+    boolean addedAtlas = gettingAtlas.add(atlas);
     executor.submit(() -> {
+      if (addedAtlas) {
+        for (int x = 0; x < ATLAS_LENGTH; x++) {
+          for (int z = 0; z < ATLAS_LENGTH; z++) {
+            if ((x != (regionX & 1 << ATLAS_BITS) || z != (regionZ & 1 << ATLAS_BITS))) {
+              RegionData rgd = mapFile.getRegion(new RegionKey(atlas.x() << ATLAS_BITS | x, atlas.z() << ATLAS_BITS | z));
+              if (rgd != null) {
+                rgd.render(tex, x, z);
+              }
+            }
+          }
+        }
+      }
       RegionData data = getData(region);
       if (data.updateChunk(chunk)) {
-        dirtyRenderAltases.add(atlas);
+        dirtyRenderAtlases.add(atlas);
         dirtySaveRegions.add(region);
       }
     });
@@ -66,7 +78,7 @@ public class MapCache {
       return Objects.requireNonNullElseGet(region1, RegionData::new);
     });
     if (created[0]) {
-      dirtyRenderAltases.add(new RegionKey(key.x() >> ATLAS_BITS, key.z() >> ATLAS_BITS));
+      dirtyRenderAtlases.add(new RegionKey(key.x() >> ATLAS_BITS, key.z() >> ATLAS_BITS));
     }
     return data;
   }
@@ -78,7 +90,7 @@ public class MapCache {
         for (int x = 0; x < ATLAS_LENGTH; x++) {
           for (int z = 0; z < ATLAS_LENGTH; z++) {
             RegionKey region = new RegionKey(atlas.x() << ATLAS_BITS | x, atlas.z() << ATLAS_BITS | z);
-            if (availableRegions.contains(region) && getting.add(region)) {
+            if (availableRegions.contains(region)) {
               int fx = x;
               int fz = z;
               RegionAtlasTexture newTexture = this.textureCache.computeIfAbsent(atlas, k -> {
@@ -97,13 +109,12 @@ public class MapCache {
         }
       }
       return null;
-    } else if (dirtyRenderAltases.remove(atlas)) {
+    } else if (dirtyRenderAtlases.remove(atlas)) {
       executor.submit(() -> {
         for (int x = 0; x < ATLAS_LENGTH; x++) {
           for (int z = 0; z < ATLAS_LENGTH; z++) {
             RegionData data = cache.get(new RegionKey(atlas.x() << ATLAS_BITS | x, atlas.z() << ATLAS_BITS | z));
             if (data != null) {
-              //System.out.println("dirty " + key);
               data.render(texture, x, z);
             }
           }
@@ -117,19 +128,27 @@ public class MapCache {
 
   public void save() {
     // todo save not just on gui close but on world unload or 60 second interval
-    executor.submit(() -> {
-      Map<RegionKey, RegionData> updated = new HashMap<>();
+    SAVE.submit(() -> {
       for (Iterator<RegionKey> iterator = dirtySaveRegions.iterator(); iterator.hasNext(); ) {
         RegionKey dirtySave = iterator.next();
         RegionData cached = this.cache.get(dirtySave);
         if (cached != null) {
-          updated.put(dirtySave, cached);
+          this.mapFile.save(dirtySave, cached);
           iterator.remove();
         }
       }
-      if (!updated.isEmpty()) {
-        this.mapFile.save(updated);
-      }
     });
+    executor.shutdownNow();
+    try {
+      executor.awaitTermination(1000, TimeUnit.DAYS);
+    } catch (InterruptedException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  public void free() {
+    for (RegionAtlasTexture atlas : this.textureCache.values()) {
+      atlas.delete();
+    }
   }
 }

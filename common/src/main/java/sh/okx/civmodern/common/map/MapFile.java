@@ -1,9 +1,7 @@
 package sh.okx.civmodern.common.map;
 
 import java.io.*;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
@@ -19,24 +17,24 @@ public class MapFile {
     return folder;
   }
 
-  public void save(Map<RegionKey, RegionData> dataMap) {
-    this.folder.mkdir();
-
-    for (Map.Entry<RegionKey, RegionData> entry : dataMap.entrySet()) {
-      File file = this.folder.toPath().resolve(entry.getKey().x() + "," + entry.getKey().z()).toFile();
-      try (DataOutputStream out = new DataOutputStream(new GZIPOutputStream(new FileOutputStream(file)))) {
-        for (int d : entry.getValue().getData()) {
-          out.writeInt(d);
-        }
-      } catch (IOException ex) {
-        ex.printStackTrace();
+  public void save(RegionKey key, RegionData data) {
+    File file = this.folder.toPath().resolve(key.x() + "," + key.z()).toFile();
+    try (DataOutputStream out = new DataOutputStream(new GZIPOutputStream(new FileOutputStream(file)))) {
+      for (int d : data.getData()) {
+        out.writeInt(d);
       }
+    } catch (IOException ex) {
+      ex.printStackTrace();
     }
   }
 
   public Set<RegionKey> listRegions() {
+    String[] list = this.folder.list();
+    if (list == null) {
+      return Collections.emptySet();
+    }
     Set<RegionKey> regions = new HashSet<>();
-    for (String file : this.folder.list()) {
+    for (String file : list) {
       String[] parts = file.split(",");
       if (parts.length == 2) {
         regions.add(new RegionKey(Integer.parseInt(parts[0]), Integer.parseInt(parts[1])));

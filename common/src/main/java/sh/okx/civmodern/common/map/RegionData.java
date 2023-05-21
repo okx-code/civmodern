@@ -10,6 +10,7 @@ import net.minecraft.core.Registry;
 import net.minecraft.util.Mth;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.level.levelgen.Heightmap;
@@ -19,6 +20,10 @@ import sh.okx.civmodern.common.AbstractCivModernMod;
 
 import java.awt.image.BufferedImage;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class RegionData {
 
@@ -123,12 +128,15 @@ public class RegionData {
         return data;
     }
 
+    private static final Set<Integer> bs = Collections.newSetFromMap(new ConcurrentHashMap<>());
     public void render(RegionAtlasTexture texture, int rx, int rz) {
         long f = System.nanoTime();
         short[] colours = new short[512 * 512];
 
         Int2IntMap blockCache = new Int2IntOpenHashMap();
+        // todo fix
         Registry<Biome> registry = Minecraft.getInstance().player.getLevel().registryAccess().registry(Registry.BIOME_REGISTRY).get();
+        int air = Registry.BLOCK.getId(Blocks.AIR);
         for (int x = 0; x < 512; x++) {
             for (int z = 0; z < 512; z++) {
                 int packedData = data[z + x * 512];
@@ -139,24 +147,34 @@ public class RegionData {
                 int color;
                 int blockBiomeId = blockId << 8 | biomeId;
                 if (!blockCache.containsKey(blockBiomeId)) {
-                    Holder.Reference<Block> blockHolder = (Holder.Reference<Block>) Registry.BLOCK.getHolder(blockId).get();
-                    String key = blockHolder.key().location().toString();
-                    color = ColoursConfig.BLOCK_COLOURS.getOrDefault(key, blockHolder.value().defaultMaterialColor().col);
+                    Optional<Holder<Block>> holder = Registry.BLOCK.getHolder(blockId);
+                    if (holder.isEmpty()) {
+                        color = 0;
+                    } else {
+                        if (blockId == Registry.BLOCK.getId(Blocks.WATER)) {
+                            System.out.println("vasser");
+                        }
+                        Holder.Reference<Block> blockHolder = (Holder.Reference<Block>) holder.get();
+                        String key = blockHolder.key().location().toString();
+                        color = ColoursConfig.BLOCK_COLOURS.getOrDefault(key, blockHolder.value().defaultMaterialColor().col);
 
-                    if (ColoursConfig.BLOCKS_GRASS.contains(key)) {
-                        Biome biome = registry.byId(biomeId);
-                        color = mix(biome.getGrassColor(0, 0), color);
-                    } else if (ColoursConfig.BLOCKS_FOLIAGE.contains(key)) {
-                        Biome biome = registry.byId(biomeId);
-                        color = mix(biome.getFoliageColor(), color);
+                        if (ColoursConfig.BLOCKS_GRASS.contains(key)) {
+                            Biome biome = registry.byId(biomeId);
+                            color = mix(biome.getGrassColor(0, 0), color);
+                        } else if (ColoursConfig.BLOCKS_FOLIAGE.contains(key)) {
+                            Biome biome = registry.byId(biomeId);
+                            color = mix(biome.getFoliageColor(), color);
+                        }
+                        blockCache.put(blockBiomeId, color);
                     }
-
-                    blockCache.put(blockBiomeId, color);
                 } else {
                     color = blockCache.get(blockBiomeId);
                 }
 
                 if (waterDepth > 0) {
+                    if (bs.add(blockId)) {
+                        System.out.println("bs " + blockId + " " + Registry.BLOCK.byId(blockId));
+                    }
                     Biome biome = registry.byId(biomeId);
                     int fluidColor = fancyFluids(biome, waterDepth * 0.025F);
                     color = blend(fluidColor, color | 0xFF000000) & 0xFFFFFF;

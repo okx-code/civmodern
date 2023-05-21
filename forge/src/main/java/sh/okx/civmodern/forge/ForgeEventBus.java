@@ -8,7 +8,6 @@ import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.function.Consumer;
 
 import net.minecraft.client.multiplayer.ClientLevel;
-import net.minecraft.client.renderer.debug.WorldGenAttemptRenderer;
 import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraftforge.client.event.RenderGameOverlayEvent;
 import net.minecraftforge.client.event.RenderGameOverlayEvent.ElementType;
@@ -17,6 +16,7 @@ import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.TickEvent.Phase;
 import net.minecraftforge.event.world.ChunkEvent;
+import net.minecraftforge.event.world.WorldEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import sh.okx.civmodern.common.events.*;
 
@@ -30,8 +30,21 @@ public class ForgeEventBus implements EventBus {
     map.put(WorldRenderEvent.class, new CopyOnWriteArraySet<>());
     map.put(ScrollEvent.class, new CopyOnWriteArraySet<>());
     map.put(ChunkLoadEvent.class, new CopyOnWriteArraySet<>());
+    map.put(JoinEvent.class, new CopyOnWriteArraySet<>());
+    map.put(LeaveEvent.class, new CopyOnWriteArraySet<>());
+    map.put(RespawnEvent.class, new CopyOnWriteArraySet<>());
 
     MinecraftForge.EVENT_BUS.register(this);
+  }
+
+  @SubscribeEvent
+  public void onWorldLoad(WorldEvent.Load event) {
+    push(new JoinEvent());
+  }
+
+  @SubscribeEvent
+  public void onWorldUnload(WorldEvent.Unload event) {
+    push(new LeaveEvent());
   }
 
   @SubscribeEvent

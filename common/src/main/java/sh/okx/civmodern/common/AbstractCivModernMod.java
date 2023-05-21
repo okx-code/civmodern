@@ -18,18 +18,12 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.lwjgl.glfw.GLFW;
 import sh.okx.civmodern.common.boat.BoatNavigation;
-import sh.okx.civmodern.common.events.ChunkLoadEvent;
-import sh.okx.civmodern.common.events.ClientTickEvent;
-import sh.okx.civmodern.common.events.EventBus;
-import sh.okx.civmodern.common.events.ScrollEvent;
+import sh.okx.civmodern.common.events.*;
 import sh.okx.civmodern.common.gui.screen.MainConfigScreen;
 import sh.okx.civmodern.common.macro.AttackMacro;
 import sh.okx.civmodern.common.macro.HoldKeyMacro;
 import sh.okx.civmodern.common.macro.IceRoadMacro;
-import sh.okx.civmodern.common.map.MapCache;
-import sh.okx.civmodern.common.map.MapFile;
-import sh.okx.civmodern.common.map.MapScreen;
-import sh.okx.civmodern.common.map.VoxelMapConverter;
+import sh.okx.civmodern.common.map.*;
 import sh.okx.civmodern.common.radar.Radar;
 
 public abstract class AbstractCivModernMod {
@@ -54,8 +48,7 @@ public abstract class AbstractCivModernMod {
     private IceRoadMacro iceRoadMacro;
     private AttackMacro attackMacro;
 
-    private MapFile mapFile;
-    private MapCache mapCache;
+    private WorldListener worlds;
     private BoatNavigation boatNavigation;
 
     private EventBus eventBus;
@@ -98,6 +91,8 @@ public abstract class AbstractCivModernMod {
             "category.civmodern"
         );
 
+        this.worlds = new WorldListener();
+
         if (INSTANCE == null) {
             INSTANCE = this;
         } else {
@@ -106,14 +101,6 @@ public abstract class AbstractCivModernMod {
     }
 
     public final void init() {
-        Path config = Minecraft.getInstance().gameDirectory.toPath()
-            .resolve("config");
-        this.mapFile = new MapFile(
-            config.resolve("civmodern_mapdata").toFile());
-        this.mapCache = new MapCache(this.mapFile);
-
-        new VoxelMapConverter(mapFile).convert(); // todo remove
-
         this.eventBus = provideEventBus();
 
         registerKeyBinding(this.configBinding);
@@ -132,7 +119,11 @@ public abstract class AbstractCivModernMod {
         this.eventBus.listen(ClientTickEvent.class, e -> this.tick());
         this.eventBus.listen(ScrollEvent.class, e -> this.onScroll());
 
-        this.eventBus.listen(ChunkLoadEvent.class, e -> this.mapCache.updateChunk(e.chunk()));
+        // todo check if forge and fabric versions of these are the same
+        this.eventBus.listen(JoinEvent.class, e -> this.worlds.onLoad());
+        this.eventBus.listen(LeaveEvent.class, e -> this.worlds.onUnload());
+        this.eventBus.listen(RespawnEvent.class, e -> this.worlds.onRespawn());
+        this.eventBus.listen(ChunkLoadEvent.class, e -> this.worlds.onChunkLoad(e.chunk()));
 
         Options options = Minecraft.getInstance().options;
         this.leftMacro = new HoldKeyMacro(this, this.holdLeftBinding, options.keyAttack);
@@ -157,7 +148,9 @@ public abstract class AbstractCivModernMod {
             Minecraft.getInstance().setScreen(new MainConfigScreen(this, config));
         }
         while (mapBinding.consumeClick()) {
-            Minecraft.getInstance().setScreen(new MapScreen(this, mapCache, boatNavigation));
+            if (worlds.getCache() != null) {
+                Minecraft.getInstance().setScreen(new MapScreen(this, worlds.getCache(), boatNavigation));
+            }
         }
     }
 
