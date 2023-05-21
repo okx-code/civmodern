@@ -93,6 +93,7 @@ public class MapScreen extends Screen {
       // 2048 = 1100us
       // 1024 = 4800us
       // 5126 = ~16000us - a whole frame at 60 FPS
+      // todo remove
       System.out.println("render " + (ns/rc) + "us");
       rc = 0;
       ns = 0;
@@ -105,13 +106,6 @@ public class MapScreen extends Screen {
       RenderSystem.setShader(GameRenderer::getPositionColorShader);
 
       LocalPlayer player = Minecraft.getInstance().player;
-//    double playerX = player.getX() / scale;
-//    double playerZ = player.getZ() / scale;
-//    double screenPlayerX = (playerX - (x / scale));
-//    double screenPlayerZ = (playerZ - (y / scale));
-//    double dx = mouseX - screenPlayerX;
-//    double dy = mouseY - screenPlayerZ;
-//    float dist = (float) Mth.length(dx, dy) + 0.5f;
 
       Tesselator tesselator = Tesselator.getInstance();
       BufferBuilder buffer = tesselator.getBuilder();
@@ -180,7 +174,7 @@ public class MapScreen extends Screen {
 
     if (scrollDir < 0) {
       // zoom out
-      if (zoom < 128) {
+      if (zoom < 32) {
         Window window = Minecraft.getInstance().getWindow();
         float scale = (float) window.getGuiScale() * zoom;
 
