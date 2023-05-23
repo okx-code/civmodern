@@ -4,11 +4,13 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import it.unimi.dsi.fastutil.ints.Int2IntMap;
 import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.color.block.BlockColors;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.core.Registry;
 import net.minecraft.util.Mth;
 import net.minecraft.world.level.biome.Biome;
+import net.minecraft.world.level.biome.Biomes;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
@@ -34,7 +36,6 @@ public class RegionData {
     // 2 bits - west Y, 01 if equal, 11 if above, 00 if below, 10 if unknown (border)
     // 2 bits - north Y, 01 if equal, 11 if above, 00 if below, 10 if unknown (border)
     // 8 bits - biome
-    // TODO optimize for cache lines?
     private final int[] data = new int[512 * 512];
 
     public boolean updateChunk(LevelChunk chunk) {
@@ -72,7 +73,7 @@ public class RegionData {
                     if (ColoursConfig.BLOCK_COLOURS.getOrDefault(Registry.BLOCK.getKey(block).toString(), block.defaultMaterialColor().col) > 0) {
                         break;
                     }
-                } while(pos.getY() > chunk.getMinBuildHeight());
+                } while (pos.getY() > chunk.getMinBuildHeight());
 
                 int blockId = Registry.BLOCK.getId(block);
                 if (blockId > 0xFFFF) {
@@ -128,17 +129,23 @@ public class RegionData {
         return data;
     }
 
-    private static final Set<Integer> bs = Collections.newSetFromMap(new ConcurrentHashMap<>());
+    public void renderChunk(RegionAtlasTexture texture, int rx, int rz, int chunkX, int chunkZ) {
+        render(texture, rx, rz, chunkX * 16, chunkX * 16 + 16, chunkZ * 16, chunkZ * 16 + 16);
+    }
+
     public void render(RegionAtlasTexture texture, int rx, int rz) {
+        render(texture, rx, rz, 0, 512, 0, 512);
+    }
+
+    private void render(RegionAtlasTexture texture, int rx, int rz, int minX, int maxX, int minZ, int maxZ) {
         long f = System.nanoTime();
-        short[] colours = new short[512 * 512];
+        short[] colours = new short[(maxX - minX) * (maxZ - minZ)];
 
         Int2IntMap blockCache = new Int2IntOpenHashMap();
         // todo fix
         Registry<Biome> registry = Minecraft.getInstance().player.getLevel().registryAccess().registry(Registry.BIOME_REGISTRY).get();
-        int air = Registry.BLOCK.getId(Blocks.AIR);
-        for (int x = 0; x < 512; x++) {
-            for (int z = 0; z < 512; z++) {
+        for (int x = minX; x < maxX; x++) {
+            for (int z = minZ; z < maxZ; z++) {
                 int packedData = data[z + x * 512];
                 int blockId = (packedData >>> 16) & 0xFFFF;
                 int waterDepth = (packedData >>> 12) & 0xF;
@@ -146,14 +153,12 @@ public class RegionData {
 
                 int color;
                 int blockBiomeId = blockId << 8 | biomeId;
-                if (!blockCache.containsKey(blockBiomeId)) {
+                int cachedColor = blockCache.getOrDefault(blockBiomeId, -1);
+                if (cachedColor == -1) {
                     Optional<Holder<Block>> holder = Registry.BLOCK.getHolder(blockId);
                     if (holder.isEmpty()) {
                         color = 0;
                     } else {
-                        if (blockId == Registry.BLOCK.getId(Blocks.WATER)) {
-                            System.out.println("vasser");
-                        }
                         Holder.Reference<Block> blockHolder = (Holder.Reference<Block>) holder.get();
                         String key = blockHolder.key().location().toString();
                         color = ColoursConfig.BLOCK_COLOURS.getOrDefault(key, blockHolder.value().defaultMaterialColor().col);
@@ -172,9 +177,6 @@ public class RegionData {
                 }
 
                 if (waterDepth > 0) {
-                    if (bs.add(blockId)) {
-                        System.out.println("bs " + blockId + " " + Registry.BLOCK.byId(blockId));
-                    }
                     Biome biome = registry.byId(biomeId);
                     int fluidColor = fancyFluids(biome, waterDepth * 0.025F);
                     color = blend(fluidColor, color | 0xFF000000) & 0xFFFFFF;
@@ -201,7 +203,7 @@ public class RegionData {
                 rgb565 |= (green / 4) << 5;
                 rgb565 |= (blue / 8);
 
-                colours[x + z * 512] = rgb565;
+                colours[(x-minX) + (z-minZ) * (maxZ - minZ)] = rgb565;
             }
         }
 
@@ -209,9 +211,9 @@ public class RegionData {
         System.out.println("data - " + (l - f) / 1000 + "us");
 
         if (RenderSystem.isOnRenderThread()) {
-            texture.update(colours, rx, rz);
+            texture.update(colours, rx, rz, minX, maxX, minZ, maxZ);
         } else {
-            RenderSystem.recordRenderCall(() -> texture.update(colours, rx, rz));
+            RenderSystem.recordRenderCall(() -> texture.update(colours, rx, rz, minX, maxX, minZ, maxZ));
         }
     }
 
@@ -294,6 +296,13 @@ public class RegionData {
         int g = green(color0) + green(color1);
         int b = blue(color0) + blue(color1);
         return rgb(r >> 1, g >> 1, b >> 2);
+    }
+
+    public static int mix2(int color0, int color1) {
+        int r = red(color0) + red(color1);
+        int g = green(color0) + green(color1);
+        int b = blue(color0) + blue(color1);
+        return rgb(r >> 1, g >> 1, b >> 1);
     }
 
     private static int[] getColorsFromImage(@NonNull BufferedImage image) {

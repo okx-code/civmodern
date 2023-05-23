@@ -1,7 +1,10 @@
 package sh.okx.civmodern.common.map;
 
 import java.io.*;
-import java.util.*;
+import java.nio.ByteBuffer;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
@@ -19,10 +22,10 @@ public class MapFile {
 
   public void save(RegionKey key, RegionData data) {
     File file = this.folder.toPath().resolve(key.x() + "," + key.z()).toFile();
-    try (DataOutputStream out = new DataOutputStream(new GZIPOutputStream(new FileOutputStream(file)))) {
-      for (int d : data.getData()) {
-        out.writeInt(d);
-      }
+    ByteBuffer buf = ByteBuffer.allocate(512 * 512 * 4);
+    try (GZIPOutputStream out = new GZIPOutputStream(new FileOutputStream(file))) {
+      buf.asIntBuffer().put(data.getData());
+      out.write(buf.array());
     } catch (IOException ex) {
       ex.printStackTrace();
     }
@@ -48,8 +51,7 @@ public class MapFile {
     if (!file.exists()) {
       return null;
     }
-    long k = System.nanoTime();
-    try (InputStream in = new GZIPInputStream(new FileInputStream(file))) {
+    try (InputStream in = new GZIPInputStream(new FileInputStream(file), 4096)) {
       RegionData region = new RegionData();
       byte[] buf = new byte[512 * 512 * 4];
       int totalRead = 0;
@@ -60,13 +62,7 @@ public class MapFile {
         }
         totalRead += read;
       }
-      DataInputStream dataIn = new DataInputStream(new ByteArrayInputStream(buf));
-      int[] data = region.getData();
-      for (int i = 0; i < data.length; i++) {
-        data[i] = dataIn.readInt();
-      }
-      long s=  System.nanoTime();
-      System.out.println("load " + key + " " + (s-k)/1000 + "us");
+      ByteBuffer.wrap(buf).asIntBuffer().get(region.getData());
       return region;
     } catch (FileNotFoundException ignored) {
       return null;

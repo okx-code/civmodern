@@ -7,6 +7,7 @@ import com.mojang.math.Matrix4f;
 import net.minecraft.client.renderer.GameRenderer;
 
 import static org.lwjgl.opengl.GL33.*;
+import static org.lwjgl.opengl.GL41.GL_RGB565;
 
 public class RegionAtlasTexture {
     public static final int SIZE = 4096;
@@ -20,6 +21,8 @@ public class RegionAtlasTexture {
         RenderSystem.bindTextureForSetup(this.indexTexture);
         RenderSystem.texParameter(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST);
         RenderSystem.texParameter(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        RenderSystem.texParameter(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        RenderSystem.texParameter(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
         clear();
     }
 
@@ -31,11 +34,11 @@ public class RegionAtlasTexture {
         RenderSystem.pixelStore(0xcf3, 0);
         RenderSystem.pixelStore(0xcf4, 0);
         RenderSystem.pixelStore(0xcf5, 4);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, SIZE, SIZE, 0, GL_RGB, GL_UNSIGNED_SHORT_5_6_5, BLACK);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB565, SIZE, SIZE, 0, GL_RGB, GL_UNSIGNED_SHORT_5_6_5, BLACK);
         glGenerateMipmap(GL_TEXTURE_2D);
     }
 
-    public void update(short[] colours, int x, int z) {
+    public void update(short[] colours, int x, int z, int minX, int maxX, int minZ, int maxZ) {
         RenderSystem.bindTexture(this.indexTexture);
         RenderSystem.pixelStore(0xcf0, 0);
         RenderSystem.pixelStore(0xcf1, 0);
@@ -43,13 +46,24 @@ public class RegionAtlasTexture {
         RenderSystem.pixelStore(0xcf3, 0);
         RenderSystem.pixelStore(0xcf4, 0);
         RenderSystem.pixelStore(0xcf5, 4);
-        glTexSubImage2D(GL_TEXTURE_2D, 0, x * 512, z * 512, 512, 512, GL_RGB, GL_UNSIGNED_SHORT_5_6_5, colours);
+        glTexSubImage2D(GL_TEXTURE_2D, 0, x * 512 + minX, z * 512 + minZ, maxX - minX, maxZ - minZ, GL_RGB, GL_UNSIGNED_SHORT_5_6_5, colours);
         glGenerateMipmap(GL_TEXTURE_2D);
     }
 
     public void draw(PoseStack poseStack, float x, float y, float scale) {
-        RenderSystem.setShaderTexture(0, this.indexTexture);
         RenderSystem.bindTexture(this.indexTexture);
+        RenderSystem.texParameter(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST);
+        draw(poseStack, x, y, scale, 0, 0, SIZE, SIZE, SIZE, SIZE);
+    }
+
+    public void drawLinear(PoseStack poseStack, float x, float y, float scale, float xOff, float yOff, float xSize, float ySize, float width, float height) {
+        RenderSystem.bindTexture(this.indexTexture);
+        RenderSystem.texParameter(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_NEAREST);
+        draw(poseStack, x, y, scale, xOff, yOff, xSize, ySize, width, height);
+    }
+
+    private void draw(PoseStack poseStack, float x, float y, float scale, float xOff, float yOff, float xSize, float ySize, float width, float height) {
+        RenderSystem.setShaderTexture(0, this.indexTexture);
         RenderSystem.pixelStore(0xcf0, 0);
         RenderSystem.pixelStore(0xcf1, 0);
         RenderSystem.pixelStore(0xcf2, 0);
@@ -57,7 +71,7 @@ public class RegionAtlasTexture {
         RenderSystem.pixelStore(0xcf4, 0);
         RenderSystem.pixelStore(0xcf5, 4);
 
-        blit(poseStack, x / scale, y / scale, 0, 0, 0, SIZE / scale, SIZE / scale, SIZE / scale, SIZE / scale);
+        blit(poseStack, x / scale, y / scale, 0, xOff / scale, yOff / scale, width / scale, height / scale, xSize / scale, ySize / scale);
     }
 
     public void delete() {
@@ -72,7 +86,6 @@ public class RegionAtlasTexture {
         innerBlit(poseStack.last().pose(), i, j, k, l, m, (f + 0.0f) / p, (f + n) / p, (g + 0.0f) / q, (g + o) / q);
     }
     private static void innerBlit(Matrix4f matrix4f, float i, float j, float k, float l, int m, float f, float g, float h, float n) {
-//        RenderSystem.setShader(ShaderManager::getMapShader);
         RenderSystem.setShader(GameRenderer::getPositionTexShader);
         BufferBuilder bufferBuilder = Tesselator.getInstance().getBuilder();
         bufferBuilder.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX);

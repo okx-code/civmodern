@@ -32,6 +32,7 @@ import net.minecraft.network.chat.TextComponent;
 import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvent;
+import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
@@ -252,6 +253,7 @@ public class Radar {
   }
 
   private void renderEntity(PoseStack matrices, Player player, Entity entity, float delta, ItemStack item, float blit) {
+    // tood instancing
     double scale = config.getRadarSize() / config.getRange();
 
     double px = player.xOld + (player.getX() - player.xOld) * delta;
@@ -367,12 +369,12 @@ public class Radar {
     float thickness = radius == radius() ? 1f : 0.5f;
 
     Matrix4f pose = stack.last().pose();
-    for (int i = 0; i <= 360; i++) {
-      float x0 = (float) Math.sin(i * Math.PI / 180.0D) * radius;
-      float y0 = (float) Math.cos(i * Math.PI / 180.0D) * radius;
+    for (int i = 0; i <= 360; i += 2) {
+      float x0 = Mth.sin(i * Mth.PI / 180.0f) * radius;
+      float y0 = Mth.cos(i * Mth.PI / 180.0f) * radius;
 
-      float x1 = (float) Math.sin(i * Math.PI / 180.0D) * (radius + thickness);
-      float y1 = (float) Math.cos(i * Math.PI / 180.0D) * (radius + thickness);
+      float x1 = Mth.sin(i * Mth.PI / 180.0f) * (radius + thickness);
+      float y1 = Mth.cos(i * Mth.PI / 180.0f) * (radius + thickness);
       buffer.vertex(pose, x0, y0, 0).color(fgColour).endVertex();
       buffer.vertex(pose, x1, y1, 0).color(fgColour).endVertex();
     }

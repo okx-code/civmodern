@@ -2,10 +2,12 @@ package sh.okx.civmodern.common.map;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.util.Mth;
+import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.chunk.LevelChunk;
 
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class MapCache {
   private static final ExecutorService SAVE = Executors.newSingleThreadExecutor();
@@ -21,7 +23,6 @@ public class MapCache {
   // not technically a leak but it only gets cleared on world unload so it can get big
   private final Map<RegionKey, RegionData> cache = new ConcurrentHashMap<>();
 
-  private final Set<RegionKey> dirtyRenderAtlases = Collections.newSetFromMap(new ConcurrentHashMap<>());
   private final Set<RegionKey> dirtySaveRegions = Collections.newSetFromMap(new ConcurrentHashMap<>());
 
   private final Queue<RegionKey> queue = new PriorityBlockingQueue<>(11, (r1, r2) -> {
@@ -31,7 +32,9 @@ public class MapCache {
         Mth.lengthSquared(r1.x() * 512 + 256 - px, r1.z() * 512 + 256 - pz),
         Mth.lengthSquared(r2.x() * 512 + 256 - px, r2.z() * 512 + 256 - pz));
   });
-  private final ExecutorService executor = Executors.newFixedThreadPool(Math.min(16, Runtime.getRuntime().availableProcessors()));
+  private final ScheduledExecutorService executor = Executors.newScheduledThreadPool(Math.min(16, Runtime.getRuntime().availableProcessors()) - 1);
+
+  private final Map<ChunkPos, ScheduledFuture<?>> debounced = new ConcurrentHashMap<>();
 
   private final MapFile mapFile;
 
@@ -43,8 +46,9 @@ public class MapCache {
   }
 
   public void updateChunk(LevelChunk chunk) {
-    int regionX = chunk.getPos().getRegionX();
-    int regionZ = chunk.getPos().getRegionZ();
+    ChunkPos pos = chunk.getPos();
+    int regionX = pos.getRegionX();
+    int regionZ = pos.getRegionZ();
     RegionKey region = new RegionKey(regionX, regionZ);
 
 
@@ -56,6 +60,7 @@ public class MapCache {
       return texture1;
     });
 
+
     boolean addedAtlas = gettingAtlas.add(atlas);
     executor.submit(() -> {
       boolean[] created = new boolean[] {false};
@@ -65,12 +70,33 @@ public class MapCache {
         return Objects.requireNonNullElseGet(region1, RegionData::new);
       });
       boolean updated = data.updateChunk(chunk);
+      if (created[0]) {
+        cacheEvict(cache);
+        data.render(tex, region.x() & ATLAS_LENGTH - 1, region.z() & ATLAS_LENGTH - 1);
+      }
       if (updated) {
         dirtySaveRegions.add(region);
-      }
-      if (updated || created[0]) {
-        // TODO debouncer? 500ms
-        data.render(tex, region.x() & ATLAS_LENGTH - 1, region.z() & ATLAS_LENGTH - 1);
+        if (!created[0]) {
+
+          int regionLocalX = pos.getRegionLocalX();
+          int regionLocalZ = pos.getRegionLocalZ();
+          // Delay chunk updates by 1 second, so we can capture all the changes during that time instead of just one.
+          debounced.compute(pos, (k, scheduledFuture) -> {
+            if (scheduledFuture == null || scheduledFuture.isDone()) {
+              AtomicReference<ScheduledFuture<?>> ref = new AtomicReference<>();
+              ref.set(executor.schedule(() -> {
+                data.renderChunk(tex, region.x() & ATLAS_LENGTH - 1, region.z() & ATLAS_LENGTH - 1, regionLocalX, regionLocalZ);
+                ScheduledFuture<?> scheduled = ref.get();
+                if (scheduled != null) {
+                  debounced.remove(pos, scheduled);
+                }
+              }, 100, TimeUnit.MILLISECONDS));
+              return ref.get();
+            } else {
+              return scheduledFuture;
+            }
+          });
+        }
       }
       if (addedAtlas) {
         for (int x = 0; x < ATLAS_LENGTH; x++) {
@@ -82,6 +108,19 @@ public class MapCache {
         }
       }
     });
+  }
+
+  private void cacheEvict(Map<RegionKey, RegionData> cache) {
+    Iterator<Map.Entry<RegionKey, RegionData>> iterator = cache.entrySet().iterator();
+    while (iterator.hasNext()) {
+      Map.Entry<RegionKey, RegionData> entry = iterator.next();
+      int px = Minecraft.getInstance().player.getBlockX();
+      int pz = Minecraft.getInstance().player.getBlockZ();
+      double dist = Mth.lengthSquared(entry.getKey().x() * 512 + 256 - px, entry.getKey().z() * 512 + 256 - pz);
+      if (dist > 96 * 16 * 96 * 16) {
+        iterator.remove();
+      }
+    }
   }
 
   public RegionAtlasTexture getTexture(RegionKey atlas) {

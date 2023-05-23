@@ -340,7 +340,7 @@ public class ColoursConfig {
     put("minecraft:granite_stairs", 0x956756);
     put("minecraft:granite_wall", 0x956756);
     put("minecraft:grass", 0x000000);
-    put("minecraft:grass_block", 0x7EA44D);
+    put("minecraft:grass_block", 0x949494);
     put("minecraft:gravel", 0x84807F);
     put("minecraft:gray_banner", 0x000000);
     put("minecraft:gray_bed", 0x3F4448);
@@ -952,5 +952,6 @@ public class ColoursConfig {
     add("minecraft:jungle_leaves");
     add("minecraft:mangrove_leaves");
     add("minecraft:oak_leaves");
+    add("minecraft:spruce_leaves");
   }};
 }

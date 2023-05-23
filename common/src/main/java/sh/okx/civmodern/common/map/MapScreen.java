@@ -34,7 +34,7 @@ public class MapScreen extends Screen {
 
   private double x;
   private double y;
-  private float zoom = 1; // blocks per pixel
+  private static float zoom = 1; // blocks per pixel
 
   private boolean boating = false;
 
@@ -51,13 +51,10 @@ public class MapScreen extends Screen {
 
   @Override
   protected void init() {
-    addRenderableWidget(new ImageButton(10, 10, 20, 20, new ResourceLocation("civmodern", "gui/boat.png"), imbg -> {
+    /*addRenderableWidget(new ImageButton(10, 10, 20, 20, new ResourceLocation("civmodern", "gui/boat.png"), imbg -> {
       this.boating = !boating;
-    }));
+    }));*/
   }
-
-  private int rc = 0;
-  private long ns = 0;
 
   @Override
   public void render(PoseStack matrices, int mouseX, int mouseY, float delta) {
@@ -67,37 +64,51 @@ public class MapScreen extends Screen {
     glClearColor(0, 0, 0, 1);
     glClear(GL_COLOR_BUFFER_BIT);
 
-    long s = System.nanoTime();
     for (int screenX = 0; screenX < (window.getWidth() * zoom) + SIZE; screenX += SIZE) {
       for (int screenY = 0; screenY < (window.getHeight() * zoom) + SIZE; screenY += SIZE) {
-        int realX = (int) this.x + screenX;
-        int realY = (int) this.y + screenY;
+        float realX = (float) this.x + screenX;
+        float realY = (float) this.y + screenY;
 
-        int renderX = realX - Math.floorMod(realX, SIZE);
-        int renderY = realY - Math.floorMod(realY, SIZE);
+        float renderX = realX - floatMod(realX, SIZE);
+        float renderY = realY - floatMod(realY, SIZE);
 
-        RegionKey key = new RegionKey(Math.floorDiv(renderX, SIZE), Math.floorDiv(renderY, SIZE));
+        RegionKey key = new RegionKey(Math.floorDiv((int) renderX, SIZE), Math.floorDiv((int) renderY, SIZE));
         // todo if loading at low zoom, only render downsampled version to save memory
         RegionAtlasTexture texture = mapCache.getTexture(key);
         if (texture != null) {
-          texture.draw(matrices, (float) ((renderX - this.x)), (float) ((renderY - this.y)), scale);
+          texture.draw(matrices, renderX - (float) this.x, renderY - (float) this.y, scale);
         }
       }
     }
-    long l = System.nanoTime();
-    ns += (l - s) / 1000;
-    rc++;
-    if (rc == 600) {
-      // 8192 = 60us
-      // 4096 = 300us
-      // 2048 = 1100us
-      // 1024 = 4800us
-      // 5126 = ~16000us - a whole frame at 60 FPS
-      // todo remove
-      System.out.println("render " + (ns/rc) + "us");
-      rc = 0;
-      ns = 0;
-    }
+
+    LocalPlayer player = Minecraft.getInstance().player;
+    float prx = (float) (player.getX() - this.x) / scale;
+    float pry = (float) (player.getZ() - this.y) / scale;
+    matrices.pushPose();
+    RenderSystem.enableBlend();
+    RenderSystem.defaultBlendFunc();
+    glEnable(GL_POLYGON_SMOOTH);
+    RenderSystem.setShader(GameRenderer::getPositionColorShader);
+    BufferBuilder bufferBuilder = Tesselator.getInstance().getBuilder();
+    bufferBuilder.begin(VertexFormat.Mode.TRIANGLE_STRIP, DefaultVertexFormat.POSITION_COLOR);
+    matrices.translate(prx, pry, 0);
+    matrices.scale(4, 4, 0);
+    matrices.mulPose(Vector3f.ZP.rotationDegrees(player.getViewYRot(delta) % 360f));
+    int chevron = 0xFF000000 | mod.getColourProvider().getChevronColour();
+    Matrix4f pose = matrices.last().pose();
+    bufferBuilder.vertex(pose, -1, -1.5f, 0).color(chevron).endVertex();
+    bufferBuilder.vertex(pose, -1, -1f, 0).color(chevron).endVertex();
+    bufferBuilder.vertex(pose, 0, -0.5f, 0).color(chevron).endVertex();
+    bufferBuilder.vertex(pose, 0, 0f, 0).color(chevron).endVertex();
+    bufferBuilder.vertex(pose, 0, -0.5f, 0).color(chevron).endVertex();
+    bufferBuilder.vertex(pose, 1, -1f, 0).color(chevron).endVertex();
+    bufferBuilder.vertex(pose, 1, -1.5f, 0).color(chevron).endVertex();
+    bufferBuilder.end();
+    BufferUploader.end(bufferBuilder);
+    glDisable(GL_POLYGON_SMOOTH);
+    RenderSystem.disableBlend();
+    matrices.popPose();
+
 
     Queue<Vec2> dests = navigation.getDestinations();
     if (boating || !dests.isEmpty()) {
@@ -105,16 +116,25 @@ public class MapScreen extends Screen {
       glEnable(GL_POLYGON_SMOOTH);
       RenderSystem.setShader(GameRenderer::getPositionColorShader);
 
-      LocalPlayer player = Minecraft.getInstance().player;
-
       Tesselator tesselator = Tesselator.getInstance();
       BufferBuilder buffer = tesselator.getBuilder();
       buffer.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_COLOR);
 
       List<Vec2> points = new ArrayList<>();
-      points.add(new Vec2((float) player.getX(), (float) player.getZ()));
+      float px;
+      float pz;
+      if (player.getVehicle() != null) {
+        px = (float) Mth.lerp(delta, player.getVehicle().xOld, player.getVehicle().getX());
+        pz = (float) Mth.lerp(delta, player.getVehicle().zOld, player.getVehicle().getZ());
+      } else {
+        px = (float) player.getX();
+        pz = (float) player.getZ();
+      }
+      points.add(new Vec2(px, pz));
       points.addAll(dests);
-      points.add(new Vec2(mouseX * scale + (float) x, mouseY * scale + (float) y));
+      if (boating) {
+        points.add(new Vec2(mouseX * scale + (float) x, mouseY * scale + (float) y));
+      }
 
       for (int i = 0; i < points.size() - 1; i++) {
         Vec2 from = points.get(i);
@@ -227,5 +247,10 @@ public class MapScreen extends Screen {
     // 0 = left
     // 1 = right
     // 2 = middle
+  }
+
+  private float floatMod(float x, float y){
+    // x mod y behaving the same way as Math.floorMod but with floats
+    return (x - (float)Math.floor(x/y) * y);
   }
 }

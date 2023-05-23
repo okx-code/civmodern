@@ -2,6 +2,9 @@ package sh.okx.civmodern.common.map;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.world.level.chunk.LevelChunk;
+import sh.okx.civmodern.common.CivMapConfig;
+import sh.okx.civmodern.common.ColourProvider;
+import sh.okx.civmodern.common.events.PostRenderGameOverlayEvent;
 import sh.okx.civmodern.common.mixins.StorageSourceAccessor;
 
 import java.io.File;
@@ -9,9 +12,18 @@ import java.nio.file.Path;
 
 public class WorldListener {
 
+  private final CivMapConfig config;
+  private final ColourProvider provider;
+
   private MapCache cache;
   private MapFile file;
+  private Minimap minimap;
   private Thread converter;
+
+  public WorldListener(CivMapConfig config, ColourProvider colourProvider) {
+    this.config = config;
+    this.provider = colourProvider;
+  }
 
   public void onLoad() {
     System.out.println("respawn");
@@ -39,6 +51,7 @@ public class WorldListener {
         try {
           voxelMapConverter.convert();
           this.cache = new MapCache(this.file);
+          this.minimap = new Minimap(this.cache, this.config, this.provider);
         } catch (RuntimeException ex) {
           ex.printStackTrace();
         }
@@ -47,6 +60,7 @@ public class WorldListener {
     } else {
       converter = null;
       this.cache = new MapCache(this.file);
+      this.minimap = new Minimap(this.cache, this.config, this.provider);
     }
   }
 
@@ -66,6 +80,7 @@ public class WorldListener {
       this.cache.save();
       this.cache.free();
     }
+    this.minimap = null;
     this.file = null;
     this.cache = null;
   }
@@ -82,6 +97,18 @@ public class WorldListener {
   public void onChunkLoad(LevelChunk chunk) {
     if (this.cache != null) {
       this.cache.updateChunk(chunk);
+    }
+  }
+
+  public void onRender(PostRenderGameOverlayEvent event) {
+    if (this.minimap != null) {
+      this.minimap.onRender(event);
+    }
+  }
+
+  public void cycleMinimapZoom() {
+    if (this.minimap != null) {
+      this.minimap.cycleZoom();
     }
   }
 }

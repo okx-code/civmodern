@@ -33,6 +33,7 @@ public class ForgeEventBus implements EventBus {
     map.put(JoinEvent.class, new CopyOnWriteArraySet<>());
     map.put(LeaveEvent.class, new CopyOnWriteArraySet<>());
     map.put(RespawnEvent.class, new CopyOnWriteArraySet<>());
+    map.put(BlockStateChangeEvent.class, new CopyOnWriteArraySet<>());
 
     MinecraftForge.EVENT_BUS.register(this);
   }

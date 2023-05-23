@@ -38,6 +38,7 @@ public abstract class AbstractCivModernMod {
     private final KeyMapping attackBinding;
 
     private final KeyMapping mapBinding;
+    private final KeyMapping minimapZoomBinding;
 
     private CivMapConfig config;
     private ColourProvider colourProvider;
@@ -90,8 +91,13 @@ public abstract class AbstractCivModernMod {
             GLFW.GLFW_KEY_M,
             "category.civmodern"
         );
+        this.minimapZoomBinding = new KeyMapping(
+            "key.civmodern.minimapzoom",
+            Type.KEYSYM,
+            GLFW.GLFW_KEY_KP_DIVIDE,
+            "category.civmodern"
+        );
 
-        this.worlds = new WorldListener();
 
         if (INSTANCE == null) {
             INSTANCE = this;
@@ -109,12 +115,15 @@ public abstract class AbstractCivModernMod {
         registerKeyBinding(this.attackBinding);
         registerKeyBinding(this.iceRoadBinding);
         registerKeyBinding(this.mapBinding);
+        registerKeyBinding(this.minimapZoomBinding);
     }
 
     public final void enable() {
         loadConfig();
         loadRadar();
         replaceItemRenderer();
+
+        this.worlds = new WorldListener(config, colourProvider);
 
         this.eventBus.listen(ClientTickEvent.class, e -> this.tick());
         this.eventBus.listen(ScrollEvent.class, e -> this.onScroll());
@@ -124,6 +133,8 @@ public abstract class AbstractCivModernMod {
         this.eventBus.listen(LeaveEvent.class, e -> this.worlds.onUnload());
         this.eventBus.listen(RespawnEvent.class, e -> this.worlds.onRespawn());
         this.eventBus.listen(ChunkLoadEvent.class, e -> this.worlds.onChunkLoad(e.chunk()));
+        this.eventBus.listen(BlockStateChangeEvent.class, e -> this.worlds.onChunkLoad(e.level().getChunkAt(e.pos())));
+        this.eventBus.listen(PostRenderGameOverlayEvent.class, e -> this.worlds.onRender(e));
 
         Options options = Minecraft.getInstance().options;
         this.leftMacro = new HoldKeyMacro(this, this.holdLeftBinding, options.keyAttack);
@@ -132,6 +143,8 @@ public abstract class AbstractCivModernMod {
         this.attackMacro = new AttackMacro(this, this.attackBinding, options.keyAttack);
 
         this.boatNavigation = new BoatNavigation(this);
+
+        this.radar.init();
     }
 
     public abstract EventBus provideEventBus();
@@ -151,6 +164,9 @@ public abstract class AbstractCivModernMod {
             if (worlds.getCache() != null) {
                 Minecraft.getInstance().setScreen(new MapScreen(this, worlds.getCache(), boatNavigation));
             }
+        }
+        while (minimapZoomBinding.consumeClick()) {
+            worlds.cycleMinimapZoom();
         }
     }
 
@@ -215,7 +231,6 @@ public abstract class AbstractCivModernMod {
     private void loadRadar() {
         this.colourProvider = new ColourProvider(config);
         this.radar = new Radar(config, eventBus, colourProvider);
-        this.radar.init();
     }
 
     public ColourProvider getColourProvider() {

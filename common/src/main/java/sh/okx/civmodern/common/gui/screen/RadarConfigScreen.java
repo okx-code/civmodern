@@ -211,7 +211,7 @@ public class RadarConfigScreen extends Screen implements ScreenCloseable {
 
       @Override
       public Component getText(double value) {
-        return new TranslatableComponent("civmodern.screen.radar.z", String.valueOf((int) value));
+        return new TranslatableComponent("civmodern.screen.radar.y", String.valueOf((int) value));
       }
     }));
     offset += 24;

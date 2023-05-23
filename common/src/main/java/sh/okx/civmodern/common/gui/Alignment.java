@@ -18,15 +18,11 @@ public enum Alignment {
   }
 
   public Alignment next() {
-    switch (this) {
-      case TOP_LEFT:
-        return TOP_RIGHT;
-      case TOP_RIGHT:
-        return BOTTOM_RIGHT;
-      case BOTTOM_RIGHT:
-        return BOTTOM_LEFT;
-      default:
-        return TOP_LEFT;
-    }
+    return switch (this) {
+      case TOP_LEFT -> TOP_RIGHT;
+      case TOP_RIGHT -> BOTTOM_RIGHT;
+      case BOTTOM_RIGHT -> BOTTOM_LEFT;
+      default -> TOP_LEFT;
+    };
   }
 }

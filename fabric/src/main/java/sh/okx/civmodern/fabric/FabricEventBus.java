@@ -26,6 +26,7 @@ public class FabricEventBus implements EventBus {
     map.put(JoinEvent.class, new CopyOnWriteArraySet<>());
     map.put(LeaveEvent.class, new CopyOnWriteArraySet<>());
     map.put(RespawnEvent.class, new CopyOnWriteArraySet<>());
+    map.put(BlockStateChangeEvent.class, new CopyOnWriteArraySet<>());
 
     ClientPlayConnectionEvents.JOIN.register((handler, sender, client) -> push(new JoinEvent()));
     ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> push(new LeaveEvent()));

@@ -8,6 +8,7 @@ public class ColourProvider {
   private Integer radarFg;
   private Integer radarBg;
   private Integer compacted;
+  private Integer chevron;
 
   public ColourProvider(CivMapConfig config) {
     this.config = config;
@@ -25,6 +26,10 @@ public class ColourProvider {
     return Objects.requireNonNullElseGet(radarBg, config::getRadarBgColour);
   }
 
+  public int getChevronColour() {
+    return Objects.requireNonNullElseGet(chevron, config::getChevronColour);
+  }
+
   public void setTemporaryRadarForegroundColour(Integer colour) {
     radarFg = colour;
   }
@@ -35,5 +40,9 @@ public class ColourProvider {
 
   public void setTemporaryCompactedColour(Integer colour) {
     compacted = colour;
+  }
+
+  public void setTemporaryChevronColour(Integer colour) {
+    chevron = colour;
   }
 }
