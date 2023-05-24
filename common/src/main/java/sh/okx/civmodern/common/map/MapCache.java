@@ -1,8 +1,12 @@
 package sh.okx.civmodern.common.map;
 
 import net.minecraft.client.Minecraft;
+import net.minecraft.core.Registry;
 import net.minecraft.util.Mth;
 import net.minecraft.world.level.ChunkPos;
+import net.minecraft.world.level.biome.Biome;
+import net.minecraft.world.level.chunk.ChunkAccess;
+import net.minecraft.world.level.chunk.ChunkStatus;
 import net.minecraft.world.level.chunk.LevelChunk;
 
 import java.util.*;
@@ -60,6 +64,11 @@ public class MapCache {
       return texture1;
     });
 
+    ChunkAccess north = chunk.getLevel().getChunk(pos.x, pos.z - 1, ChunkStatus.HEIGHTMAPS, false);
+    ChunkAccess west = chunk.getLevel().getChunk(pos.x - 1, pos.z, ChunkStatus.HEIGHTMAPS, false);
+
+    ChunkAccess south = pos.getRegionLocalZ() == 31 ? null : chunk.getLevel().getChunk(pos.x, pos.z + 1, ChunkStatus.HEIGHTMAPS, false);
+    ChunkAccess east = pos.getRegionLocalX() == 31 ? null : chunk.getLevel().getChunk(pos.x + 1, pos.z, ChunkStatus.HEIGHTMAPS, false);
 
     boolean addedAtlas = gettingAtlas.add(atlas);
     executor.submit(() -> {
@@ -69,7 +78,8 @@ public class MapCache {
         RegionData region1 = mapFile.getRegion(k);
         return Objects.requireNonNullElseGet(region1, RegionData::new);
       });
-      boolean updated = data.updateChunk(chunk);
+      Registry<Biome> registry = chunk.getLevel().registryAccess().registry(Registry.BIOME_REGISTRY).get();
+      boolean updated = data.updateChunk(chunk, registry, north, west);
       if (created[0]) {
         cacheEvict(cache);
         data.render(tex, region.x() & ATLAS_LENGTH - 1, region.z() & ATLAS_LENGTH - 1);

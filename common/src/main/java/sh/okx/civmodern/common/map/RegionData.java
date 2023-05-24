@@ -4,17 +4,14 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import it.unimi.dsi.fastutil.ints.Int2IntMap;
 import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.color.block.BlockColors;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.core.Registry;
 import net.minecraft.util.Mth;
 import net.minecraft.world.level.biome.Biome;
-import net.minecraft.world.level.biome.Biomes;
 import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.chunk.LevelChunk;
+import net.minecraft.world.level.chunk.ChunkAccess;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.level.material.Fluids;
 import org.checkerframework.checker.nullness.qual.NonNull;
@@ -22,10 +19,7 @@ import sh.okx.civmodern.common.AbstractCivModernMod;
 
 import java.awt.image.BufferedImage;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Optional;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 
 public class RegionData {
 
@@ -38,20 +32,32 @@ public class RegionData {
     // 8 bits - biome
     private final int[] data = new int[512 * 512];
 
-    public boolean updateChunk(LevelChunk chunk) {
+    public boolean updateChunk(ChunkAccess chunk, Registry<Biome> registry, ChunkAccess north, ChunkAccess west) {
         boolean updated = false;
-        Registry<Biome> registry = chunk.getLevel().registryAccess().registry(Registry.BIOME_REGISTRY).get();
 
         int rx = chunk.getPos().getRegionLocalX() * 16;
         int rz = chunk.getPos().getRegionLocalZ() * 16;
 
+        int[] northY = new int[16];
+        if (north == null) {
+            Arrays.fill(northY, Integer.MIN_VALUE);
+        } else {
+            for (int x = 0; x < 16; x++) {
+                northY[x] = north.getHeight(Heightmap.Types.WORLD_SURFACE, x, 15);
+            }
+        }
         int[] westY = new int[16];
-        Arrays.fill(westY, Integer.MIN_VALUE);
-        int northY = Integer.MIN_VALUE;
+        if (west == null) {
+            Arrays.fill(westY, Integer.MIN_VALUE);
+        } else {
+            for (int z = 0; z < 16; z++) {
+                westY[z] = west.getHeight(Heightmap.Types.WORLD_SURFACE, 15, z);
+            }
+        }
         for (int x = rx; x < rx + 16; x++) {
             BlockPos.MutableBlockPos pos;
             for (int z = rz; z < rz + 16; z++) {
-                pos = new BlockPos.MutableBlockPos(x + chunk.getPos().getRegionX() * 512, chunk.getHeight(Heightmap.Types.WORLD_SURFACE, x + chunk.getPos().getRegionX() * 512, z + chunk.getPos().getRegionZ() * 512) + 1, z + chunk.getPos().getRegionZ() * 512);
+                pos = new BlockPos.MutableBlockPos(x + chunk.getPos().getRegionX() * 512, chunk.getHeight(Heightmap.Types.WORLD_SURFACE, x, z) + 1, z + chunk.getPos().getRegionZ() * 512);
 
                 int dataValue = 0;
 
@@ -94,16 +100,16 @@ public class RegionData {
                 }
                 westY[z - rz] = pos.getY();
 
-                if (northY != Integer.MIN_VALUE) {
-                    if (northY > pos.getY()) {
+                if (northY[x - rx] != Integer.MIN_VALUE) {
+                    if (northY[x - rx] > pos.getY()) {
                         dataValue |= 0b11 << 8;
-                    } else if (northY == pos.getY()) {
+                    } else if (northY[x - rx] == pos.getY()) {
                         dataValue |= 0b01 << 8;
                     }
                 } else {
                     dataValue |= 0b10 << 8;
                 }
-                northY = pos.getY();
+                northY[x - rx] = pos.getY();
 
 
                 int biomeId = registry.getId(chunk.getNoiseBiome(pos.getX() >> 2, pos.getY() >> 2, pos.getZ() >> 2).value());
@@ -119,7 +125,6 @@ public class RegionData {
                 }
                 data[z + x * 512] = dataValue;
             }
-            northY = Integer.MIN_VALUE;
         }
 
         return updated;
@@ -292,17 +297,21 @@ public class RegionData {
 
 
     public static int mix(int color0, int color1) {
-        int r = red(color0) + red(color1);
-        int g = green(color0) + green(color1);
-        int b = blue(color0) + blue(color1);
-        return rgb(r >> 1, g >> 1, b >> 2);
+//        int r = red(color0) + red(color1);
+//        int g = green(color0) + green(color1);
+//        int b = blue(color0) + blue(color1);
+//        return rgb(r >> 1, g >> 1, b >> 2);
+        float r = red(color0) / 255f * red(color1) / 255f;
+        float g = green(color0) / 255f * green(color1) / 255f;
+        float b = blue(color0) / 255f * blue(color1) / 255f;
+        return rgb((int) (r * 255), (int) (g * 255), (int) (b * 255));
     }
 
     public static int mix2(int color0, int color1) {
         int r = red(color0) + red(color1);
         int g = green(color0) + green(color1);
         int b = blue(color0) + blue(color1);
-        return rgb(r >> 1, g >> 1, b >> 1);
+        return rgb(r >> 1, g >> 1, b >> 2);
     }
 
     private static int[] getColorsFromImage(@NonNull BufferedImage image) {

@@ -28,24 +28,24 @@ public class RegionAtlasTexture {
 
     private void clear() {
         RenderSystem.bindTexture(this.indexTexture);
-        RenderSystem.pixelStore(0xcf0, 0);
-        RenderSystem.pixelStore(0xcf1, 0);
-        RenderSystem.pixelStore(0xcf2, 0);
-        RenderSystem.pixelStore(0xcf3, 0);
-        RenderSystem.pixelStore(0xcf4, 0);
-        RenderSystem.pixelStore(0xcf5, 4);
+        RenderSystem.pixelStore(GL_UNPACK_SWAP_BYTES, 0);
+        RenderSystem.pixelStore(GL_UNPACK_LSB_FIRST, 0);
+        RenderSystem.pixelStore(GL_UNPACK_ROW_LENGTH, 0);
+        RenderSystem.pixelStore(GL_UNPACK_SKIP_ROWS, 0);
+        RenderSystem.pixelStore(GL_UNPACK_SKIP_PIXELS, 0);
+        RenderSystem.pixelStore(GL_UNPACK_ALIGNMENT, 2);
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB565, SIZE, SIZE, 0, GL_RGB, GL_UNSIGNED_SHORT_5_6_5, BLACK);
         glGenerateMipmap(GL_TEXTURE_2D);
     }
 
     public void update(short[] colours, int x, int z, int minX, int maxX, int minZ, int maxZ) {
         RenderSystem.bindTexture(this.indexTexture);
-        RenderSystem.pixelStore(0xcf0, 0);
-        RenderSystem.pixelStore(0xcf1, 0);
-        RenderSystem.pixelStore(0xcf2, 0);
-        RenderSystem.pixelStore(0xcf3, 0);
-        RenderSystem.pixelStore(0xcf4, 0);
-        RenderSystem.pixelStore(0xcf5, 4);
+        RenderSystem.pixelStore(GL_UNPACK_SWAP_BYTES, 0);
+        RenderSystem.pixelStore(GL_UNPACK_LSB_FIRST, 0);
+        RenderSystem.pixelStore(GL_UNPACK_ROW_LENGTH, 0);
+        RenderSystem.pixelStore(GL_UNPACK_SKIP_ROWS, 0);
+        RenderSystem.pixelStore(GL_UNPACK_SKIP_PIXELS, 0);
+        RenderSystem.pixelStore(GL_UNPACK_ALIGNMENT, 2);
         glTexSubImage2D(GL_TEXTURE_2D, 0, x * 512 + minX, z * 512 + minZ, maxX - minX, maxZ - minZ, GL_RGB, GL_UNSIGNED_SHORT_5_6_5, colours);
         glGenerateMipmap(GL_TEXTURE_2D);
     }

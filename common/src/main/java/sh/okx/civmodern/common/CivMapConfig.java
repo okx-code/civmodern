@@ -66,7 +66,7 @@ public class CivMapConfig {
     this.minimapEnabled = Boolean.parseBoolean(properties.getProperty("minimap_enabled", "true"));
     this.minimapX = Integer.parseInt(properties.getProperty("minimap_x", "5"));
     this.minimapY = Integer.parseInt(properties.getProperty("minimap_y", "5"));
-    this.minimapAlignment = Alignment.valueOf(properties.getProperty("alignment", "top_right").toUpperCase());
+    this.minimapAlignment = Alignment.valueOf(properties.getProperty("minimap_alignment", "top_right").toUpperCase());
     this.minimapSize = Integer.parseInt(properties.getProperty("minimap_size", "100"));
   }
 
@@ -94,6 +94,10 @@ public class CivMapConfig {
       properties.setProperty("show_items", Boolean.toString(showItems));
       properties.setProperty("chevron_colour", Integer.toString(chevronColour));
       properties.setProperty("minimap_enabled", Boolean.toString(minimapEnabled));
+      properties.setProperty("minimap_x", Integer.toString(minimapX));
+      properties.setProperty("minimap_y", Integer.toString(minimapY));
+      properties.setProperty("minimap_alignment", minimapAlignment.name().toLowerCase());
+      properties.setProperty("minimap_size", Integer.toString(minimapSize));
 
       try (FileOutputStream output = new FileOutputStream(file)) {
         properties.store(output, null);

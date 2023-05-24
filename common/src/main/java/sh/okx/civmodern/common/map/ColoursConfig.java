@@ -792,7 +792,7 @@ public class ColoursConfig {
     put("minecraft:spruce_door", 0x6A5030);
     put("minecraft:spruce_fence", 0x735531);
     put("minecraft:spruce_fence_gate", 0x735531);
-    put("minecraft:spruce_leaves", 0x4E7A4E);
+    put("minecraft:spruce_leaves", 0x273D27);
     put("minecraft:spruce_log", 0x3B2611);
     put("minecraft:spruce_planks", 0x735531);
     put("minecraft:spruce_pressure_plate", 0x735531);
@@ -953,5 +953,6 @@ public class ColoursConfig {
     add("minecraft:mangrove_leaves");
     add("minecraft:oak_leaves");
     add("minecraft:spruce_leaves");
+    add("minecraft:birch_leaves");
   }};
 }
