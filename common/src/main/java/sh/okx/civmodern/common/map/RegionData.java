@@ -18,7 +18,6 @@ import org.checkerframework.checker.nullness.qual.NonNull;
 import sh.okx.civmodern.common.AbstractCivModernMod;
 
 import java.awt.image.BufferedImage;
-import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.Optional;
 
@@ -36,14 +35,24 @@ public class RegionData {
 
     private int getHeight(ChunkAccess chunk, int x, int z) {
         BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos(chunk.getPos().getBlockX(x), chunk.getHeight(Heightmap.Types.WORLD_SURFACE, x, z) + 1, chunk.getPos().getBlockZ(z));
+        int depth;
         do {
             pos.setY(pos.getY() - 1);
-            Block block = chunk.getBlockState(pos).getBlock();
+            Block block;
+            BlockState state = chunk.getBlockState(pos);
+            if (state.getFluidState().is(Fluids.WATER)) {
+                BlockPos bottomPos = new BlockPos.MutableBlockPos(pos.getX(), chunk.getHeight(Heightmap.Types.OCEAN_FLOOR_WG, pos.getX(), pos.getZ()), pos.getZ());
+                depth = pos.getY() - bottomPos.getY();
+                block = chunk.getBlockState(bottomPos).getBlock();
+            } else {
+                block = state.getBlock();
+                depth = 0;
+            }
             if (ColoursConfig.BLOCK_COLOURS.getOrDefault(Registry.BLOCK.getKey(block).toString(), block.defaultMaterialColor().col) > 0) {
                 break;
             }
         } while (pos.getY() > chunk.getMinBuildHeight());
-        return pos.getY();
+        return pos.getY() - depth;
     }
 
     public boolean updateChunk(ChunkAccess chunk, Registry<Biome> registry, ChunkAccess north, ChunkAccess west) {
@@ -105,9 +114,9 @@ public class RegionData {
                 dataValue |= Math.min(depth, 0xF) << 12;
 
                 if (westY[z - rz] != Integer.MIN_VALUE) {
-                    if (westY[z - rz] > pos.getY()) {
+                    if (westY[z - rz] > pos.getY() - depth) {
                         dataValue |= 0b11 << 10;
-                    } else if (westY[z - rz] == pos.getY()) {
+                    } else if (westY[z - rz] == pos.getY() - depth) {
                         dataValue |= 0b01 << 10;
                     }
                 } else if ((current >> 10 & 0x3) == 0) {
@@ -115,12 +124,12 @@ public class RegionData {
                 } else {
                     dataValue |= current & 0xC00;
                 }
-                westY[z - rz] = pos.getY();
+                westY[z - rz] = pos.getY() - depth;
 
                 if (northY[x - rx] != Integer.MIN_VALUE) {
-                    if (northY[x - rx] > pos.getY()) {
+                    if (northY[x - rx] > pos.getY() - depth) {
                         dataValue |= 0b11 << 8;
-                    } else if (northY[x - rx] == pos.getY()) {
+                    } else if (northY[x - rx] == pos.getY() - depth) {
                         dataValue |= 0b01 << 8;
                     }
                 } else if ((current >> 8 & 0x3) == 0) {
@@ -128,7 +137,7 @@ public class RegionData {
                 } else {
                     dataValue |= current & 0x300;
                 }
-                northY[x - rx] = pos.getY();
+                northY[x - rx] = pos.getY() - depth;
 
 
                 int biomeId = registry.getId(chunk.getNoiseBiome(pos.getX() >> 2, pos.getY() >> 2, pos.getZ() >> 2).value());
@@ -201,21 +210,21 @@ public class RegionData {
 
                 if (waterDepth > 0) {
                     Biome biome = registry.byId(biomeId);
+                    waterDepth = 2;
                     int fluidColor = fancyFluids(biome, waterDepth * 0.025F);
                     color = blend(fluidColor, color | 0xFF000000) & 0xFFFFFF;
-                } else {
+                }
                     int bt = Integer.bitCount((packedData >>> 8) & 0xF);
                     int alpha;
                     if (bt == 0 || bt == 1) {
                         alpha = 0;
                     } else if (bt == 2) {
-                        alpha = 0x22;
+                        alpha = waterDepth > 0 ? 0x11 : 0x22;
                     } else {
-                        alpha = 0x44;
+                        alpha = waterDepth > 0 ? 0x22 : 0x44;
                     }
 
                     color = blend(color, (double) alpha / 0xFF);
-                }
 
                 int red = color >> 16 & 0xFF;
                 int green = color >> 8 & 0xFF;

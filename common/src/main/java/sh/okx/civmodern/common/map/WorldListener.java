@@ -5,6 +5,9 @@ import net.minecraft.world.level.chunk.LevelChunk;
 import sh.okx.civmodern.common.CivMapConfig;
 import sh.okx.civmodern.common.ColourProvider;
 import sh.okx.civmodern.common.events.PostRenderGameOverlayEvent;
+import sh.okx.civmodern.common.events.WorldRenderLastEvent;
+import sh.okx.civmodern.common.map.waypoints.Waypoint;
+import sh.okx.civmodern.common.map.waypoints.Waypoints;
 import sh.okx.civmodern.common.mixins.StorageSourceAccessor;
 
 import java.io.File;
@@ -18,6 +21,7 @@ public class WorldListener {
   private MapCache cache;
   private MapFile file;
   private Minimap minimap;
+  private Waypoints waypoints;
   private Thread converter;
 
   public WorldListener(CivMapConfig config, ColourProvider colourProvider) {
@@ -62,6 +66,7 @@ public class WorldListener {
       this.cache = new MapCache(this.file);
       this.minimap = new Minimap(this.cache, this.config, this.provider);
     }
+    this.waypoints = new Waypoints();
   }
 
   public void onUnload() {
@@ -106,9 +111,19 @@ public class WorldListener {
     }
   }
 
+  public void onRender(WorldRenderLastEvent event) {
+    if (this.waypoints != null) {
+      this.waypoints.onRender(event);
+    }
+  }
+
   public void cycleMinimapZoom() {
     if (this.minimap != null) {
       this.minimap.cycleZoom();
     }
+  }
+
+  public Waypoints getWaypoints() {
+    return null; // todo
   }
 }

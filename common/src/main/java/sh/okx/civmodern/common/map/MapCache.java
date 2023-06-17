@@ -8,6 +8,7 @@ import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.chunk.ChunkAccess;
 import net.minecraft.world.level.chunk.ChunkStatus;
 import net.minecraft.world.level.chunk.LevelChunk;
+import net.minecraft.world.level.levelgen.Heightmap;
 
 import java.util.*;
 import java.util.concurrent.*;
@@ -49,6 +50,17 @@ public class MapCache {
     this.availableRegions = mapFile.listRegions();
   }
 
+  private void primeHeightmaps(ChunkAccess chunk) {
+    if (chunk != null) {
+      if (!chunk.hasPrimedHeightmap(Heightmap.Types.WORLD_SURFACE)) {
+        Heightmap.primeHeightmaps(chunk, EnumSet.of(Heightmap.Types.WORLD_SURFACE));
+      }
+      if (!chunk.hasPrimedHeightmap(Heightmap.Types.OCEAN_FLOOR_WG)) {
+        Heightmap.primeHeightmaps(chunk, EnumSet.of(Heightmap.Types.OCEAN_FLOOR_WG));
+      }
+    }
+  }
+
   public void updateChunk(LevelChunk chunk) {
     ChunkPos pos = chunk.getPos();
     int regionX = pos.getRegionX();
@@ -67,8 +79,9 @@ public class MapCache {
     ChunkAccess north = chunk.getLevel().getChunk(pos.x, pos.z - 1, ChunkStatus.FULL, false);
     ChunkAccess west = chunk.getLevel().getChunk(pos.x - 1, pos.z, ChunkStatus.FULL, false);
 
-    //ChunkAccess south = pos.getRegionLocalZ() == 31 ? null : chunk.getLevel().getChunk(pos.x, pos.z + 1, ChunkStatus.HEIGHTMAPS, false);
-    //ChunkAccess east = pos.getRegionLocalX() == 31 ? null : chunk.getLevel().getChunk(pos.x + 1, pos.z, ChunkStatus.HEIGHTMAPS, false);
+    primeHeightmaps(chunk);
+    primeHeightmaps(north);
+    primeHeightmaps(west);
 
     boolean addedAtlas = gettingAtlas.add(atlas);
     executor.submit(() -> {
@@ -91,7 +104,7 @@ public class MapCache {
 
           int regionLocalX = pos.getRegionLocalX();
           int regionLocalZ = pos.getRegionLocalZ();
-          // Delay chunk updates by 1 second, so we can capture all the changes during that time instead of just one.
+          // Delay chunk updates, so we can capture all the changes during that time instead of just one.
           debounced.compute(pos, (k, scheduledFuture) -> {
             if (scheduledFuture == null || scheduledFuture.isDone()) {
               AtomicReference<ScheduledFuture<?>> ref = new AtomicReference<>();
@@ -155,7 +168,6 @@ public class MapCache {
       return null;
     }
 
-    // TODO reset texture on world unload
     return texture;
   }
 
@@ -175,7 +187,7 @@ public class MapCache {
 
   public void save() {
     // todo save not just on gui close but on world unload or 60 second interval
-    SAVE.submit(() -> {
+    Future<?> toSave = SAVE.submit(() -> {
       for (Iterator<RegionKey> iterator = dirtySaveRegions.iterator(); iterator.hasNext(); ) {
         RegionKey dirtySave = iterator.next();
         RegionData cached = this.cache.get(dirtySave);
@@ -188,7 +200,8 @@ public class MapCache {
     executor.shutdownNow();
     try {
       executor.awaitTermination(1000, TimeUnit.DAYS);
-    } catch (InterruptedException e) {
+      toSave.get();
+    } catch (InterruptedException | ExecutionException e) {
       throw new RuntimeException(e);
     }
   }

@@ -64,12 +64,6 @@ public class RegionAtlasTexture {
 
     private void draw(PoseStack poseStack, float x, float y, float scale, float xOff, float yOff, float xSize, float ySize, float width, float height) {
         RenderSystem.setShaderTexture(0, this.indexTexture);
-        RenderSystem.pixelStore(0xcf0, 0);
-        RenderSystem.pixelStore(0xcf1, 0);
-        RenderSystem.pixelStore(0xcf2, 0);
-        RenderSystem.pixelStore(0xcf3, 0);
-        RenderSystem.pixelStore(0xcf4, 0);
-        RenderSystem.pixelStore(0xcf5, 4);
 
         blit(poseStack, x / scale, y / scale, 0, xOff / scale, yOff / scale, width / scale, height / scale, xSize / scale, ySize / scale);
     }

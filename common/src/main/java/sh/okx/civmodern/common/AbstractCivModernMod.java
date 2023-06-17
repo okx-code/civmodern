@@ -136,6 +136,7 @@ public abstract class AbstractCivModernMod {
         this.eventBus.listen(ChunkLoadEvent.class, e -> this.worlds.onChunkLoad(e.chunk()));
         this.eventBus.listen(BlockStateChangeEvent.class, e -> this.worlds.onChunkLoad(e.level().getChunkAt(e.pos())));
         this.eventBus.listen(PostRenderGameOverlayEvent.class, e -> this.worlds.onRender(e));
+        this.eventBus.listen(WorldRenderLastEvent.class, e -> this.worlds.onRender(e));
 
         Options options = Minecraft.getInstance().options;
         this.leftMacro = new HoldKeyMacro(this, this.holdLeftBinding, options.keyAttack);
@@ -163,7 +164,7 @@ public abstract class AbstractCivModernMod {
         }
         while (mapBinding.consumeClick()) {
             if (worlds.getCache() != null) {
-                Minecraft.getInstance().setScreen(new MapScreen(this, worlds.getCache(), boatNavigation));
+                Minecraft.getInstance().setScreen(new MapScreen(this, worlds.getCache(), boatNavigation, worlds.getWaypoints()));
             }
         }
         while (minimapZoomBinding.consumeClick()) {

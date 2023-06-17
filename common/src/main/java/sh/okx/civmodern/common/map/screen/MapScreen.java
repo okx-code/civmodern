@@ -6,10 +6,12 @@ import com.mojang.blaze3d.vertex.*;
 import com.mojang.math.Matrix4f;
 import com.mojang.math.Vector3f;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.GameRenderer;
+import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.TextComponent;
 import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraft.resources.ResourceLocation;
@@ -21,6 +23,7 @@ import sh.okx.civmodern.common.gui.widget.ImageButton;
 import sh.okx.civmodern.common.map.MapCache;
 import sh.okx.civmodern.common.map.RegionAtlasTexture;
 import sh.okx.civmodern.common.map.RegionKey;
+import sh.okx.civmodern.common.map.waypoints.Waypoints;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -38,17 +41,23 @@ public class MapScreen extends Screen {
   private final AbstractCivModernMod mod;
   private final MapCache mapCache;
   private final BoatNavigation navigation;
+  private final Waypoints waypoints;
+
+  private WaypointModal waypointModal;
+  private ImageButton openWaypointButton;
 
   private double x;
   private double y;
   private static float zoom = 1; // blocks per pixel
 
   private boolean boating = false;
+  private boolean onWaypointModal = false;
 
-  public MapScreen(AbstractCivModernMod mod, MapCache mapCache, BoatNavigation navigation) {
+  public MapScreen(AbstractCivModernMod mod, MapCache mapCache, BoatNavigation navigation, Waypoints waypoints) {
     super(new TranslatableComponent("civmodern.screen.map.title"));
     this.mod = mod;
     this.mapCache = mapCache;
+    this.waypoints = waypoints;
     Window window = Minecraft.getInstance().getWindow();
 
     x = Minecraft.getInstance().player.getX() - (window.getWidth() * zoom) / 2;
@@ -60,32 +69,42 @@ public class MapScreen extends Screen {
   protected void init() {
     /*addRenderableWidget(new ImageButton(10, 10, 20, 20, new ResourceLocation("civmodern", "gui/boat.png"), imbg -> {
       this.boating = !boating;
-    }));
+    }));*/
     int left = width / 2 - 96;
     EditBox editBox = new EditBox(font, left + 32, 64, 160, 20, TextComponent.EMPTY);
-    Pattern pattern = Pattern.compile("^-?[0-9]*$");
-    Predicate<String> numFilter = s -> pattern.matcher(s).matches();
+    Pattern inputFilter = Pattern.compile("^-?[0-9]*$");
+    Predicate<String> numFilter = s -> inputFilter.matcher(s).matches();
     EditBox xBox = new EditBox(font, left, 104, 48, 20, TextComponent.EMPTY);
     xBox.setFilter(numFilter);
     EditBox yBox = new EditBox(font, left + 56, 104, 48, 20, TextComponent.EMPTY);
     yBox.setFilter(numFilter);
     EditBox zBox = new EditBox(font, left + 56 + 56, 104, 48, 20, TextComponent.EMPTY);
     zBox.setFilter(numFilter);
+    Button doneButton = new Button(left + 72, 132, 120, 20, CommonComponents.GUI_DONE, button -> {
+      waypointModal.done();
+    });
+    doneButton.active = false;
     ImageButton coordsButton = new ImageButton(left + 56 + 56 + 60, 104, 20, 20, new ResourceLocation("civmodern", "gui/boat.png"), imbg -> {
 
     });
-    WaypointModal waypointModal = new WaypointModal(font, editBox, xBox, yBox, zBox, coordsButton);
+    waypointModal = new WaypointModal(waypoints, font, editBox, xBox, yBox, zBox, coordsButton, doneButton);
     waypointModal.setVisible(false);
+    xBox.setResponder(r -> waypointModal.updateDone());
+    yBox.setResponder(r -> waypointModal.updateDone());
+    zBox.setResponder(r -> waypointModal.updateDone());
+    editBox.setResponder(r -> waypointModal.updateDone());
     addRenderableWidget(waypointModal);
     addRenderableWidget(editBox);
     addRenderableWidget(xBox);
     addRenderableWidget(yBox);
     addRenderableWidget(zBox);
     addRenderableWidget(coordsButton);
+    addRenderableWidget(doneButton);
 
-    addRenderableWidget(new ImageButton(this.width / 2 - 10, 10, 20, 20, new ResourceLocation("civmodern", "gui/boat.png"), imbg -> {
+    openWaypointButton = new ImageButton(this.width / 2 - 10, 10, 20, 20, new ResourceLocation("civmodern", "gui/boat.png"), imbg -> {
       waypointModal.setVisible(!waypointModal.isVisible());
-    }));*/
+    });
+    addRenderableWidget(openWaypointButton);
   }
 
   @Override
@@ -197,6 +216,7 @@ public class MapScreen extends Screen {
 
   @Override
   public boolean mouseClicked(double mouseX, double mouseY, int button) {
+    onWaypointModal = waypointModal.overlaps(mouseX, mouseY);
     if (super.mouseClicked(mouseX, mouseY, button)) {
       return true;
     }
@@ -216,6 +236,12 @@ public class MapScreen extends Screen {
       return true;
     }
     return false;
+  }
+
+  @Override
+  public boolean mouseReleased(double d, double e, int i) {
+//    onWaypointModal = false;
+    return super.mouseReleased(d, e, i);
   }
 
   @Override
@@ -265,7 +291,7 @@ public class MapScreen extends Screen {
 
   @Override
   public boolean mouseDragged(double x, double y, int button, double changeX, double changeY) {
-    if (super.mouseDragged(x, y, button, changeX, changeY)) {
+    if (super.mouseDragged(x, y, button, changeX, changeY) || onWaypointModal) {
       return true;
     }
 

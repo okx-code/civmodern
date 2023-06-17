@@ -5,6 +5,7 @@ import com.mojang.blaze3d.vertex.*;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiComponent;
+import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.components.Widget;
 import net.minecraft.client.gui.components.events.GuiEventListener;
@@ -13,25 +14,30 @@ import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.network.chat.TextComponent;
 import sh.okx.civmodern.common.gui.widget.ImageButton;
+import sh.okx.civmodern.common.map.waypoints.Waypoints;
 
 public class WaypointModal implements Widget, GuiEventListener, NarratableEntry {
 
   private boolean visible = true;
 
+  private final Waypoints waypoints;
   private final Font font;
   private final EditBox editBox;
   private final EditBox xBox;
   private final EditBox yBox;
   private final EditBox zBox;
   private final ImageButton coordsButton;
+  private final Button doneButton;
 
-  public WaypointModal(Font font, EditBox editBox, EditBox xBox, EditBox yBox, EditBox zBox, ImageButton coordsButton) {
+  public WaypointModal(Waypoints waypoints, Font font, EditBox editBox, EditBox xBox, EditBox yBox, EditBox zBox, ImageButton coordsButton, Button doneButton) {
+    this.waypoints = waypoints;
     this.font = font;
     this.editBox = editBox;
     this.xBox = xBox;
     this.yBox = yBox;
     this.zBox = zBox;
     this.coordsButton = coordsButton;
+    this.doneButton = doneButton;
   }
 
   @Override
@@ -45,7 +51,7 @@ public class WaypointModal implements Widget, GuiEventListener, NarratableEntry 
     int x0 = width / 2 - 104;
     int x1 = width / 2 + 104;
     int y0 = 56;
-    int y1 = 56+120;
+    int y1 = 56+104;
 
     Tesselator tesselator = Tesselator.getInstance();
     BufferBuilder bufferBuilder = tesselator.getBuilder();
@@ -75,6 +81,19 @@ public class WaypointModal implements Widget, GuiEventListener, NarratableEntry 
     this.yBox.setVisible(visible);
     this.zBox.setVisible(visible);
     this.coordsButton.visible = visible;
+    this.doneButton.visible = visible;
+  }
+
+  public void updateDone() {
+    try {
+      Integer.parseInt(this.xBox.getValue());
+      Integer.parseInt(this.yBox.getValue());
+      Integer.parseInt(this.zBox.getValue());
+
+      this.doneButton.active = !this.editBox.getValue().isBlank();
+    } catch (NumberFormatException ex) {
+      this.doneButton.active = false;
+    }
   }
 
   public boolean isVisible() {
@@ -89,5 +108,19 @@ public class WaypointModal implements Widget, GuiEventListener, NarratableEntry 
   @Override
   public void updateNarration(NarrationElementOutput narrationElementOutput) {
 
+  }
+
+  public boolean overlaps(double x, double y) {
+    int width = Minecraft.getInstance().getWindow().getGuiScaledWidth();
+    int x0 = width / 2 - 104;
+    int x1 = width / 2 + 104;
+    int y0 = 56;
+    int y1 = 56+104;
+
+    return visible && x >= x0 && x < x1 && y >= y0 && y <= y1;
+  }
+
+  public void done() {
+//    setVisible(false);
   }
 }
