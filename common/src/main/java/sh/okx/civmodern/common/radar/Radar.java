@@ -55,11 +55,7 @@ public class Radar {
 
   static {
     URL resource = Radar.class.getResource("/civmc");
-    if (resource != null) {
-      hideY = true;
-    } else {
-      hideY = false;
-    }
+    hideY = resource != null;
   }
 
   private final EventBus eventBus;

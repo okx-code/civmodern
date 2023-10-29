@@ -88,7 +88,7 @@ task remapCivMc(type: RemapJarTask) {
 
 task cleanJar(type: Delete) {
     delete fileTree('../dist') {
-        include "*-forge*.jar"
+        include "*-fabric*.jar"
     }
 }
 
