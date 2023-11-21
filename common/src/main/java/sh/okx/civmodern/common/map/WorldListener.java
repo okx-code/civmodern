@@ -66,7 +66,7 @@ public class WorldListener {
       this.cache = new MapCache(this.file);
       this.minimap = new Minimap(this.cache, this.config, this.provider);
     }
-    this.waypoints = new Waypoints();
+    this.waypoints = new Waypoints(mapFile);
   }
 
   public void onUnload() {
@@ -88,6 +88,10 @@ public class WorldListener {
     this.minimap = null;
     this.file = null;
     this.cache = null;
+    if (this.waypoints != null) {
+      this.waypoints.save();
+    }
+    this.waypoints = null;
   }
 
   public void onRespawn() {
@@ -124,6 +128,6 @@ public class WorldListener {
   }
 
   public Waypoints getWaypoints() {
-    return null; // todo
+    return this.waypoints;
   }
 }

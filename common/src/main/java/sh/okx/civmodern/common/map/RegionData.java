@@ -333,22 +333,4 @@ public class RegionData {
         float b = blue(color0) / 255f * blue(color1) / 255f;
         return rgb((int) (r * 255), (int) (g * 255), (int) (b * 255));
     }
-
-    public static int mix2(int color0, int color1) {
-        int r = red(color0) + red(color1);
-        int g = green(color0) + green(color1);
-        int b = blue(color0) + blue(color1);
-        return rgb(r >> 1, g >> 1, b >> 2);
-    }
-
-    private static int[] getColorsFromImage(@NonNull BufferedImage image) {
-        int[] map = new int[256 * 256];
-        for (int x = 0; x < 256; ++x) {
-            for (int y = 0; y < 256; ++y) {
-                int rgb = image.getRGB(x, y);
-                map[x + y * 256] = (red(rgb) << 16) | (green(rgb) << 8) | blue(rgb);
-            }
-        }
-        return map;
-    }
 }

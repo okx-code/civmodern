@@ -14,6 +14,7 @@ import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.network.chat.TextComponent;
 import sh.okx.civmodern.common.gui.widget.ImageButton;
+import sh.okx.civmodern.common.map.waypoints.Waypoint;
 import sh.okx.civmodern.common.map.waypoints.Waypoints;
 
 public class WaypointModal implements Widget, GuiEventListener, NarratableEntry {
@@ -90,7 +91,7 @@ public class WaypointModal implements Widget, GuiEventListener, NarratableEntry 
       Integer.parseInt(this.yBox.getValue());
       Integer.parseInt(this.zBox.getValue());
 
-      this.doneButton.active = !this.editBox.getValue().isBlank();
+      this.doneButton.active = true;
     } catch (NumberFormatException ex) {
       this.doneButton.active = false;
     }
@@ -121,6 +122,14 @@ public class WaypointModal implements Widget, GuiEventListener, NarratableEntry 
   }
 
   public void done() {
-//    setVisible(false);
+    try {
+      int x = Integer.parseInt(this.xBox.getValue());
+      int y = Integer.parseInt(this.yBox.getValue());
+      int z = Integer.parseInt(this.zBox.getValue());
+      waypoints.addWaypoint(new Waypoint(this.editBox.getValue(), x, y, z, "waypoint"));
+      setVisible(false);
+    } catch (NumberFormatException ex) {
+
+    }
   }
 }

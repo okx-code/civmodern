@@ -14,6 +14,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.Options;
 import net.minecraft.client.gui.Gui;
 import net.minecraft.client.renderer.entity.ItemRenderer;
+import net.minecraft.resources.ResourceLocation;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.lwjgl.glfw.GLFW;
@@ -25,6 +26,7 @@ import sh.okx.civmodern.common.macro.HoldKeyMacro;
 import sh.okx.civmodern.common.macro.IceRoadMacro;
 import sh.okx.civmodern.common.map.*;
 import sh.okx.civmodern.common.map.screen.MapScreen;
+import sh.okx.civmodern.common.map.waypoints.WaypointTexture;
 import sh.okx.civmodern.common.radar.Radar;
 
 public abstract class AbstractCivModernMod {
@@ -56,6 +58,9 @@ public abstract class AbstractCivModernMod {
     private EventBus eventBus;
 
     public AbstractCivModernMod() {
+
+//        new sh.okx.civmodern.Enchants().gen();
+//        System.exit(0);
         this.configBinding = new KeyMapping(
             "key.civmodern.config",
             Type.KEYSYM,

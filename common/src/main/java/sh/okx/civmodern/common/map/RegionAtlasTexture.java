@@ -69,7 +69,7 @@ public class RegionAtlasTexture {
     }
 
     public void delete() {
-        RenderSystem.deleteTexture(this.indexTexture);
+        RenderSystem.recordRenderCall(() -> RenderSystem.deleteTexture(this.indexTexture));
     }
 
     private static void blit(PoseStack poseStack, float renderX, float renderY, int z, float textureXoffset, float texureYoffset, float renderWidth, float renderHeight, float textureWidth, float textureHeight) {

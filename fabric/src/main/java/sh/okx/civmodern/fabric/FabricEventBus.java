@@ -35,7 +35,7 @@ public class FabricEventBus implements EventBus {
     ClientTickEvents.START_CLIENT_TICK.register(client -> push(new ClientTickEvent()));
     HudRenderCallback.EVENT.register(((matrixStack, tickDelta) -> push(new PostRenderGameOverlayEvent(matrixStack, tickDelta))));
     ClientChunkEvents.CHUNK_LOAD.register((level, chunk) -> push(new ChunkLoadEvent(level, chunk)));
-    WorldRenderEvents.LAST.register(context -> push(new WorldRenderLastEvent(context.matrixStack(), context.consumers())));
+    WorldRenderEvents.END.register(context -> push(new WorldRenderLastEvent(context.matrixStack(), context.consumers(), context.tickDelta())));
   }
 
   @Override
