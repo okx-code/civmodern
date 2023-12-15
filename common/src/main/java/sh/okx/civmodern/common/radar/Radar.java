@@ -1,53 +1,56 @@
 package sh.okx.civmodern.common.radar;
 
-import static org.lwjgl.opengl.GL11.*;
-
+import com.mojang.blaze3d.platform.Lighting;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.Tesselator;
 import com.mojang.blaze3d.vertex.VertexFormat.Mode;
-import com.mojang.math.Matrix4f;
-import com.mojang.math.Vector3f;
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.URL;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Random;
-import java.util.Set;
-import java.util.UUID;
+import com.mojang.math.Axis;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.Gui;
+import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.multiplayer.PlayerInfo;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.player.RemotePlayer;
 import net.minecraft.client.renderer.GameRenderer;
+import net.minecraft.client.renderer.LightTexture;
+import net.minecraft.client.renderer.block.model.BlockModel;
+import net.minecraft.client.renderer.texture.OverlayTexture;
+import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.Registry;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.ClickEvent;
+import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.HoverEvent;
 import net.minecraft.network.chat.Style;
-import net.minecraft.network.chat.TextComponent;
-import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvent;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.vehicle.Boat;
 import net.minecraft.world.entity.vehicle.Minecart;
+import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import org.joml.Matrix4f;
 import sh.okx.civmodern.common.CivMapConfig;
 import sh.okx.civmodern.common.ColourProvider;
 import sh.okx.civmodern.common.events.ClientTickEvent;
 import sh.okx.civmodern.common.events.EventBus;
 import sh.okx.civmodern.common.events.PostRenderGameOverlayEvent;
+
+import java.net.URL;
+import java.util.*;
+
+import static org.lwjgl.opengl.GL11.*;
 
 public class Radar {
 
@@ -116,15 +119,15 @@ public class Radar {
                     + player.getScoreboardName();
 
             Minecraft.getInstance().player.displayClientMessage(
-                new TranslatableComponent("civmodern.radar.enter",
+                Component.translatable("civmodern.radar.enter",
                     player.getName(),
-                    new TextComponent(hideY() ? (pos.getX() + " " + pos.getZ()) : (pos.getX() + " " + pos.getY() + " " + pos.getZ()))
-                        .withStyle(s -> s.applyFormat(ChatFormatting.AQUA)))
+                    Component.literal(hideY() ? (pos.getX() + " " + pos.getZ()) : (pos.getX() + " " + pos.getY() + " " + pos.getZ()))
+                        .withStyle(ChatFormatting.AQUA))
                     .setStyle(Style.EMPTY
                         .withClickEvent(
                             new ClickEvent(ClickEvent.Action.RUN_COMMAND, lastWaypointCommand))
                         .withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT,
-                            new TranslatableComponent("civmodern.radar.hover")))),
+                            Component.translatable("civmodern.radar.hover")))),
                 false);
           }
           if (config.isPingSoundEnabled()) {
@@ -142,15 +145,15 @@ public class Radar {
               "/newWaypoint x:" + pos.getX() + ",y:" + (hideY() ? Minecraft.getInstance().player.getBlockY() : pos.getY()) + ",z:" + pos.getZ() + ",name:"
                   + player.getScoreboardName();
           Minecraft.getInstance().player.displayClientMessage(
-              new TranslatableComponent("civmodern.radar.leave",
+              Component.translatable("civmodern.radar.leave",
                   player.getName(),
-                  new TextComponent(hideY() ? (pos.getX() + " " + pos.getZ()) : (pos.getX() + " " + pos.getY() + " " + pos.getZ()))
+                  Component.literal(hideY() ? (pos.getX() + " " + pos.getZ()) : (pos.getX() + " " + pos.getY() + " " + pos.getZ()))
                       .withStyle(s -> s.applyFormat(ChatFormatting.AQUA)))
                   .setStyle(Style.EMPTY
                       .withClickEvent(
                           new ClickEvent(ClickEvent.Action.RUN_COMMAND, lastWaypointCommand))
                       .withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT,
-                          new TranslatableComponent("civmodern.radar.hover")))),
+                          Component.translatable("civmodern.radar.hover")))),
               false);
         }
       }
@@ -166,7 +169,7 @@ public class Radar {
     }
 
     if (config.isRadarEnabled()) {
-      render(event.getPoseStack(), event.getDelta());
+      render(event.getGuiGraphics(), event.getDelta());
     }
   }
 
@@ -174,7 +177,7 @@ public class Radar {
     return config.getRadarSize();
   }
 
-  public void render(PoseStack matrices, float delta) {
+  public void render(GuiGraphics guiGraphics, float delta) {
     bgColour = (colourProvider.getBackgroundColour() & 0xFF_FF_FF) | (int) ((1 - config.getBackgroundTransparency()) * 255) << 24;
     fgColour = (colourProvider.getForegroundColour() & 0xFF_FF_FF) | (int) ((1 - config.getTransparency()) * 255) << 24;
 
@@ -185,7 +188,7 @@ public class Radar {
 
     Minecraft client = Minecraft.getInstance();
     LocalPlayer player = client.player;
-    matrices.pushPose();
+    guiGraphics.pose().pushPose();
 
     int offsetX = config.getX() + config.getRadarSize();
     int offsetY = config.getY() + config.getRadarSize();
@@ -210,50 +213,50 @@ public class Radar {
         translateY = height - offsetY;
       }
     }
-    matrices.translate(translateX, translateY, 100);
-    renderCircleBackground(matrices);
+    guiGraphics.pose().translate(translateX, translateY, 100);
+    renderCircleBackground(guiGraphics.pose());
     for (int i = 1; i <= config.getRadarCircles(); i++) {
-      renderCircleBorder(matrices, radius() * (i / (float) config.getRadarCircles()));
+      renderCircleBorder(guiGraphics.pose(), radius() * (i / (float) config.getRadarCircles()));
     }
-    matrices.mulPose(Vector3f.ZP.rotationDegrees((-player.getViewYRot(delta)) % 360f));
-    renderLines(matrices);
+    guiGraphics.pose().mulPose(Axis.ZP.rotationDegrees((-player.getViewYRot(delta)) % 360f));
+    renderLines(guiGraphics.pose());
 
     if (config.isShowItems()) {
-      renderItems(matrices, delta);
+      renderItems(guiGraphics, delta);
     }
-    renderBoatsMinecarts(matrices, delta);
-    renderPlayers(matrices, delta);
+    renderBoatsMinecarts(guiGraphics, delta);
+    renderPlayers(guiGraphics, delta);
 
-    matrices.popPose();
+    guiGraphics.pose().popPose();
     RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1);
 
     RenderSystem.disableBlend();
     RenderSystem.disableDepthTest();
   }
 
-  private void renderBoatsMinecarts(PoseStack matrices, float delta) {
+  private void renderBoatsMinecarts(GuiGraphics guiGraphics, float delta) {
     Minecraft minecraft = Minecraft.getInstance();
 
     for (Entity entity : minecraft.level.entitiesForRendering()) {
       if (entity instanceof Boat boat) {
-        renderEntity(matrices, minecraft.player, boat, delta, boat.getPickResult(), 1.0f);
+        renderEntity(guiGraphics, minecraft.player, boat, delta, boat.getPickResult(), 1.0f);
       } else if (entity instanceof Minecart minecart) {
-        renderEntity(matrices, minecraft.player, minecart, delta, new ItemStack(Items.MINECART, 1), 1.1f);
+        renderEntity(guiGraphics, minecraft.player, minecart, delta, new ItemStack(Items.MINECART, 1), 1.1f);
       }
     }
   }
 
-  private void renderItems(PoseStack matrices, float delta) {
+  private void renderItems(GuiGraphics guiGraphics, float delta) {
     Minecraft minecraft = Minecraft.getInstance();
 
     for (Entity entity : minecraft.level.entitiesForRendering()) {
       if (entity instanceof ItemEntity item) {
-        renderEntity(matrices, minecraft.player, item, delta, item.getItem(), 0f);
+        renderEntity(guiGraphics, minecraft.player, item, delta, item.getItem(), 0f);
       }
     }
   }
 
-  private void renderEntity(PoseStack matrices, Player player, Entity entity, float delta, ItemStack item, float blit) {
+  private void renderEntity(GuiGraphics guiGraphics, Player player, Entity entity, float delta, ItemStack item, float blit) {
     double scale = config.getRadarSize() / config.getRange();
 
     double px = player.xOld + (player.getX() - player.xOld) * delta;
@@ -267,28 +270,29 @@ public class Radar {
       return;
     }
 
-    matrices.pushPose();
-    matrices.translate(dx * scale, dz * scale, 0f);
-    matrices.mulPose(Vector3f.ZP.rotationDegrees(player.getViewYRot(delta)));
-    matrices.scale(config.getIconSize(), config.getIconSize(), 0);
-
+    guiGraphics.pose().pushPose();
+    guiGraphics.pose().translate(dx * scale, dz * scale, 0);
+    guiGraphics.pose().mulPose(Axis.ZP.rotationDegrees(player.getViewYRot(delta)));
+    guiGraphics.pose().scale(config.getIconSize(), config.getIconSize(), 0);
 
     PoseStack poseStack = RenderSystem.getModelViewStack();
     poseStack.pushPose();
-    poseStack.mulPoseMatrix(matrices.last().pose());
+    poseStack.mulPoseMatrix(guiGraphics.pose().last().pose());
     poseStack.scale(0.5f, 0.5f, 1);
-    poseStack.translate(-8, -8, -blit);
+    poseStack.translate(-88, -88, 0);
     RenderSystem.applyModelViewMatrix();
 
-    Minecraft.getInstance().getItemRenderer().renderAndDecorateItem(player, item, 0, 0, 0);
-    RenderSystem.setShader(GameRenderer::getPositionColorShader);
+    BakedModel bakedModel = Minecraft.getInstance().getItemRenderer().getModel(item, player.level(), player, 0);
+    guiGraphics.pose().mulPoseMatrix(new Matrix4f().scaling(1.0f, -1.0f, 1.0f));
+    guiGraphics.pose().scale(16.0f, 16.0f, 16.0f);
+
+    Minecraft.getInstance().getItemRenderer().render(item, ItemDisplayContext.GUI, false, guiGraphics.pose(), guiGraphics.bufferSource(), 0xF000F0, OverlayTexture.NO_OVERLAY, bakedModel);
     poseStack.popPose();
-    RenderSystem.applyModelViewMatrix();
 
-    matrices.popPose();
+    guiGraphics.pose().popPose();
   }
 
-  private void renderPlayers(PoseStack matrices, float delta) {
+  private void renderPlayers(GuiGraphics guiGraphics, float delta) {
     Minecraft minecraft = Minecraft.getInstance();
 
     for (RemotePlayer player : playersInRange) {
@@ -310,33 +314,33 @@ public class Radar {
       RenderSystem.defaultBlendFunc();
       RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1);
 
-      matrices.pushPose();
-      matrices.translate(dx * v, dz * v, 0);
-      matrices.scale(0.9f, 0.9f, 0);
+      guiGraphics.pose().pushPose();
+      guiGraphics.pose().translate(dx * v, dz * v, 0);
+      guiGraphics.pose().scale(0.9f, 0.9f, 0);
 
       PlayerInfo entry = minecraft.player.connection.getPlayerInfo(player.getUUID());
-      matrices.scale(config.getIconSize(), config.getIconSize(), 0);
-      matrices.mulPose(Vector3f.ZP.rotationDegrees(minecraft.player.getViewYRot(delta)));
+      guiGraphics.pose().scale(config.getIconSize(), config.getIconSize(), 0);
+      guiGraphics.pose().mulPose(Axis.ZP.rotationDegrees(minecraft.player.getViewYRot(delta)));
+      ResourceLocation location;
       if (entry != null) {
-        RenderSystem.setShaderTexture(0, entry.getSkinLocation());
+        location = entry.getSkinLocation();
       } else {
-        RenderSystem.setShaderTexture(0, new ResourceLocation("textures/entity/steve.png"));
+        location = new ResourceLocation("textures/entity/steve.png");
       }
-      Gui.blit(matrices, -4, -4, 8, 8, 8.0F, 8, 8, 8, 64, 64);
+      guiGraphics.blit(location, -4, -4, 8, 8, 8.0F, 8, 8, 8, 64, 64);
       RenderSystem.disableBlend();
-      matrices.scale(0.6f, 0.6f, 0);
-      TextComponent component = new TextComponent(
+      guiGraphics.pose().scale(0.6f, 0.6f, 0);
+      Component component = Component.literal(
           player.getScoreboardName() + " (" + (hideY() ? ((int) Math.round(Math.sqrt(dx * dx + dz * dz))) : (int) player.getY()) + ")");
-      minecraft.font.draw(matrices, component, -minecraft.font.width(component) / 2f, 7, 0xffffff);
+      minecraft.font.drawInBatch(component, -minecraft.font.width(component) / 2f, 7, 0xffffff, false, guiGraphics.pose().last().pose(), guiGraphics.bufferSource(), Font.DisplayMode.NORMAL, 0, 0);
 
-      matrices.popPose();
+      guiGraphics.pose().popPose();
     }
   }
 
   private void renderCircleBackground(PoseStack stack) {
     RenderSystem.lineWidth(1);
     RenderSystem.enableBlend();
-    RenderSystem.disableTexture();
     RenderSystem.defaultBlendFunc();
     RenderSystem.setShader(GameRenderer::getPositionColorShader);
 
@@ -353,12 +357,10 @@ public class Radar {
     tessellator.end();
 
     RenderSystem.disableBlend();
-    RenderSystem.enableTexture();
   }
 
   private void renderCircleBorder(PoseStack stack, float radius) {
     RenderSystem.enableBlend();
-    RenderSystem.disableTexture();
     glEnable(GL_POLYGON_SMOOTH);
     RenderSystem.defaultBlendFunc();
     RenderSystem.setShader(GameRenderer::getPositionColorShader);
@@ -382,13 +384,11 @@ public class Radar {
     tessellator.end();
 
     glDisable(GL_POLYGON_SMOOTH);
-    RenderSystem.enableTexture();
     RenderSystem.disableBlend();
   }
 
   private void renderLines(PoseStack matrixStack) {
     RenderSystem.enableBlend();
-    RenderSystem.disableTexture();
     glEnable(GL_POLYGON_SMOOTH);
     RenderSystem.defaultBlendFunc();
     RenderSystem.setShader(GameRenderer::getPositionColorShader);
@@ -412,7 +412,8 @@ public class Radar {
       buffer.vertex(last, left, radius, 0f).color(fgColour).endVertex();
       buffer.vertex(last, right, radius, 0f).color(fgColour).endVertex();
       buffer.vertex(last, right, -radius, 0f).color(fgColour).endVertex();
-      last.multiply(Vector3f.ZP.rotation(rotationRadians));
+      Matrix4f mul = new Matrix4f();
+      last.mul(Axis.ZP.rotation(rotationRadians).get(mul));
     }
     matrixStack.popPose();
 
@@ -420,11 +421,10 @@ public class Radar {
 
     glDisable(GL_POLYGON_SMOOTH);
     RenderSystem.disableBlend();
-    RenderSystem.enableTexture();
   }
 
   public static void playPlayerSound(String soundName, UUID playerKey) {
-    SoundEvent soundEvent = Registry.SOUND_EVENT.get(new ResourceLocation("block.note_block." + soundName));
+    SoundEvent soundEvent = BuiltInRegistries.SOUND_EVENT.get(new ResourceLocation("block.note_block." + soundName));
     if (soundEvent == null) return;
 
     float pitch = .5f + 1.5f * new Random(playerKey.hashCode()).nextFloat();

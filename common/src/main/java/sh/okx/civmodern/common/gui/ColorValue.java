@@ -4,7 +4,6 @@ import java.text.DecimalFormat;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.TranslatableComponent;
 
 public class ColorValue implements DoubleValue {
   private static final DecimalFormat PERCENT_FORMAT = new DecimalFormat("##%");
@@ -34,6 +33,6 @@ public class ColorValue implements DoubleValue {
 
   @Override
   public Component getText(double value) {
-    return new TranslatableComponent(name, PERCENT_FORMAT.format(value));
+    return Component.translatable(name, PERCENT_FORMAT.format(value));
   }
 }

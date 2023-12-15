@@ -1,16 +1,22 @@
 package sh.okx.civmodern.common.gui.widget;
 
+import com.mojang.blaze3d.platform.GlUtil;
 import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.*;
+
 import java.util.function.Consumer;
+
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Gui;
-import net.minecraft.client.gui.GuiComponent;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
-import net.minecraft.network.chat.TextComponent;
+import net.minecraft.client.renderer.GameRenderer;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
+import org.joml.Matrix4f;
+import org.lwjgl.opengl.GLUtil;
 import sh.okx.civmodern.common.gui.Texture;
 import sh.okx.civmodern.common.gui.screen.ScreenCloseable;
 
@@ -38,7 +44,7 @@ public class HsbColourPicker extends AbstractWidget {
   private int renderY;
 
   public HsbColourPicker(int x, int y, int width, int height, int colour, Consumer<Integer> colourConsumer, Consumer<Integer> previewConsumer, ScreenCloseable closeable) {
-    super(x, y, width, height, new TextComponent("HSB Colour Picker"));
+    super(x, y, width, height, Component.literal("HSB Colour Picker"));
 
     this.hue = getHue(colour);
 
@@ -50,17 +56,16 @@ public class HsbColourPicker extends AbstractWidget {
   }
 
   @Override
-  public void renderButton(PoseStack matrixStack, int mouseX, int mouseY, float partialTicks) {
+  public void renderWidget(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTicks) {
     // Render colour picker above button if it would exceed the screen height otherwise
-    this.renderY = (this.y + 101 > Minecraft.getInstance().getWindow().getGuiScaledHeight()) ? this.y - 101 - this.height : this.y;
+    this.renderY = (this.getX() + 101 > Minecraft.getInstance().getWindow().getGuiScaledHeight()) ? this.getY() - 101 - this.height : this.getY();
 
     RenderSystem.setShaderTexture(0, COLOUR_PICKER_ICON);
     RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
-    Gui.blit(matrixStack, this.x, this.y, this.getBlitOffset(), 0, isHoveredOrFocused() ? 20 : 0, this.width,
+    guiGraphics.blit(COLOUR_PICKER_ICON, this.getX(), this.getY(), 10, 0, isHoveredOrFocused() ? 20 : 0, this.width,
         this.height, 20, 40);
 
     if (showPalette) {
-      RenderSystem.enableTexture();
       RenderSystem.enableBlend();
       RenderSystem.defaultBlendFunc();
 
@@ -71,24 +76,32 @@ public class HsbColourPicker extends AbstractWidget {
 
       this.saturationBrightnessTexture.bind();
 
-      matrixStack.pushPose();
-      matrixStack.translate(0, 0, 1000);
+      guiGraphics.pose().pushPose();
+      guiGraphics.pose().translate(0, 0, 1000);
       // Saturation and brightness selector
-      Gui.blit(matrixStack, this.x, renderY + height, 0, 0, 0, 101, 101, 128, 128);
+//      RenderSystem.setShader(GameRenderer::getPositionTexShader);
+//      Matrix4f matrix4f = guiGraphics.pose().last().pose();
+//      BufferBuilder bufferBuilder = Tesselator.getInstance().getBuilder();
+//      bufferBuilder.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX);
+//      bufferBuilder.vertex(matrix4f, i, k, m).uv(f, h).endVertex();
+//      bufferBuilder.vertex(matrix4f, i, l, m).uv(f, n).endVertex();
+//      bufferBuilder.vertex(matrix4f, j, l, m).uv(g, n).endVertex();
+//      bufferBuilder.vertex(matrix4f, j, k, m).uv(g, h).endVertex();
+//      BufferUploader.drawWithShader(bufferBuilder.end());
+//      guiGraphics.blit(this.saturationBrightnessTexture, this.getX(), renderY + height, 0, 0, 0, 101, 101, 128, 128);
 
       // Hue selector
       hueSelector.bind();
-      Gui.blit(matrixStack, this.x + 106, renderY + height, 10, 101, 0, 0, 1, 360, 1, 360);
+//      Gui.blit(matrixStack, this.x + 106, renderY + height, 10, 101, 0, 0, 1, 360, 1, 360);
 
-      RenderSystem.disableTexture();
       RenderSystem.disableBlend();
 
       // Render cursor
       float hueOffset = (this.hue / 360f) * 100;
-      int cursorX = this.x + 106;
+      int cursorX = this.getX() + 106;
       int cursorY = (int) hueOffset + renderY + height;
-      GuiComponent.fill(matrixStack, cursorX, cursorY, cursorX + 10, cursorY + 1, 0xFFFFFFFF);
-      matrixStack.popPose();
+      guiGraphics.fill(cursorX, cursorY, cursorX + 10, cursorY + 1, 0xFFFFFFFF);
+      guiGraphics.pose().popPose();
     }
   }
 
@@ -96,7 +109,7 @@ public class HsbColourPicker extends AbstractWidget {
   public void mouseMoved(double mouseX, double mouseY) {
     if (previewConsumer != null) {
       if (active && visible && showPalette && isOverGrid(mouseX, mouseY)) {
-        int saturation = (int) (mouseX - this.x);
+        int saturation = (int) (mouseX - this.getX());
         int brightness = (int) (mouseY - renderY - height);
         mouseOverGrid = true;
         previewConsumer.accept(toRgb(hue, saturation, brightness));
@@ -133,9 +146,14 @@ public class HsbColourPicker extends AbstractWidget {
         || super.mouseClicked(mouseX, mouseY, button);
   }
 
+  @Override
+  protected void updateWidgetNarration(NarrationElementOutput narrationElementOutput) {
+
+  }
+
   private boolean selectColour(double mouseX, double mouseY, int button) {
     if (active && visible && button == 0 && showPalette && isOverGrid(mouseX, mouseY)) {
-        int saturation = (int) (mouseX - this.x);
+        int saturation = (int) (mouseX - this.getX());
         int brightness = (int) (mouseY - renderY - height);
         colourConsumer.accept(toRgb(hue, saturation, brightness));
         this.showPalette = false;
@@ -151,7 +169,7 @@ public class HsbColourPicker extends AbstractWidget {
         return false;
       }
 
-      if (force || (mouseX >= this.x + 106 && mouseX <= this.x + 106 + 10)) {
+      if (force || (mouseX >= this.getX() + 106 && mouseX <= this.getX() + 106 + 10)) {
         this.hueMouseDown = true;
         double yOffset = mouseY - (renderY + height);
         int newHue = Mth.clamp((int) ((yOffset / 102) * 360), 0, 360);
@@ -166,7 +184,7 @@ public class HsbColourPicker extends AbstractWidget {
   }
 
   private boolean isOverGrid(double mouseX, double mouseY) {
-    return mouseX >= this.x && mouseX < this.x + 101
+    return mouseX >= this.getX() && mouseX < this.getX() + 101
         && mouseY >= renderY + height && mouseY < renderY + height + 101;
   }
 
@@ -211,10 +229,5 @@ public class HsbColourPicker extends AbstractWidget {
 
   public void close() {
     this.showPalette = false;
-  }
-
-  @Override
-  public void updateNarration(NarrationElementOutput narrationElementOutput) {
-
   }
 }

@@ -2,10 +2,11 @@ package sh.okx.civmodern.common.gui.screen;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.CommonComponents;
-import net.minecraft.network.chat.TranslatableComponent;
+import net.minecraft.network.chat.Component;
 import sh.okx.civmodern.common.AbstractCivModernMod;
 import sh.okx.civmodern.common.CivMapConfig;
 import sh.okx.civmodern.common.gui.widget.CyclicButton;
@@ -16,7 +17,7 @@ public class IceRoadConfigScreen extends Screen {
   private final Screen parent;
 
   protected IceRoadConfigScreen(AbstractCivModernMod mod, CivMapConfig config, Screen parent) {
-    super(new TranslatableComponent("civmodern.screen.ice.title"));
+    super(Component.translatable("civmodern.screen.ice.title"));
     this.mod = mod;
     this.config = config;
     this.parent = parent;
@@ -26,28 +27,28 @@ public class IceRoadConfigScreen extends Screen {
   protected void init() {
     addRenderableWidget(new CyclicButton(this.width / 2 - 75, this.height / 6 + 24, 150, 20, config.isIceRoadCardinalEnabled() ? 0 : 1, cycl -> {
       config.setIceRoadCardinalEnabled(cycl.getIndex() == 0);
-    }, new TranslatableComponent("civmodern.screen.ice.cardinal.enable"), new TranslatableComponent("civmodern.screen.ice.cardinal.disable")));
+    }, Component.translatable("civmodern.screen.ice.cardinal.enable"), Component.translatable("civmodern.screen.ice.cardinal.disable")));
 
     addRenderableWidget(new CyclicButton(this.width / 2 - 75, this.height / 6 + 48, 150, 20, config.isIceRoadAutoEat() ? 0 : 1, cycl -> {
       config.setIceRoadAutoEat(cycl.getIndex() == 0);
-    }, new TranslatableComponent("civmodern.screen.ice.eat.enable"), new TranslatableComponent("civmodern.screen.ice.eat.disable")));
+    }, Component.translatable("civmodern.screen.ice.eat.enable"), Component.translatable("civmodern.screen.ice.eat.disable")));
 
     addRenderableWidget(new CyclicButton(this.width / 2 - 75, this.height / 6 + 72, 150, 20, config.isIceRoadStop() ? 0 : 1, cycl -> {
       config.setIceRoadStop(cycl.getIndex() == 0);
-    }, new TranslatableComponent("civmodern.screen.ice.stop.enable"), new TranslatableComponent("civmodern.screen.ice.stop.disable")));
+    }, Component.translatable("civmodern.screen.ice.stop.enable"), Component.translatable("civmodern.screen.ice.stop.disable")));
 
-    addRenderableWidget(new Button(this.width / 2 - 49, this.height / 6 + 169, 98, 20, CommonComponents.GUI_DONE, button -> {
+    addRenderableWidget(Button.builder(CommonComponents.GUI_DONE, button -> {
       config.save();
       minecraft.setScreen(parent);
-    }));
+    }).pos(this.width / 2 - 49, this.height / 6 + 169).size(98, 20).build());
   }
 
   @Override
-  public void render(PoseStack poseStack, int i, int j, float f) {
-    super.renderBackground(poseStack);
-    super.render(poseStack, i, j, f);
+  public void render(GuiGraphics guiGraphics, int i, int j, float f) {
+    super.renderBackground(guiGraphics);
+    super.render(guiGraphics, i, j, f);
 
-    font.drawShadow(poseStack, this.title, this.width / 2f - font.width(this.title) / 2f, 40, 0xffffff);
+    guiGraphics.drawString(font, this.title, (int) (this.width / 2f - font.width(this.title) / 2f), 40, 0xffffff);
   }
 
   @Override

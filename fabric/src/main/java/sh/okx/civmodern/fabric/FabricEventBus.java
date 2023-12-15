@@ -26,7 +26,7 @@ public class FabricEventBus implements EventBus {
     map.put(ScrollEvent.class, new CopyOnWriteArraySet<>());
 
     ClientTickEvents.START_CLIENT_TICK.register(client -> push(new ClientTickEvent()));
-    HudRenderCallback.EVENT.register(((matrixStack, tickDelta) -> push(new PostRenderGameOverlayEvent(matrixStack, tickDelta))));
+    HudRenderCallback.EVENT.register(((guiGraphics, tickDelta) -> push(new PostRenderGameOverlayEvent(guiGraphics, tickDelta))));
   }
 
   @Override

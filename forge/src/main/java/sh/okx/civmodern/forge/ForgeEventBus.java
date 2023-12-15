@@ -6,10 +6,8 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.function.Consumer;
-import net.minecraft.client.renderer.debug.WorldGenAttemptRenderer;
-import net.minecraftforge.client.event.RenderGameOverlayEvent;
-import net.minecraftforge.client.event.RenderGameOverlayEvent.ElementType;
-import net.minecraftforge.client.event.RenderLevelLastEvent;
+import net.minecraftforge.client.event.RenderGuiEvent;
+import net.minecraftforge.client.event.RenderLevelStageEvent;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.TickEvent.Phase;
@@ -42,15 +40,15 @@ public class ForgeEventBus implements EventBus {
   }
 
   @SubscribeEvent
-  public void onRender(RenderGameOverlayEvent.Post event) {
-    if (event.getType() == ElementType.ALL) {
-     push(new PostRenderGameOverlayEvent(event.getMatrixStack(), event.getPartialTicks()));
-    }
+  public void onRender(RenderGuiEvent.Post event) {
+    push(new PostRenderGameOverlayEvent(event.getGuiGraphics(), event.getPartialTick()));
   }
 
   @SubscribeEvent
-  public void onWorldRender(RenderLevelLastEvent event) {
-    push(new WorldRenderEvent(event.getPoseStack(), event.getPartialTick()));
+  public void onWorldRender(RenderLevelStageEvent event) {
+    if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_LEVEL) {
+      push(new WorldRenderEvent(event.getPoseStack(), event.getPartialTick()));
+    }
   }
 
   @Override

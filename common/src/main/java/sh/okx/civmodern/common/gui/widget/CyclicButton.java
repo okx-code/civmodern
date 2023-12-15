@@ -10,7 +10,7 @@ public class CyclicButton extends Button {
   private int index;
 
   public CyclicButton(int x, int y, int width, int height, int index, OnPress onPress, Component... components) {
-    super(x, y, width, height, components[index], b -> {});
+    super(x, y, width, height, components[index], b -> {}, DEFAULT_NARRATION);
     this.index = index;
     this.components = components;
     this.onPress = onPress;

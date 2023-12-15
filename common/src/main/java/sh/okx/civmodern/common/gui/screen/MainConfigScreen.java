@@ -1,9 +1,10 @@
 package sh.okx.civmodern.common.gui.screen;
 
 import com.mojang.blaze3d.vertex.PoseStack;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
-import net.minecraft.network.chat.TranslatableComponent;
+import net.minecraft.network.chat.Component;
 import sh.okx.civmodern.common.AbstractCivModernMod;
 import sh.okx.civmodern.common.CivMapConfig;
 
@@ -13,7 +14,7 @@ public class MainConfigScreen extends Screen {
   private final CivMapConfig config;
 
   public MainConfigScreen(AbstractCivModernMod mod, CivMapConfig config) {
-    super(new TranslatableComponent("civmodern.screen.main.title"));
+    super(Component.translatable("civmodern.screen.main.title"));
     this.mod = mod;
     this.config = config;
   }
@@ -21,22 +22,22 @@ public class MainConfigScreen extends Screen {
   @Override
   protected void init() {
     int col0 = this.width / 2 - 150 / 2;
-    addRenderableWidget(new Button(col0, this.height / 6, 150, 20, new TranslatableComponent("civmodern.screen.main.compacted"), button -> {
+    addRenderableWidget(Button.builder(Component.translatable("civmodern.screen.main.compacted"), button -> {
       minecraft.setScreen(new CompactedConfigScreen(mod, config, this));
-    }));
-    addRenderableWidget(new Button(col0, this.height / 6 + 24, 150, 20, new TranslatableComponent("civmodern.screen.main.radar"), button -> {
+    }).pos(col0, this.height / 6).size(150, 20).build());
+    addRenderableWidget(Button.builder(Component.translatable("civmodern.screen.main.radar"), button -> {
       minecraft.setScreen(new RadarConfigScreen(mod, config, this));
-    }));
-    addRenderableWidget(new Button(col0, this.height / 6 + 48, 150, 20, new TranslatableComponent("civmodern.screen.main.ice"), button -> {
+    }).pos(col0, this.height / 6 + 24).size(150, 20).build());
+    addRenderableWidget(Button.builder(Component.translatable("civmodern.screen.main.ice"), button -> {
       minecraft.setScreen(new IceRoadConfigScreen(mod, config, this));
-    }));
+    }).pos(col0, this.height / 6 + 48).size(150, 20).build());
   }
 
   @Override
-  public void render(PoseStack matrices, int mouseX, int mouseY, float delta) {
-    super.renderBackground(matrices);
+  public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float delta) {
+    super.renderBackground(guiGraphics);
 
-    font.drawShadow(matrices, this.title, this.width / 2f - this.font.width(this.title) / 2f, 15, 0xffffff);
-    super.render(matrices, mouseX, mouseY, delta);
+    guiGraphics.drawString(this.font, this.title, (int) (this.width / 2f - this.font.width(this.title) / 2f), 15, 0xffffff);
+    super.render(guiGraphics, mouseX, mouseY, delta);
   }
 }

@@ -4,9 +4,10 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Gui;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
-import net.minecraft.network.chat.TextComponent;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 
 public class ImageButton extends AbstractWidget {
@@ -15,22 +16,22 @@ public class ImageButton extends AbstractWidget {
   private final OnPress onPress;
 
   public ImageButton(int x, int y, int width, int height, ResourceLocation image, OnPress onPress) {
-    super(x, y, width, height, TextComponent.EMPTY);
+    super(x, y, width, height, Component.empty());
     this.image = image;
     this.onPress = onPress;
   }
 
   @Override
-  public void renderButton(PoseStack poseStack, int i, int j, float f) {
-    Minecraft minecraft = Minecraft.getInstance();
+  public void renderWidget(GuiGraphics guiGraphics, int i, int j, float f) {
     RenderSystem.setShaderTexture(0, image);
     RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
     int k = this.isHoveredOrFocused() ? 1 : 0;
     RenderSystem.enableBlend();
     RenderSystem.defaultBlendFunc();
     RenderSystem.enableDepthTest();
-    Gui.blit(poseStack, this.x, this.y, this.getBlitOffset(), 0, k * 20, this.width, this.height, 20, 40);
-    this.renderBg(poseStack, minecraft, i, j);
+    int blitOffset = 10;
+    guiGraphics.blit(image, this.getX(), this.getY(), blitOffset, 0, k * 20, this.width, this.height, 20, 40);
+//    this.renderBg(poseStack, minecraft, i, j);
   }
 
   @Override
@@ -39,7 +40,7 @@ public class ImageButton extends AbstractWidget {
   }
 
   @Override
-  public void updateNarration(NarrationElementOutput narrationElementOutput) {
+  protected void updateWidgetNarration(NarrationElementOutput narrationElementOutput) {
 
   }
 

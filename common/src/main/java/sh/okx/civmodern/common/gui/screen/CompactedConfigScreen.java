@@ -4,6 +4,7 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import java.text.DecimalFormat;
 import java.util.regex.Pattern;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
@@ -13,8 +14,6 @@ import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.StringTag;
 import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.TextComponent;
-import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 import sh.okx.civmodern.common.AbstractCivModernMod;
@@ -52,7 +51,7 @@ public class CompactedConfigScreen extends Screen {
   private HsbColourPicker picker;
 
   public CompactedConfigScreen(AbstractCivModernMod mod, CivMapConfig config, Screen parent) {
-    super(new TranslatableComponent("civmodern.screen.compacted.title"));
+    super(Component.translatable("civmodern.screen.compacted.title"));
     this.mod = mod;
     this.config = config;
     this.parent = parent;
@@ -65,7 +64,7 @@ public class CompactedConfigScreen extends Screen {
 
     int leftWidth = width / 2 - (60 + 8 + 20 + 8 + 20) / 2;
 
-    EditBox widget = new EditBox(font, leftWidth, height / 6, 60, 20, TextComponent.EMPTY);
+    EditBox widget = new EditBox(font, leftWidth, height / 6, 60, 20, Component.empty());
     widget.setValue("#" + String.format("%06X", config.getColour()));
     widget.setMaxLength(7);
     Pattern pattern = Pattern.compile("^(#[0-9A-F]{0,6})?$", Pattern.CASE_INSENSITIVE);
@@ -94,25 +93,25 @@ public class CompactedConfigScreen extends Screen {
 
     addRenderableWidget(picker = hsb);
 
-    addRenderableWidget(new Button(this.width / 2 - 49, this.height / 6 + 169, 98, 20, CommonComponents.GUI_DONE, button -> {
+    addRenderableWidget(Button.builder(CommonComponents.GUI_DONE, button -> {
       config.save();
       minecraft.setScreen(parent);
-    }));
+    }).pos(this.width / 2 - 49, this.height / 6 + 169).size(98, 20).build());
   }
 
   @Override
-  public void render(PoseStack matrices, int mouseX, int mouseY, float delta) {
-    super.renderBackground(matrices);
+  public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float delta) {
+    super.renderBackground(guiGraphics);
 
-    drawCentredText(matrices, this.title, 0, 40, 0xffffff);
+    drawCentredText(guiGraphics, this.title, 0, 40, 0xffffff);
 
-    drawItem();
+    drawItem(guiGraphics);
 
     if (isCursorOverItem(mouseX, mouseY)) {
-      this.renderTooltip(matrices, ITEM, mouseX, mouseY);
+      guiGraphics.renderTooltip(font, ITEM, mouseX, mouseY);
     }
 
-    super.render(matrices, mouseX, mouseY, delta);
+    super.render(guiGraphics, mouseX, mouseY, delta);
   }
 
   @Override
@@ -145,14 +144,14 @@ public class CompactedConfigScreen extends Screen {
     return mouseX >= itemX - 1  && mouseX < itemX + 17 && mouseY > itemY - 1 && mouseY < itemY + 17;
   }
 
-  private void drawItem() {
-    itemRenderer.renderGuiItem(ITEM, itemX, itemY);
-    itemRenderer.renderGuiItemDecorations(font, ITEM, itemX, itemY);
+  private void drawItem(GuiGraphics guiGraphics) {
+    guiGraphics.renderItem(ITEM, itemX, itemY);
+    guiGraphics.renderItemDecorations(font, ITEM, itemX, itemY);
   }
 
-  private void drawCentredText(PoseStack matrix, Component text, int xOffsetCentre, int yOffsetTop, int colour) {
+  private void drawCentredText(GuiGraphics guiGraphics, Component text, int xOffsetCentre, int yOffsetTop, int colour) {
     int width = Minecraft.getInstance().getWindow().getGuiScaledWidth();
     int centre = width / 2 - font.width(text) / 2;
-    this.font.drawShadow(matrix, text, centre + xOffsetCentre, yOffsetTop, colour);
+    guiGraphics.drawString(this.font, text, centre + xOffsetCentre, yOffsetTop, centre);
   }
 }

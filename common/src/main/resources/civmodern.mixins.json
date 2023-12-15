@@ -5,7 +5,8 @@
   "mixins": [],
   "client": [
     "InventoryMixin",
-    "KeyMappingAccessor"
+    "KeyMappingAccessor",
+    "DecorationsGuiGraphicsMixin"
   ],
   "server": [],
   "injectors": {

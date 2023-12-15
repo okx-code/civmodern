@@ -1,18 +1,19 @@
 package sh.okx.civmodern.common.events;
 
 import com.mojang.blaze3d.vertex.PoseStack;
+import net.minecraft.client.gui.GuiGraphics;
 
 public class PostRenderGameOverlayEvent implements Event {
-  private final PoseStack poseStack;
+  private final GuiGraphics guiGraphics;
   private final float delta;
 
-  public PostRenderGameOverlayEvent(PoseStack poseStack, float delta) {
-    this.poseStack = poseStack;
+  public PostRenderGameOverlayEvent(GuiGraphics guiGraphics, float delta) {
+    this.guiGraphics = guiGraphics;
     this.delta = delta;
   }
 
-  public PoseStack getPoseStack() {
-    return poseStack;
+  public GuiGraphics getGuiGraphics() {
+    return guiGraphics;
   }
 
   public float getDelta() {

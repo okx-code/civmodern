@@ -45,17 +45,13 @@ shadowJar {
     exclude "fabric.mod.json"
 
     configurations = [project.configurations.shadowCommon]
-    classifier "dev-shadow"
+    archiveClassifier = "dev-shadow"
 }
 
 remapJar {
     input.set shadowJar.archiveFile
     dependsOn shadowJar
-    classifier "forge"
-}
-
-jar {
-    classifier "dev"
+    archiveClassifier = "forge"
 }
 
 sourcesJar {
@@ -89,7 +85,7 @@ import net.fabricmc.loom.task.RemapJarTask
 task remapCivMc(type: RemapJarTask) {
     inputFile.set shadowJar.archiveFile
     dependsOn shadowJar
-    classifier "civmc-forge"
+    archiveClassifier = "civmc-forge"
     from sourceSets.main.output
     from '../civmc'
 }

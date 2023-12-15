@@ -1,7 +1,7 @@
 package sh.okx.civmodern.common.gui.widget;
 
 import net.minecraft.client.gui.components.AbstractSliderButton;
-import net.minecraft.network.chat.TextComponent;
+import net.minecraft.network.chat.Component;
 import net.minecraft.util.Mth;
 import sh.okx.civmodern.common.gui.DoubleValue;
 
@@ -13,7 +13,7 @@ public class DoubleOptionUpdateableSliderWidget extends AbstractSliderButton {
 
   public DoubleOptionUpdateableSliderWidget(int x, int y,
       int width, int height, double min, double max, double step, DoubleValue param) {
-    super(x, y, width, height, TextComponent.EMPTY, (param.get() - min) / (max - min));
+    super(x, y, width, height, Component.empty(), (param.get() - min) / (max - min));
     this.param = param;
     this.min = min;
     this.max = max;

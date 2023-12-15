@@ -99,7 +99,6 @@ public abstract class AbstractCivModernMod {
     public final void enable() {
         loadConfig();
         loadRadar();
-        replaceItemRenderer();
 
         this.eventBus.listen(ClientTickEvent.class, e -> this.tick());
         this.eventBus.listen(ScrollEvent.class, e -> this.onScroll());
@@ -124,40 +123,6 @@ public abstract class AbstractCivModernMod {
         while (configBinding.consumeClick()) {
             Minecraft.getInstance().setScreen(new MainConfigScreen(this, config));
         }
-    }
-
-    private void replaceItemRenderer() {
-        Minecraft minecraft = Minecraft.getInstance();
-        for (Field field : Minecraft.class.getDeclaredFields()) {
-            if (field.getType() == ItemRenderer.class) {
-                field.setAccessible(true);
-                try {
-                    field.set(minecraft, new CustomItemRenderer(minecraft.getItemRenderer(), colourProvider));
-                    replaceGuiItemRenderer();
-                    return;
-                } catch (IllegalAccessException e) {
-                    e.printStackTrace();
-                }
-            }
-        }
-        LOGGER.warn("Unable to replace item renderer");
-    }
-
-    private void replaceGuiItemRenderer() {
-        Minecraft minecraft = Minecraft.getInstance();
-        Gui gui = minecraft.gui;
-        for (Field field : Gui.class.getDeclaredFields()) {
-            if (field.getType() == ItemRenderer.class) {
-                field.setAccessible(true);
-                try {
-                    field.set(gui, minecraft.getItemRenderer());
-                    return;
-                } catch (IllegalAccessException e) {
-                    e.printStackTrace();
-                }
-            }
-        }
-        LOGGER.warn("Unable to replace hotbar item renderer");
     }
 
     private void loadConfig() {

@@ -1,18 +1,17 @@
 package sh.okx.civmodern.common.gui.screen;
 
-import com.mojang.blaze3d.vertex.PoseStack;
 import java.text.DecimalFormat;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.TextComponent;
-import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraft.resources.ResourceLocation;
 import sh.okx.civmodern.common.AbstractCivModernMod;
 import sh.okx.civmodern.common.CivMapConfig;
@@ -36,7 +35,7 @@ public class RadarConfigScreen extends Screen implements ScreenCloseable {
   private HsbColourPicker fgPicker;
 
   public RadarConfigScreen(AbstractCivModernMod mod, CivMapConfig config, Screen parent) {
-    super(new TranslatableComponent("civmodern.screen.radar.title"));
+    super(Component.translatable("civmodern.screen.radar.title"));
     this.mod = mod;
     this.config = config;
     this.parent = parent;
@@ -49,28 +48,28 @@ public class RadarConfigScreen extends Screen implements ScreenCloseable {
     int centre = left + 80;
     int right = left + 160;
     int offset = this.height / 6 - 18;
-    addRenderableWidget(new Button(centre, offset, 150, 20, getRadarToggleMessage(), button -> {
+    addRenderableWidget(Button.builder(getRadarToggleMessage(), button -> {
       config.setRadarEnabled(!config.isRadarEnabled());
       button.setMessage(getRadarToggleMessage());
-    }));
+    }).pos(centre, offset).size(150, 20).build());
     offset += 24;
-    addRenderableWidget(new Button(left, offset, 150, 20, getPingToggleMessage(), button -> {
+    addRenderableWidget(Button.builder(getPingToggleMessage(), button -> {
       config.setPingEnabled(!config.isPingEnabled());
       button.setMessage(getPingToggleMessage());
-    }));
-    addRenderableWidget(new Button(right, offset, 150, 20, getPingSoundMessage(), button -> {
+    }).pos(left, offset).size(150, 20).build());
+    addRenderableWidget(Button.builder(getPingSoundMessage(), button -> {
       config.setPingSoundEnabled(!config.isPingSoundEnabled());
       button.setMessage(getPingSoundMessage());
-    }));
+    }).pos(right, offset).size(150, 20).build());
     offset += 24;
-    addRenderableWidget(new Button(left, offset, 150, 20, new TranslatableComponent("civmodern.screen.radar.alignment", config.getAlignment().toString()), button -> {
+    addRenderableWidget(Button.builder(Component.translatable("civmodern.screen.radar.alignment", config.getAlignment().toString()), button -> {
       config.setAlignment(config.getAlignment().next());
-      button.setMessage(new TranslatableComponent("civmodern.screen.radar.alignment", config.getAlignment().toString()));
-    }));
-    addRenderableWidget(new Button(right, offset, 150, 20, getItemToggleMessage(), button -> {
+      button.setMessage(Component.translatable("civmodern.screen.radar.alignment", config.getAlignment().toString()));
+    }).pos(left, offset).size(150, 20).build());
+    addRenderableWidget(Button.builder(getItemToggleMessage(), button -> {
       config.setShowItems(!config.isShowItems());
       button.setMessage(getItemToggleMessage());
-    }));
+    }).pos(right, offset).size(150, 20).build());
     offset += 24;
     addRenderableWidget(new DoubleOptionUpdateableSliderWidget(right, offset, 150, 20, 0, 1, 0.01, new DoubleValue() {
       private final DecimalFormat format = new DecimalFormat("##%");
@@ -87,7 +86,7 @@ public class RadarConfigScreen extends Screen implements ScreenCloseable {
 
       @Override
       public Component getText(double value) {
-        return new TranslatableComponent("civmodern.screen.radar.transparency", format.format(value));
+        return Component.translatable("civmodern.screen.radar.transparency", format.format(value));
       }
     }));
     addRenderableWidget(new DoubleOptionUpdateableSliderWidget(left, offset, 150, 20, 0, 1, 0.01, new DoubleValue() {
@@ -105,7 +104,7 @@ public class RadarConfigScreen extends Screen implements ScreenCloseable {
 
       @Override
       public Component getText(double value) {
-        return new TranslatableComponent("civmodern.screen.radar.background_transparency", format.format(value));
+        return Component.translatable("civmodern.screen.radar.background_transparency", format.format(value));
       }
     }));
     offset += 24;
@@ -124,7 +123,7 @@ public class RadarConfigScreen extends Screen implements ScreenCloseable {
 
       @Override
       public Component getText(double value) {
-        return new TranslatableComponent("civmodern.screen.radar.iconsize", format.format(value));
+        return Component.translatable("civmodern.screen.radar.iconsize", format.format(value));
       }
     }));
     addRenderableWidget(new DoubleOptionUpdateableSliderWidget(right, offset, 150, 20, 20, 150, 1, new DoubleValue() {
@@ -141,7 +140,7 @@ public class RadarConfigScreen extends Screen implements ScreenCloseable {
 
       @Override
       public Component getText(double value) {
-        return new TranslatableComponent("civmodern.screen.radar.range", String.valueOf((int) value));
+        return Component.translatable("civmodern.screen.radar.range", String.valueOf((int) value));
       }
     }));
     offset += 24;
@@ -158,7 +157,7 @@ public class RadarConfigScreen extends Screen implements ScreenCloseable {
 
       @Override
       public Component getText(double value) {
-        return new TranslatableComponent("civmodern.screen.radar.size",
+        return Component.translatable("civmodern.screen.radar.size",
             Integer.toString((int) value));
       }
     }));
@@ -175,7 +174,7 @@ public class RadarConfigScreen extends Screen implements ScreenCloseable {
 
       @Override
       public Component getText(double value) {
-        return new TranslatableComponent("civmodern.screen.radar.circles",
+        return Component.translatable("civmodern.screen.radar.circles",
             Integer.toString((int) value));
       }
     }));
@@ -194,7 +193,7 @@ public class RadarConfigScreen extends Screen implements ScreenCloseable {
 
       @Override
       public Component getText(double value) {
-        return new TranslatableComponent("civmodern.screen.radar.x", String.valueOf((int) value));
+        return Component.translatable("civmodern.screen.radar.x", String.valueOf((int) value));
       }
     }));
     addRenderableWidget(new DoubleOptionUpdateableSliderWidget(right, offset, 150, 20, 0, 300, 1, new DoubleValue() {
@@ -211,7 +210,7 @@ public class RadarConfigScreen extends Screen implements ScreenCloseable {
 
       @Override
       public Component getText(double value) {
-        return new TranslatableComponent("civmodern.screen.radar.y", String.valueOf((int) value));
+        return Component.translatable("civmodern.screen.radar.y", String.valueOf((int) value));
       }
     }));
     offset += 24;
@@ -227,15 +226,15 @@ public class RadarConfigScreen extends Screen implements ScreenCloseable {
         colourProvider::setTemporaryRadarForegroundColour);
 
     offset += 36;
-    addRenderableWidget(new Button(centre, offset, 150, 20, CommonComponents.GUI_DONE, button -> {
+    addRenderableWidget(Button.builder(CommonComponents.GUI_DONE, button -> {
       config.save();
       Minecraft.getInstance().setScreen(parent);
-    }));
+    }).pos(centre, offset).size(150, 20).build());
   }
 
   private HsbColourPicker addColourPicker(int x, int y, int defaultColour, Supplier<Integer> colourGet, Consumer<Integer> colourSet, Consumer<Integer> preview) {
     int left = (x + 75) - (60 + 8 + 20 + 8 + 20) / 2;
-    EditBox widget = new EditBox(font, left, y, 60, 20, TextComponent.EMPTY);
+    EditBox widget = new EditBox(font, left, y, 60, 20, Component.empty());
     widget.setValue("#" + String.format("%06X", colourGet.get()));
     widget.setMaxLength(7);
     Pattern pattern = Pattern.compile("^(#[0-9A-F]{0,6})?$", Pattern.CASE_INSENSITIVE);
@@ -264,25 +263,25 @@ public class RadarConfigScreen extends Screen implements ScreenCloseable {
 
   private Component getPingToggleMessage() {
     if (config.isPingEnabled()) {
-      return new TranslatableComponent("civmodern.screen.radar.pings.enable");
+      return Component.translatable("civmodern.screen.radar.pings.enable");
     } else {
-      return new TranslatableComponent("civmodern.screen.radar.pings.disable");
+      return Component.translatable("civmodern.screen.radar.pings.disable");
     }
   }
 
   private Component getItemToggleMessage() {
     if (config.isShowItems()) {
-      return new TranslatableComponent("civmodern.screen.radar.items.enable");
+      return Component.translatable("civmodern.screen.radar.items.enable");
     } else {
-      return new TranslatableComponent("civmodern.screen.radar.items.disable");
+      return Component.translatable("civmodern.screen.radar.items.disable");
     }
   }
 
   private Component getPingSoundMessage() {
     if (config.isPingSoundEnabled()) {
-      return new TranslatableComponent("civmodern.screen.radar.sound.enable");
+      return Component.translatable("civmodern.screen.radar.sound.enable");
     } else {
-      return new TranslatableComponent("civmodern.screen.radar.sound.disable");
+      return Component.translatable("civmodern.screen.radar.sound.disable");
     }
   }
 
@@ -306,23 +305,23 @@ public class RadarConfigScreen extends Screen implements ScreenCloseable {
   }
 
   @Override
-  public void render(PoseStack matrices, int mouseX, int mouseY, float delta) {
-    TextComponent lineColour = new TextComponent("Line colour");
-    TextComponent backgroundColour = new TextComponent("Background colour");
+  public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float delta) {
+    Component lineColour = Component.literal("Line colour");
+    Component backgroundColour = Component.literal("Background colour");
 
-    this.font.drawShadow(matrices, lineColour, this.width / 2f + 75 - font.width(lineColour) / 2f, foregroundColourY, 0xffffff);
-    this.font.drawShadow(matrices, backgroundColour, this.width / 2f - 75 - font.width(backgroundColour) / 2f, backgroundColourY, 0xffffff);
+    this.font.drawInBatch(lineColour, this.width / 2f + 75 - font.width(lineColour) / 2f, foregroundColourY, 0xffffff, true, guiGraphics.pose().last().pose(), guiGraphics.bufferSource(), Font.DisplayMode.NORMAL, 0, 0xF000F0);
+    this.font.drawInBatch(backgroundColour, this.width / 2f - 75 - font.width(backgroundColour) / 2f, backgroundColourY, 0xffffff, true, guiGraphics.pose().last().pose(), guiGraphics.bufferSource(), Font.DisplayMode.NORMAL, 0, 0xF000F0);
 
-    drawCenteredString(matrices, this.font, this.title, this.width / 2, 15, 0xffffff);
+    guiGraphics.drawCenteredString(this.font, this.title, this.width / 2, 15, 0xffffff);
 
-    super.render(matrices, mouseX, mouseY, delta);
+    super.render(guiGraphics, mouseX, mouseY, delta);
   }
 
   private Component getRadarToggleMessage() {
     if (config.isRadarEnabled()) {
-      return new TextComponent("Radar: Enabled");
+      return Component.literal("Radar: Enabled");
     } else {
-      return new TextComponent("Radar: Disabled");
+      return Component.literal("Radar: Disabled");
     }
   }
 

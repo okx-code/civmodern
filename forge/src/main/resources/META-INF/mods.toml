@@ -7,7 +7,7 @@ license = "GPL"
 modId = "civmodern"
 version = "${version}"
 displayName = "Civ Modern"
-authors = "Me!"
+authors = "Okx"
 description = '''
 Civ Modern
 '''
