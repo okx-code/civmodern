@@ -29,7 +29,8 @@ public class CivMapConfig {
   private boolean pingSoundEnabled;
   private int x;
   private int y;
-  private boolean iceRoadCardinalEnabled;
+  private boolean iceRoadPitchCardinalEnabled;
+  private boolean iceRoadYawCardinalEnabled;
   private boolean iceRoadAutoEat;
   private boolean iceRoadStop;
   private boolean showItems;
@@ -50,7 +51,8 @@ public class CivMapConfig {
     this.radarEnabled = Boolean.parseBoolean(properties.getProperty("radar_enabled", "true"));
     this.pingEnabled = Boolean.parseBoolean(properties.getProperty("ping_enabled", "true"));
     this.pingSoundEnabled = Boolean.parseBoolean(properties.getProperty("ping_sound_enabled", "true"));
-    this.iceRoadCardinalEnabled = Boolean.parseBoolean(properties.getProperty("ice_road_cardinal", "true"));
+    this.iceRoadPitchCardinalEnabled = Boolean.parseBoolean(properties.getProperty("ice_road_cardinal_pitch", "true"));
+    this.iceRoadYawCardinalEnabled = Boolean.parseBoolean(properties.getProperty("ice_road_cardinal_yaw", "true"));
     this.iceRoadAutoEat = Boolean.parseBoolean(properties.getProperty("ice_road_auto_eat", "false"));
     this.iceRoadStop = Boolean.parseBoolean(properties.getProperty("ice_road_stop", "true"));
     this.bgTransparency = Float.parseFloat(properties.getProperty("bg_transparency", String.valueOf(this.transparency)));
@@ -75,7 +77,8 @@ public class CivMapConfig {
       properties.setProperty("radar_enabled", Boolean.toString(radarEnabled));
       properties.setProperty("ping_enabled", Boolean.toString(pingEnabled));
       properties.setProperty("ping_sound_enabled", Boolean.toString(pingEnabled));
-      properties.setProperty("ice_road_cardinal", Boolean.toString(iceRoadCardinalEnabled));
+      properties.setProperty("ice_road_cardinal_pitch", Boolean.toString(iceRoadPitchCardinalEnabled));
+      properties.setProperty("ice_road_cardinal_yaw", Boolean.toString(iceRoadYawCardinalEnabled));
       properties.setProperty("ice_road_auto_eat", Boolean.toString(iceRoadAutoEat));
       properties.setProperty("ice_road_stop", Boolean.toString(iceRoadStop));
       properties.setProperty("show_items", Boolean.toString(showItems));
@@ -201,12 +204,20 @@ public class CivMapConfig {
     this.pingEnabled = pingEnabled;
   }
 
-  public void setIceRoadCardinalEnabled(boolean iceRoadCardinalEnabled) {
-    this.iceRoadCardinalEnabled = iceRoadCardinalEnabled;
+  public void setIceRoadPitchCardinalEnabled(boolean iceRoadPitchCardinalEnabled) {
+    this.iceRoadPitchCardinalEnabled = iceRoadPitchCardinalEnabled;
   }
 
-  public boolean isIceRoadCardinalEnabled() {
-    return iceRoadCardinalEnabled;
+  public void setIceRoadYawCardinalEnabled(boolean iceRoadYawCardinalEnabled) {
+    this.iceRoadYawCardinalEnabled = iceRoadYawCardinalEnabled;
+  }
+
+  public boolean iceRoadPitchCardinalEnabled() {
+    return iceRoadPitchCardinalEnabled;
+  }
+
+  public boolean iceRoadYawCardinalEnabled() {
+    return iceRoadYawCardinalEnabled;
   }
 
   public void setIceRoadAutoEat(boolean iceRoadAutoEat) {
