@@ -48,6 +48,13 @@ public class RadarConfigScreen extends Screen implements ScreenCloseable {
     int centre = left + 80;
     int right = left + 160;
     int offset = this.height / 6 - 18;
+
+    ColourProvider colourProvider = mod.getColourProvider();
+    bgPicker = addColourPicker(left, 220, CivMapConfig.DEFAULT_RADAR_BG_COLOUR, config::getRadarBgColour, config::setRadarBgColour,
+        colourProvider::setTemporaryRadarBackgroundColour);
+    fgPicker = addColourPicker(right, 220, CivMapConfig.DEFAULT_RADAR_FG_COLOUR, config::getRadarColour, config::setRadarColour,
+        colourProvider::setTemporaryRadarForegroundColour);
+
     addRenderableWidget(Button.builder(getRadarToggleMessage(), button -> {
       config.setRadarEnabled(!config.isRadarEnabled());
       button.setMessage(getRadarToggleMessage());
@@ -218,12 +225,6 @@ public class RadarConfigScreen extends Screen implements ScreenCloseable {
     foregroundColourY = backgroundColourY = offset;
 
     offset += 12;
-
-    ColourProvider colourProvider = mod.getColourProvider();
-    bgPicker = addColourPicker(left, offset, CivMapConfig.DEFAULT_RADAR_BG_COLOUR, config::getRadarBgColour, config::setRadarBgColour,
-        colourProvider::setTemporaryRadarBackgroundColour);
-    fgPicker = addColourPicker(right, offset, CivMapConfig.DEFAULT_RADAR_FG_COLOUR, config::getRadarColour, config::setRadarColour,
-        colourProvider::setTemporaryRadarForegroundColour);
 
     offset += 36;
     addRenderableWidget(Button.builder(CommonComponents.GUI_DONE, button -> {

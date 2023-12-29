@@ -1,5 +1,6 @@
 package sh.okx.civmodern.common.radar;
 
+import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.platform.Lighting;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.BufferBuilder;
@@ -18,6 +19,7 @@ import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.player.RemotePlayer;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.LightTexture;
+import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.block.model.BlockModel;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.client.resources.model.BakedModel;
@@ -37,6 +39,7 @@ import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.vehicle.Boat;
 import net.minecraft.world.entity.vehicle.Minecart;
+import net.minecraft.world.inventory.InventoryMenu;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -218,7 +221,12 @@ public class Radar {
     for (int i = 1; i <= config.getRadarCircles(); i++) {
       renderCircleBorder(guiGraphics.pose(), radius() * (i / (float) config.getRadarCircles()));
     }
-    guiGraphics.pose().mulPose(Axis.ZP.rotationDegrees((-player.getViewYRot(delta)) % 360f));
+    if (config.isNorthUp()) {
+      guiGraphics.pose().mulPose(Axis.ZP.rotationDegrees(180));
+      renderAngle(guiGraphics.pose(), delta);
+    } else {
+      guiGraphics.pose().mulPose(Axis.ZP.rotationDegrees((-player.getViewYRot(delta)) % 360f));
+    }
     renderLines(guiGraphics.pose());
 
     if (config.isShowItems()) {
@@ -272,22 +280,27 @@ public class Radar {
 
     guiGraphics.pose().pushPose();
     guiGraphics.pose().translate(dx * scale, dz * scale, 0);
-    guiGraphics.pose().mulPose(Axis.ZP.rotationDegrees(player.getViewYRot(delta)));
+    if (config.isNorthUp()) {
+      guiGraphics.pose().mulPose(Axis.ZP.rotationDegrees(180));
+    } else {
+      guiGraphics.pose().mulPose(Axis.ZP.rotationDegrees(player.getViewYRot(delta)));
+    }
     guiGraphics.pose().scale(config.getIconSize(), config.getIconSize(), 0);
-
-    PoseStack poseStack = RenderSystem.getModelViewStack();
-    poseStack.pushPose();
-    poseStack.mulPoseMatrix(guiGraphics.pose().last().pose());
-    poseStack.scale(0.5f, 0.5f, 1);
-    poseStack.translate(-88, -88, 0);
-    RenderSystem.applyModelViewMatrix();
 
     BakedModel bakedModel = Minecraft.getInstance().getItemRenderer().getModel(item, player.level(), player, 0);
     guiGraphics.pose().mulPoseMatrix(new Matrix4f().scaling(1.0f, -1.0f, 1.0f));
     guiGraphics.pose().scale(16.0f, 16.0f, 16.0f);
 
+    boolean notUseBlockLight = !bakedModel.usesBlockLight();
+
+    if (notUseBlockLight)
+      Lighting.setupForFlatItems();
+
     Minecraft.getInstance().getItemRenderer().render(item, ItemDisplayContext.GUI, false, guiGraphics.pose(), guiGraphics.bufferSource(), 0xF000F0, OverlayTexture.NO_OVERLAY, bakedModel);
-    poseStack.popPose();
+    guiGraphics.bufferSource().endBatch();
+
+    if (notUseBlockLight)
+      Lighting.setupFor3DItems();
 
     guiGraphics.pose().popPose();
   }
@@ -320,7 +333,11 @@ public class Radar {
 
       PlayerInfo entry = minecraft.player.connection.getPlayerInfo(player.getUUID());
       guiGraphics.pose().scale(config.getIconSize(), config.getIconSize(), 0);
-      guiGraphics.pose().mulPose(Axis.ZP.rotationDegrees(minecraft.player.getViewYRot(delta)));
+      if (config.isNorthUp()) {
+        guiGraphics.pose().mulPose(Axis.ZP.rotationDegrees(minecraft.player.getViewYRot(delta)));
+      } else {
+        guiGraphics.pose().mulPose(Axis.ZP.rotationDegrees(180));
+      }
       ResourceLocation location;
       if (entry != null) {
         location = entry.getSkinLocation();
@@ -383,6 +400,37 @@ public class Radar {
     }
     tessellator.end();
 
+    glDisable(GL_POLYGON_SMOOTH);
+    RenderSystem.disableBlend();
+  }
+
+  private void renderAngle(PoseStack matrixStack, float delta) {
+    RenderSystem.enableBlend();
+    glEnable(GL_POLYGON_SMOOTH);
+    RenderSystem.defaultBlendFunc();
+    RenderSystem.setShader(GameRenderer::getPositionColorShader);
+
+    float radius = radius() + 0.5f;
+
+    Tesselator tesselator = Tesselator.getInstance();
+    BufferBuilder buffer = tesselator.getBuilder();
+    buffer.begin(Mode.QUADS, DefaultVertexFormat.POSITION_COLOR);
+
+    float thickness = 1f;
+    float left = -thickness / 2;
+    float right = thickness / 2;
+
+    matrixStack.pushPose();
+    Matrix4f last = matrixStack.last().pose();
+
+    last.mul(Axis.ZP.rotationDegrees(Minecraft.getInstance().player.getViewYRot(delta)).get(new Matrix4f()));
+    buffer.vertex(last, left, -radius, 0).color(fgColour).endVertex();
+    buffer.vertex(last, left, 0, 0).color(fgColour).endVertex();
+    buffer.vertex(last, right, 0, 0).color(fgColour).endVertex();
+    buffer.vertex(last, right, -radius, 0).color(fgColour).endVertex();
+
+    matrixStack.popPose();
+    tesselator.end();
     glDisable(GL_POLYGON_SMOOTH);
     RenderSystem.disableBlend();
   }

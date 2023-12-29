@@ -79,19 +79,27 @@ public class HsbColourPicker extends AbstractWidget {
       guiGraphics.pose().pushPose();
       guiGraphics.pose().translate(0, 0, 1000);
       // Saturation and brightness selector
-//      RenderSystem.setShader(GameRenderer::getPositionTexShader);
-//      Matrix4f matrix4f = guiGraphics.pose().last().pose();
-//      BufferBuilder bufferBuilder = Tesselator.getInstance().getBuilder();
-//      bufferBuilder.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX);
-//      bufferBuilder.vertex(matrix4f, i, k, m).uv(f, h).endVertex();
-//      bufferBuilder.vertex(matrix4f, i, l, m).uv(f, n).endVertex();
-//      bufferBuilder.vertex(matrix4f, j, l, m).uv(g, n).endVertex();
-//      bufferBuilder.vertex(matrix4f, j, k, m).uv(g, h).endVertex();
-//      BufferUploader.drawWithShader(bufferBuilder.end());
+      RenderSystem.setShader(GameRenderer::getPositionTexShader);
+      Matrix4f matrix4f = guiGraphics.pose().last().pose();
+      BufferBuilder bufferBuilder = Tesselator.getInstance().getBuilder();
+
+      bufferBuilder.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX);
+      bufferBuilder.vertex(matrix4f, this.getX(), renderY + height, 0).uv(0, 0).endVertex();
+      bufferBuilder.vertex(matrix4f, this.getX(), renderY + height + 128, 0).uv(0, 1).endVertex();
+      bufferBuilder.vertex(matrix4f, this.getX() + 128, renderY + height + 128, 0).uv(1, 1).endVertex();
+      bufferBuilder.vertex(matrix4f, this.getX() + 128, renderY + height, 0).uv(1, 0).endVertex();
+      BufferUploader.drawWithShader(bufferBuilder.end());
 //      guiGraphics.blit(this.saturationBrightnessTexture, this.getX(), renderY + height, 0, 0, 0, 101, 101, 128, 128);
 
       // Hue selector
       hueSelector.bind();
+      RenderSystem.setShader(GameRenderer::getPositionTexShader);
+      bufferBuilder.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX);
+      bufferBuilder.vertex(matrix4f, this.getX() + 106, renderY + height, 0).uv(0, 0).endVertex();
+      bufferBuilder.vertex(matrix4f, this.getX() + 106, renderY + height + 101, 0).uv(0, 1).endVertex();
+      bufferBuilder.vertex(matrix4f, this.getX() + 106 + 10, renderY + height + 101, 0).uv(1, 1).endVertex();
+      bufferBuilder.vertex(matrix4f, this.getX() + 106 + 10, renderY + height, 0).uv(1, 0).endVertex();
+      BufferUploader.drawWithShader(bufferBuilder.end());
 //      Gui.blit(matrixStack, this.x + 106, renderY + height, 10, 101, 0, 0, 1, 360, 1, 360);
 
       RenderSystem.disableBlend();
@@ -153,12 +161,12 @@ public class HsbColourPicker extends AbstractWidget {
 
   private boolean selectColour(double mouseX, double mouseY, int button) {
     if (active && visible && button == 0 && showPalette && isOverGrid(mouseX, mouseY)) {
-        int saturation = (int) (mouseX - this.getX());
-        int brightness = (int) (mouseY - renderY - height);
-        colourConsumer.accept(toRgb(hue, saturation, brightness));
-        this.showPalette = false;
-        return true;
-      }
+      int saturation = (int) (mouseX - this.getX());
+      int brightness = (int) (mouseY - renderY - height);
+      colourConsumer.accept(toRgb(hue, saturation, brightness));
+      this.showPalette = false;
+      return true;
+    }
     return false;
   }
 

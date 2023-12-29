@@ -33,6 +33,7 @@ public class CivMapConfig {
   private boolean iceRoadAutoEat;
   private boolean iceRoadStop;
   private boolean showItems;
+  private boolean northUp;
 
   public CivMapConfig(File file, Properties properties) {
     this.file = file;
@@ -55,6 +56,7 @@ public class CivMapConfig {
     this.iceRoadStop = Boolean.parseBoolean(properties.getProperty("ice_road_stop", "true"));
     this.bgTransparency = Float.parseFloat(properties.getProperty("bg_transparency", String.valueOf(this.transparency)));
     this.showItems = Boolean.parseBoolean(properties.getProperty("show_items", "true"));
+    this.northUp = Boolean.parseBoolean(properties.getProperty("north_up", "false"));
   }
 
   public void save() {
@@ -79,6 +81,7 @@ public class CivMapConfig {
       properties.setProperty("ice_road_auto_eat", Boolean.toString(iceRoadAutoEat));
       properties.setProperty("ice_road_stop", Boolean.toString(iceRoadStop));
       properties.setProperty("show_items", Boolean.toString(showItems));
+      properties.setProperty("north_up", Boolean.toString(northUp));
 
       try (FileOutputStream output = new FileOutputStream(file)) {
         properties.store(output, null);
@@ -239,5 +242,13 @@ public class CivMapConfig {
 
   public void setRadarBgColour(int radarBgColour) {
     this.radarBgColour = radarBgColour;
+  }
+
+  public boolean isNorthUp() {
+    return northUp;
+  }
+
+  public void setNorthUp(boolean northUp) {
+    this.northUp = northUp;
   }
 }

@@ -48,7 +48,7 @@ public class IceRoadConfigScreen extends Screen {
     super.renderBackground(guiGraphics);
     super.render(guiGraphics, i, j, f);
 
-    guiGraphics.drawString(font, this.title, (int) (this.width / 2f - font.width(this.title) / 2f), 40, 0xffffff);
+    guiGraphics.drawString(font, this.title, (int) (this.width / 2f - font.width(this.title) / 2f), 15, 0xffffff);
   }
 
   @Override

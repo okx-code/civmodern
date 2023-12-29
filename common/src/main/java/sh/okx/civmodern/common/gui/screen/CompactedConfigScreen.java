@@ -1,5 +1,6 @@
 package sh.okx.civmodern.common.gui.screen;
 
+import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import java.text.DecimalFormat;
 import java.util.regex.Pattern;
@@ -103,7 +104,7 @@ public class CompactedConfigScreen extends Screen {
   public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float delta) {
     super.renderBackground(guiGraphics);
 
-    drawCentredText(guiGraphics, this.title, 0, 40, 0xffffff);
+    drawCentredText(guiGraphics, this.title, 0, 15, 0xffffff);
 
     drawItem(guiGraphics);
 
@@ -152,6 +153,6 @@ public class CompactedConfigScreen extends Screen {
   private void drawCentredText(GuiGraphics guiGraphics, Component text, int xOffsetCentre, int yOffsetTop, int colour) {
     int width = Minecraft.getInstance().getWindow().getGuiScaledWidth();
     int centre = width / 2 - font.width(text) / 2;
-    guiGraphics.drawString(this.font, text, centre + xOffsetCentre, yOffsetTop, centre);
+    guiGraphics.drawString(this.font, text, centre + xOffsetCentre, yOffsetTop, colour);
   }
 }
