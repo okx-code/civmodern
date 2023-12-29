@@ -43,9 +43,13 @@ public class IceRoadMacro {
         eating = null;
         enabled = false;
       } else {
-        if (config.isIceRoadCardinalEnabled()) {
-          float rot = Math.round(mc.player.getYRot() / 45) * 45;
-          mc.player.setYRot(rot);
+        if (config.iceRoadYawCardinalEnabled()) {
+          float roty = Math.round(mc.player.getYRot() / 45) * 45;
+          mc.player.setYRot(roty);
+        }
+        if (config.iceRoadPitchCardinalEnabled()) {
+          float rotx = Math.round(mc.player.getXRot() / 45) * 45;
+          mc.player.setXRot(rotx);
         }
 
         enabled = true;

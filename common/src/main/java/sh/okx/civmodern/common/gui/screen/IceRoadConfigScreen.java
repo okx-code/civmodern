@@ -1,7 +1,5 @@
 package sh.okx.civmodern.common.gui.screen;
 
-import com.mojang.blaze3d.vertex.PoseStack;
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
@@ -25,15 +23,19 @@ public class IceRoadConfigScreen extends Screen {
 
   @Override
   protected void init() {
-    addRenderableWidget(new CyclicButton(this.width / 2 - 75, this.height / 6 + 24, 150, 20, config.isIceRoadCardinalEnabled() ? 0 : 1, cycl -> {
-      config.setIceRoadCardinalEnabled(cycl.getIndex() == 0);
-    }, Component.translatable("civmodern.screen.ice.cardinal.enable"), Component.translatable("civmodern.screen.ice.cardinal.disable")));
+    addRenderableWidget(new CyclicButton(this.width / 2 - 85, this.height / 6 + 24, 165, 20, config.iceRoadPitchCardinalEnabled() ? 0 : 1, cycl -> {
+      config.setIceRoadPitchCardinalEnabled(cycl.getIndex() == 0);
+    }, Component.translatable("civmodern.screen.ice.cardinal.pitch.enable"), Component.translatable("civmodern.screen.ice.cardinal.pitch.disable")));
 
-    addRenderableWidget(new CyclicButton(this.width / 2 - 75, this.height / 6 + 48, 150, 20, config.isIceRoadAutoEat() ? 0 : 1, cycl -> {
+    addRenderableWidget(new CyclicButton(this.width / 2 - 85, this.height / 6 + 48, 165, 20, config.iceRoadYawCardinalEnabled() ? 0 : 1, cycl -> {
+      config.setIceRoadYawCardinalEnabled(cycl.getIndex() == 0);
+    }, Component.translatable("civmodern.screen.ice.cardinal.yaw.enable"), Component.translatable("civmodern.screen.ice.cardinal.yaw.disable")));
+
+    addRenderableWidget(new CyclicButton(this.width / 2 - 85, this.height / 6 + 72, 165, 20, config.isIceRoadAutoEat() ? 0 : 1, cycl -> {
       config.setIceRoadAutoEat(cycl.getIndex() == 0);
     }, Component.translatable("civmodern.screen.ice.eat.enable"), Component.translatable("civmodern.screen.ice.eat.disable")));
 
-    addRenderableWidget(new CyclicButton(this.width / 2 - 75, this.height / 6 + 72, 150, 20, config.isIceRoadStop() ? 0 : 1, cycl -> {
+    addRenderableWidget(new CyclicButton(this.width / 2 - 85, this.height / 6 + 96, 165, 20, config.isIceRoadStop() ? 0 : 1, cycl -> {
       config.setIceRoadStop(cycl.getIndex() == 0);
     }, Component.translatable("civmodern.screen.ice.stop.enable"), Component.translatable("civmodern.screen.ice.stop.disable")));
 
