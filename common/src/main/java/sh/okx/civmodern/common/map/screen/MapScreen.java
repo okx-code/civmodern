@@ -95,8 +95,8 @@ public class MapScreen extends Screen {
 		Button doneButton = new Button(left + 72, 132, 120, 20, CommonComponents.GUI_DONE, button -> {
 			waypointModal.done();
 		});
-		ImageButton coordsButton = new ImageButton(left + 56 + 56 + 60, 104, 20, 20, new ResourceLocation("civmodern", "gui/boat.png"), imbg -> {
-
+		ImageButton coordsButton = new ImageButton(left + 56 + 56 + 60, 104, 20, 20, new ResourceLocation("civmodern", "gui/target.png"), imbg -> {
+			waypointModal.done();
 		});
 		waypointModal = new WaypointModal(waypoints, font, editBox, xBox, yBox, zBox, coordsButton, doneButton);
 		waypointModal.updateDone();
@@ -150,6 +150,8 @@ public class MapScreen extends Screen {
 			}
 		}
 
+		matrices.pushPose();
+		matrices.translate(0, -1, 0);
 		Tesselator tesselator = Tesselator.getInstance();
 		BufferBuilder buffer = tesselator.getBuilder();
 
@@ -186,7 +188,7 @@ public class MapScreen extends Screen {
 
 				String str = waypoint.name();
 
-				matrices.translate(0, -15, 0);
+				matrices.translate(0, -15, -10);
 				Matrix4f last = matrices.last().pose();
 				RenderSystem.enableBlend();
 				font.drawInBatch(str, -font.width(str) / 2f, (float) 0, 0xFFFFFFFF, false, last, source, false, 1056964608, 15728640);
@@ -300,6 +302,7 @@ public class MapScreen extends Screen {
 			RenderSystem.disableBlend();
 		}
 
+		matrices.popPose();
 		super.render(matrices, mouseX, mouseY, delta);
 	}
 

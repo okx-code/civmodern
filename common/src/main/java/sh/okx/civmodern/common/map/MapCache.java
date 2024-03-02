@@ -143,6 +143,8 @@ public class MapCache {
       double dist = Mth.lengthSquared(entry.getKey().x() * 512 + 256 - px, entry.getKey().z() * 512 + 256 - pz);
       if (dist > 96 * 16 * 96 * 16) {
         iterator.remove();
+        this.mapFile.save(entry.getKey(), entry.getValue());
+        this.dirtySaveRegions.remove(entry.getKey());
       }
     }
   }

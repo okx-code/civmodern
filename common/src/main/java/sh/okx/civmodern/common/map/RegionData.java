@@ -14,10 +14,8 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.chunk.ChunkAccess;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.level.material.Fluids;
-import org.checkerframework.checker.nullness.qual.NonNull;
 import sh.okx.civmodern.common.AbstractCivModernMod;
 
-import java.awt.image.BufferedImage;
 import java.util.Arrays;
 import java.util.Optional;
 
@@ -208,6 +206,12 @@ public class RegionData {
                     color = blockCache.get(blockBiomeId);
                 }
 
+                if (waterDepth > 0) {
+                    Biome biome = registry.byId(biomeId);
+                    int fluidColor = fancyFluids(biome, 0.05F);
+                    color = blend(fluidColor, color | 0xFF000000) & 0xFFFFFF;
+                }
+
                 int bt = Integer.bitCount((packedData >>> 8) & 0xF);
                 int alpha;
                 if (bt == 0 || bt == 1) {
@@ -233,9 +237,6 @@ public class RegionData {
             }
         }
 
-        long l = System.nanoTime();
-        System.out.println("data - " + (l - f) / 1000 + "us");
-
         if (RenderSystem.isOnRenderThread()) {
             texture.update(colours, rx, rz, minX, maxX, minZ, maxZ);
         } else {
@@ -248,6 +249,48 @@ public class RegionData {
         double g = (green(color1) * (1 - a0));
         double b = (blue(color1) * (1 - a0));
         return rgb((int) r, (int) g, (int) b);
+    }
+
+    public static int fancyFluids(Biome biome, float depth) {
+        // let's do some maths to get pretty fluid colors based on depth
+        int color = biome.getWaterColor();
+        color = lerpARGB(color, 0xFF000000, Mth.clamp(cubicOut(depth / 1.5F), 0, 0.45f));
+        color = setAlpha((int) (quinticOut(Mth.clamp(depth * 5F, 0, 1)) * 0xFF), color);
+        return color;
+    }
+
+    public static int setAlpha(int alpha, int argb) {
+        return (alpha << 24) | (argb & 0xFFFFFF);
+    }
+
+    public static int lerpARGB(int color0, int color1, float delta) {
+        if (color0 == color1) return color0;
+        if (delta >= 1F) return color1;
+        if (delta <= 0F) return color0;
+        return argb(
+            (int) Mth.lerp(delta, alpha(color0), alpha(color1)),
+            (int) Mth.lerp(delta, red(color0), red(color1)),
+            (int) Mth.lerp(delta, green(color0), green(color1)),
+            (int) Mth.lerp(delta, blue(color0), blue(color1))
+        );
+    }
+
+    public static int blend(int color0, int color1) {
+        double a0 = (double) alpha(color0) / 0xFF;
+        double a1 = (double) alpha(color1) / 0xFF;
+        double a = a0 + a1 * (1 - a0);
+        double r = (red(color0) * a0 + red(color1) * a1 * (1 - a0)) / a;
+        double g = (green(color0) * a0 + green(color1) * a1 * (1 - a0)) / a;
+        double b = (blue(color0) * a0 + blue(color1) * a1 * (1 - a0)) / a;
+        return argb((int) a * 0xFF, (int) r, (int) g, (int) b);
+    }
+
+    public static float quinticOut(float t) {
+        return 1F + ((t -= 1F) * t * t * t * t);
+    }
+
+    public static float cubicOut(float t) {
+        return 1F + ((t -= 1F) * t * t);
     }
 
     public static int argb(int alpha, int red, int green, int blue) {
