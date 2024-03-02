@@ -102,7 +102,7 @@ public class CompactedConfigScreen extends Screen {
 
   @Override
   public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float delta) {
-    super.renderBackground(guiGraphics);
+    super.renderBackground(guiGraphics, mouseX, mouseY, delta);
 
     drawCentredText(guiGraphics, this.title, 0, 15, 0xffffff);
 
