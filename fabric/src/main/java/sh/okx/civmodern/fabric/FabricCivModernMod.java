@@ -7,13 +7,13 @@ import sh.okx.civmodern.common.events.EventBus;
 
 public class FabricCivModernMod extends AbstractCivModernMod {
 
-  @Override
-  public EventBus provideEventBus() {
-    return new FabricEventBus();
-  }
+    @Override
+    public EventBus provideEventBus() {
+        return new FabricEventBus();
+    }
 
-  @Override
-  public void registerKeyBinding(KeyMapping mapping) {
-    KeyBindingHelper.registerKeyBinding(mapping);
-  }
+    @Override
+    public void registerKeyBinding(KeyMapping mapping) {
+        KeyBindingHelper.registerKeyBinding(mapping);
+    }
 }

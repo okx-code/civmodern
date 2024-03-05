@@ -17,32 +17,32 @@ import sh.okx.civmodern.common.events.WorldRenderEvent;
 
 public class FabricEventBus implements EventBus {
 
-  private final Map<Class<? extends Event>, Set<Consumer<Event>>> map = new ConcurrentHashMap<>();
+    private final Map<Class<? extends Event>, Set<Consumer<Event>>> map = new ConcurrentHashMap<>();
 
-  public FabricEventBus() {
-    map.put(ClientTickEvent.class, new CopyOnWriteArraySet<>());
-    map.put(PostRenderGameOverlayEvent.class, new CopyOnWriteArraySet<>());
-    map.put(WorldRenderEvent.class, new CopyOnWriteArraySet<>());
-    map.put(ScrollEvent.class, new CopyOnWriteArraySet<>());
+    public FabricEventBus() {
+        map.put(ClientTickEvent.class, new CopyOnWriteArraySet<>());
+        map.put(PostRenderGameOverlayEvent.class, new CopyOnWriteArraySet<>());
+        map.put(WorldRenderEvent.class, new CopyOnWriteArraySet<>());
+        map.put(ScrollEvent.class, new CopyOnWriteArraySet<>());
 
-    ClientTickEvents.START_CLIENT_TICK.register(client -> push(new ClientTickEvent()));
-    HudRenderCallback.EVENT.register(((guiGraphics, tickDelta) -> push(new PostRenderGameOverlayEvent(guiGraphics, tickDelta))));
-  }
-
-  @Override
-  public void push(Event event) {
-    for (Consumer<Event> consumer : map.getOrDefault(event.getClass(), Collections.emptySet())) {
-      consumer.accept(event);
+        ClientTickEvents.START_CLIENT_TICK.register(client -> push(new ClientTickEvent()));
+        HudRenderCallback.EVENT.register(((guiGraphics, tickDelta) -> push(new PostRenderGameOverlayEvent(guiGraphics, tickDelta))));
     }
-  }
 
-  @SuppressWarnings("unchecked")
-  @Override
-  public <T extends Event> void listen(Class<T> event, Consumer<T> listener) {
-    Set<Consumer<Event>> set = map.get(event);
-    if (set == null) {
-      throw new IllegalArgumentException("Class not supported: " + event);
+    @Override
+    public void push(Event event) {
+        for (Consumer<Event> consumer : map.getOrDefault(event.getClass(), Collections.emptySet())) {
+            consumer.accept(event);
+        }
     }
-    set.add((Consumer<Event>) listener);
-  }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public <T extends Event> void listen(Class<T> event, Consumer<T> listener) {
+        Set<Consumer<Event>> set = map.get(event);
+        if (set == null) {
+            throw new IllegalArgumentException("Class not supported: " + event);
+        }
+        set.add((Consumer<Event>) listener);
+    }
 }
