@@ -334,9 +334,9 @@ public class Radar {
             PlayerInfo entry = minecraft.player.connection.getPlayerInfo(player.getUUID());
             guiGraphics.pose().scale(config.getIconSize(), config.getIconSize(), 0);
             if (config.isNorthUp()) {
-                guiGraphics.pose().mulPose(Axis.ZP.rotationDegrees(minecraft.player.getViewYRot(delta)));
-            } else {
                 guiGraphics.pose().mulPose(Axis.ZP.rotationDegrees(180));
+            } else {
+                guiGraphics.pose().mulPose(Axis.ZP.rotationDegrees(minecraft.player.getViewYRot(delta)));
             }
             ResourceLocation location;
             if (entry != null) {
