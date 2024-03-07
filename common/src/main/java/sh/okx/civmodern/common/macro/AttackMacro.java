@@ -7,7 +7,7 @@ import org.jetbrains.annotations.NotNull;
 import sh.okx.civmodern.common.AbstractCivModernMod;
 import sh.okx.civmodern.common.events.ClientTickEvent;
 import sh.okx.civmodern.common.events.ScrollEvent;
-import sh.okx.civmodern.common.mixins.KeyMappingAccessor;
+import sh.okx.civmodern.common.mixins.accessors.KeyMappingAccessor;
 
 public class AttackMacro {
 
