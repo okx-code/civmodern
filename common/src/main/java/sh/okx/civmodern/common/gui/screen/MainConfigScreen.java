@@ -35,7 +35,7 @@ public class MainConfigScreen extends Screen {
 
   @Override
   public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float delta) {
-    super.renderBackground(guiGraphics, mouseX, mouseY, delta);
+    super.renderBackground(guiGraphics);
 
     guiGraphics.drawString(this.font, this.title, (int) (this.width / 2f - this.font.width(this.title) / 2f), 15, 0xffffff);
     super.render(guiGraphics, mouseX, mouseY, delta);

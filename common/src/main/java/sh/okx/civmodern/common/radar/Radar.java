@@ -167,7 +167,7 @@ public class Radar {
 
   public void onRender(PostRenderGameOverlayEvent event) {
     Minecraft mc = Minecraft.getInstance();
-    if (mc.options.hideGui || mc.getDebugOverlay().showDebugScreen()) {
+    if (mc.options.hideGui || mc.options.renderDebug) {
       return;
     }
 
@@ -340,7 +340,7 @@ public class Radar {
       }
       ResourceLocation location;
       if (entry != null) {
-        location = entry.getSkin().texture();
+        location = entry.getSkinLocation();
       } else {
         location = new ResourceLocation("textures/entity/steve.png");
       }
