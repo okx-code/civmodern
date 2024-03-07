@@ -1,22 +1,14 @@
 package sh.okx.civmodern.common.events;
 
-import com.mojang.blaze3d.vertex.PoseStack;
+import java.util.Objects;
 import net.minecraft.client.gui.GuiGraphics;
+import org.jetbrains.annotations.NotNull;
 
-public class PostRenderGameOverlayEvent implements Event {
-    private final GuiGraphics guiGraphics;
-    private final float delta;
-
-    public PostRenderGameOverlayEvent(GuiGraphics guiGraphics, float delta) {
-        this.guiGraphics = guiGraphics;
-        this.delta = delta;
-    }
-
-    public GuiGraphics getGuiGraphics() {
-        return guiGraphics;
-    }
-
-    public float getDelta() {
-        return delta;
+public record PostRenderGameOverlayEvent(
+    @NotNull GuiGraphics guiGraphics,
+    float deltaTick
+) {
+    public PostRenderGameOverlayEvent {
+        Objects.requireNonNull(guiGraphics);
     }
 }

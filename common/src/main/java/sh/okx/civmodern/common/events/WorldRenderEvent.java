@@ -1,21 +1,14 @@
 package sh.okx.civmodern.common.events;
 
 import com.mojang.blaze3d.vertex.PoseStack;
+import java.util.Objects;
+import org.jetbrains.annotations.NotNull;
 
-public class WorldRenderEvent implements Event {
-    private final PoseStack poseStack;
-    private final float delta;
-
-    public WorldRenderEvent(PoseStack poseStack, float delta) {
-        this.poseStack = poseStack;
-        this.delta = delta;
-    }
-
-    public PoseStack getPoseStack() {
-        return poseStack;
-    }
-
-    public float getDelta() {
-        return delta;
+public record WorldRenderEvent(
+    @NotNull PoseStack poseStack,
+    float deltaTick
+) {
+    public WorldRenderEvent {
+        Objects.requireNonNull(poseStack);
     }
 }

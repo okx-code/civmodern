@@ -1,5 +1,6 @@
 package sh.okx.civmodern.common;
 
+import com.google.common.eventbus.Subscribe;
 import com.mojang.blaze3d.platform.InputConstants.Type;
 import java.io.File;
 import java.io.FileInputStream;
@@ -16,10 +17,10 @@ import net.minecraft.client.gui.Gui;
 import net.minecraft.client.renderer.entity.ItemRenderer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.lwjgl.glfw.GLFW;
 import sh.okx.civmodern.common.events.ClientTickEvent;
 import sh.okx.civmodern.common.events.EventBus;
-import sh.okx.civmodern.common.events.ScrollEvent;
 import sh.okx.civmodern.common.gui.screen.MainConfigScreen;
 import sh.okx.civmodern.common.macro.AttackMacro;
 import sh.okx.civmodern.common.macro.HoldKeyMacro;
@@ -45,7 +46,7 @@ public abstract class AbstractCivModernMod {
     private IceRoadMacro iceRoadMacro;
     private AttackMacro attackMacro;
 
-    private EventBus eventBus;
+    public final EventBus eventBus = new EventBus("CivModernEvents");
 
     public AbstractCivModernMod() {
         this.configBinding = new KeyMapping(
@@ -87,8 +88,6 @@ public abstract class AbstractCivModernMod {
     }
 
     public final void init() {
-        this.eventBus = provideEventBus();
-
         registerKeyBinding(this.configBinding);
         registerKeyBinding(this.holdLeftBinding);
         registerKeyBinding(this.holdRightBinding);
@@ -100,8 +99,7 @@ public abstract class AbstractCivModernMod {
         loadConfig();
         loadRadar();
 
-        this.eventBus.listen(ClientTickEvent.class, e -> this.tick());
-        this.eventBus.listen(ScrollEvent.class, e -> this.onScroll());
+        this.eventBus.register(this);
 
         Options options = Minecraft.getInstance().options;
         this.leftMacro = new HoldKeyMacro(this, this.holdLeftBinding, options.keyAttack);
@@ -110,16 +108,12 @@ public abstract class AbstractCivModernMod {
         this.attackMacro = new AttackMacro(this, this.attackBinding, options.keyAttack);
     }
 
-    public abstract EventBus provideEventBus();
     public abstract void registerKeyBinding(KeyMapping mapping);
 
-    public void onScroll() {
-        if (this.leftMacro != null) this.leftMacro.onScroll();
-        if (this.rightMacro != null) this.rightMacro.onScroll();
-        if (this.attackMacro != null) this.attackMacro.onScroll();
-    }
-
-    private void tick() {
+    @Subscribe
+    private void tick(
+        final @NotNull ClientTickEvent event
+    ) {
         while (configBinding.consumeClick()) {
             Minecraft.getInstance().setScreen(new MainConfigScreen(this, config));
         }
@@ -152,15 +146,10 @@ public abstract class AbstractCivModernMod {
     private void loadRadar() {
         this.colourProvider = new ColourProvider(config);
         this.radar = new Radar(config, eventBus, colourProvider);
-        this.radar.init();
     }
 
     public ColourProvider getColourProvider() {
         return colourProvider;
-    }
-
-    public EventBus getEventBus() {
-        return eventBus;
     }
 
     public static AbstractCivModernMod getInstance() {

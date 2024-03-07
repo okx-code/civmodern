@@ -1,5 +1,6 @@
 package sh.okx.civmodern.common.radar;
 
+import com.google.common.eventbus.Subscribe;
 import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.platform.Lighting;
 import com.mojang.blaze3d.systems.RenderSystem;
@@ -43,6 +44,7 @@ import net.minecraft.world.inventory.InventoryMenu;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import org.jetbrains.annotations.NotNull;
 import org.joml.Matrix4f;
 import sh.okx.civmodern.common.CivMapConfig;
 import sh.okx.civmodern.common.ColourProvider;
@@ -83,15 +85,13 @@ public class Radar {
         this.config = config;
         this.eventBus = eventBus;
         this.colourProvider = colourProvider;
+        eventBus.register(this);
     }
 
-    public void init() {
-        eventBus.listen(ClientTickEvent.class, this::onClientTick);
-        eventBus.listen(ClientTickEvent.class, this::onWorldTickPing);
-        eventBus.listen(PostRenderGameOverlayEvent.class, this::onRender);
-    }
-
-    public void onClientTick(ClientTickEvent event) {
+    @Subscribe
+    private void onClientTick(
+        final @NotNull ClientTickEvent event
+    ) {
         Minecraft client = Minecraft.getInstance();
         if (client.level == null) {
             this.playersInRange = Collections.emptySet();
@@ -102,7 +102,10 @@ public class Radar {
         return hideY;
     }
 
-    public void onWorldTickPing(ClientTickEvent event) {
+    @Subscribe
+    private void onWorldTickPing(
+        final @NotNull ClientTickEvent event
+    ) {
         ClientLevel world = Minecraft.getInstance().level;
         if (world == null) {
             return;
@@ -165,14 +168,17 @@ public class Radar {
         this.playersInRange = newPlayersInRange;
     }
 
-    public void onRender(PostRenderGameOverlayEvent event) {
+    @Subscribe
+    private void onRender(
+        final @NotNull PostRenderGameOverlayEvent event
+    ) {
         Minecraft mc = Minecraft.getInstance();
         if (mc.options.hideGui || mc.getDebugOverlay().showDebugScreen()) {
             return;
         }
 
         if (config.isRadarEnabled()) {
-            render(event.getGuiGraphics(), event.getDelta());
+            render(event.guiGraphics(), event.deltaTick());
         }
     }
 
