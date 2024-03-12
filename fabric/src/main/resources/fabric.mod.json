@@ -1,26 +1,26 @@
 {
-  "schemaVersion": 1,
-  "id": "civmodern",
-  "version": "${version}",
-  "name": "Civ Modern",
-  "description": "Civ Modern",
-  "authors": [
-    "Okx"
-  ],
-  "license": "Copyright",
-  "icon": "assets/civmodern/icon.png",
-  "environment": "client",
-  "entrypoints": {
-    "client": [
-      "sh.okx.civmodern.fabric.FabricCivModernBootstrap"
+    "schemaVersion": 1,
+    "id": "civmodern",
+    "version": "${version}",
+    "name": "Civ Modern",
+    "description": "Civ Modern",
+    "authors": [
+        "Okx"
+    ],
+    "license": "Copyright",
+    "icon": "assets/civmodern/icon.png",
+    "environment": "client",
+    "entrypoints": {
+        "client": [
+            "sh.okx.civmodern.fabric.FabricCivModernBootstrap"
+        ]
+    },
+    "depends": {
+        "fabricloader": ">=0.12.0",
+        "fabric": "*",
+        "minecraft": "1.20.x"
+    },
+    "mixins": [
+        "civmodern.mixins.json"
     ]
-  },
-  "depends": {
-    "fabricloader": ">=0.12.0",
-    "fabric": "*",
-    "minecraft": "1.20.x"
-  },
-  "mixins": [
-    "civmodern.mixins.json"
-  ]
 }

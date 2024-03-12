@@ -9,18 +9,18 @@ import org.apache.logging.log4j.Logger;
 
 @Mod("civmodern")
 public class ForgeCivModernBootstrap {
-  private static final Logger LOGGER = LogManager.getLogger();
+    private static final Logger LOGGER = LogManager.getLogger();
 
-  private final ForgeCivModernMod mod;
+    private final ForgeCivModernMod mod;
 
-  public ForgeCivModernBootstrap() {
-    this.mod = new ForgeCivModernMod();
-    FMLJavaModLoadingContext.get().getModEventBus().addListener(this::clientSetup);
-    MinecraftForge.EVENT_BUS.register(this);
-  }
+    public ForgeCivModernBootstrap() {
+        this.mod = new ForgeCivModernMod();
+        FMLJavaModLoadingContext.get().getModEventBus().addListener(this::clientSetup);
+        MinecraftForge.EVENT_BUS.register(this);
+    }
 
-  public void clientSetup(FMLClientSetupEvent event) {
-    this.mod.init();
-    this.mod.enable();
-  }
+    public void clientSetup(FMLClientSetupEvent event) {
+        this.mod.init();
+        this.mod.enable();
+    }
 }

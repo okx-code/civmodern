@@ -4,7 +4,7 @@ import java.util.function.Consumer;
 
 public interface EventBus {
 
-  void push(Event event);
+    void push(Event event);
 
-  <T extends Event> void listen(Class<T> event, Consumer<T> listener);
+    <T extends Event> void listen(Class<T> event, Consumer<T> listener);
 }

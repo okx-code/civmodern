@@ -7,52 +7,52 @@ import sh.okx.civmodern.common.events.ClientTickEvent;
 
 public class HoldKeyMacro {
 
-  private final KeyMapping holdBinding;
-  private final KeyMapping defaultBinding;
-  private boolean down = false;
+    private final KeyMapping holdBinding;
+    private final KeyMapping defaultBinding;
+    private boolean down = false;
 
-  public HoldKeyMacro(AbstractCivModernMod mod, KeyMapping holdBinding, KeyMapping defaultBinding) {
-    mod.getEventBus().listen(ClientTickEvent.class, e -> tick());
-    this.holdBinding = holdBinding;
-    this.defaultBinding = defaultBinding;
-  }
-
-  public void tick() {
-    Minecraft mc = Minecraft.getInstance();
-    if (mc.player == null) {
-      return;
+    public HoldKeyMacro(AbstractCivModernMod mod, KeyMapping holdBinding, KeyMapping defaultBinding) {
+        mod.getEventBus().listen(ClientTickEvent.class, e -> tick());
+        this.holdBinding = holdBinding;
+        this.defaultBinding = defaultBinding;
     }
 
-    if (down && (mc.screen != null || !mc.mouseHandler.isMouseGrabbed())) {
-      set(false);
-      return;
+    public void tick() {
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.player == null) {
+            return;
+        }
+
+        if (down && (mc.screen != null || !mc.mouseHandler.isMouseGrabbed())) {
+            set(false);
+            return;
+        }
+
+        for (KeyMapping hotbar : mc.options.keyHotbarSlots) {
+            if (hotbar.isDown()) {
+                set(false);
+                return;
+            }
+        }
+
+        while (holdBinding.consumeClick()) {
+            if (this.down) {
+                set(false);
+            } else if (!mc.player.isUsingItem()) {
+                set(true);
+            }
+        }
     }
 
-    for (KeyMapping hotbar : mc.options.keyHotbarSlots) {
-      if (hotbar.isDown()) {
+    public void onScroll() {
         set(false);
-        return;
-      }
     }
 
-    while (holdBinding.consumeClick()) {
-      if (this.down) {
-        set(false);
-      } else if (!mc.player.isUsingItem()) {
-        set(true);
-      }
+    private void set(boolean down) {
+        if (this.down == down) {
+            return;
+        }
+        this.down = down;
+        this.defaultBinding.setDown(down);
     }
-  }
-
-  public void onScroll() {
-    set(false);
-  }
-
-  private void set(boolean down) {
-    if (this.down == down) {
-      return;
-    }
-    this.down = down;
-    this.defaultBinding.setDown(down);
-  }
 }

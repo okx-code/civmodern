@@ -8,13 +8,13 @@ import sh.okx.civmodern.common.events.EventBus;
 
 public class ForgeCivModernMod extends AbstractCivModernMod {
 
-  @Override
-  public EventBus provideEventBus() {
-    return new ForgeEventBus();
-  }
+    @Override
+    public EventBus provideEventBus() {
+        return new ForgeEventBus();
+    }
 
-  @Override
-  public void registerKeyBinding(KeyMapping mapping) {
-    ArrayUtils.add(Minecraft.getInstance().options.keyMappings, mapping);
-  }
+    @Override
+    public void registerKeyBinding(KeyMapping mapping) {
+        ArrayUtils.add(Minecraft.getInstance().options.keyMappings, mapping);
+    }
 }

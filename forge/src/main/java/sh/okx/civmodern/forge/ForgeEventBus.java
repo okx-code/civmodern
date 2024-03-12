@@ -21,49 +21,49 @@ import sh.okx.civmodern.common.events.WorldRenderEvent;
 
 public class ForgeEventBus implements EventBus {
 
-  private final Map<Class<? extends Event>, Set<Consumer<Event>>> map = new ConcurrentHashMap<>();
+    private final Map<Class<? extends Event>, Set<Consumer<Event>>> map = new ConcurrentHashMap<>();
 
-  public ForgeEventBus() {
-    map.put(ClientTickEvent.class, new CopyOnWriteArraySet<>());
-    map.put(PostRenderGameOverlayEvent.class, new CopyOnWriteArraySet<>());
-    map.put(WorldRenderEvent.class, new CopyOnWriteArraySet<>());
-    map.put(ScrollEvent.class, new CopyOnWriteArraySet<>());
+    public ForgeEventBus() {
+        map.put(ClientTickEvent.class, new CopyOnWriteArraySet<>());
+        map.put(PostRenderGameOverlayEvent.class, new CopyOnWriteArraySet<>());
+        map.put(WorldRenderEvent.class, new CopyOnWriteArraySet<>());
+        map.put(ScrollEvent.class, new CopyOnWriteArraySet<>());
 
-    MinecraftForge.EVENT_BUS.register(this);
-  }
-
-  @SubscribeEvent
-  public void onClientTick(TickEvent.ClientTickEvent event) {
-    if (event.phase == Phase.START) {
-      push(new ClientTickEvent());
+        MinecraftForge.EVENT_BUS.register(this);
     }
-  }
 
-  @SubscribeEvent
-  public void onRender(RenderGuiEvent.Post event) {
-    push(new PostRenderGameOverlayEvent(event.getGuiGraphics(), event.getPartialTick()));
-  }
-
-  @SubscribeEvent
-  public void onWorldRender(RenderLevelStageEvent event) {
-    if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_LEVEL) {
-      push(new WorldRenderEvent(event.getPoseStack(), event.getPartialTick()));
+    @SubscribeEvent
+    public void onClientTick(TickEvent.ClientTickEvent event) {
+        if (event.phase == Phase.START) {
+            push(new ClientTickEvent());
+        }
     }
-  }
 
-  @Override
-  public void push(Event event) {
-    for (Consumer<Event> consumer : map.getOrDefault(event.getClass(), Collections.emptySet())) {
-      consumer.accept(event);
+    @SubscribeEvent
+    public void onRender(RenderGuiEvent.Post event) {
+        push(new PostRenderGameOverlayEvent(event.getGuiGraphics(), event.getPartialTick()));
     }
-  }
 
-  @Override
-  public <T extends Event> void listen(Class<T> event, Consumer<T> listener) {
-    Set<Consumer<Event>> set = map.get(event);
-    if (set == null) {
-      throw new IllegalArgumentException("Class not supported: " + event);
+    @SubscribeEvent
+    public void onWorldRender(RenderLevelStageEvent event) {
+        if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_LEVEL) {
+            push(new WorldRenderEvent(event.getPoseStack(), event.getPartialTick()));
+        }
     }
-    set.add((Consumer<Event>) listener);
-  }
+
+    @Override
+    public void push(Event event) {
+        for (Consumer<Event> consumer : map.getOrDefault(event.getClass(), Collections.emptySet())) {
+            consumer.accept(event);
+        }
+    }
+
+    @Override
+    public <T extends Event> void listen(Class<T> event, Consumer<T> listener) {
+        Set<Consumer<Event>> set = map.get(event);
+        if (set == null) {
+            throw new IllegalArgumentException("Class not supported: " + event);
+        }
+        set.add((Consumer<Event>) listener);
+    }
 }
