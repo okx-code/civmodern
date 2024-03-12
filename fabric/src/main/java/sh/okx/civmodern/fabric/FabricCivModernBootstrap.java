@@ -23,7 +23,7 @@ public class FabricCivModernBootstrap implements ClientModInitializer {
         FabricCivModernBootstrap.mod.init();
         ClientLifecycleEvents.CLIENT_STARTED.register(e -> mod.enable());
         ClientTickEvents.START_CLIENT_TICK.register((client) -> {
-            mod.eventBus.post(ClientTickEvent.PREMADE);
+            mod.eventBus.post(new ClientTickEvent());
         });
         HudRenderCallback.EVENT.register((guiGraphics, tickDelta) -> {
             mod.eventBus.post(new PostRenderGameOverlayEvent(guiGraphics, tickDelta));

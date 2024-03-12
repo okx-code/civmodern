@@ -34,7 +34,7 @@ public class ForgeCivModernBootstrap {
     @SubscribeEvent
     public void onClientTick(TickEvent.ClientTickEvent event) {
         if (event.phase == TickEvent.Phase.START) {
-            mod.eventBus.post(ClientTickEvent.PREMADE);
+            mod.eventBus.post(new ClientTickEvent());
         }
     }
 
