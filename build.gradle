@@ -2,8 +2,8 @@
 // See Gradle's releases here: https://gradle.org/releases/
 
 plugins {
-    id "architectury-plugin" version "3.4-SNAPSHOT"
-    id "dev.architectury.loom" version "1.5-SNAPSHOT" apply false
+    id("architectury-plugin") version "3.4-SNAPSHOT"
+    id("dev.architectury.loom") version "1.5-SNAPSHOT" apply false
 }
 
 architectury {
@@ -18,8 +18,8 @@ subprojects {
     }
 
     dependencies {
-        minecraft "com.mojang:minecraft:${rootProject.minecraft_version}"
-        mappings loom.officialMojangMappings()
+        minecraft("com.mojang:minecraft:${rootProject.minecraft_version}")
+        mappings(loom.officialMojangMappings())
     }
 }
 
@@ -40,7 +40,7 @@ allprojects {
         // for more information about repositories.
     }
 
-    tasks.withType(JavaCompile) {
+    tasks.withType(JavaCompile).configureEach {
         options.encoding = "UTF-8"
         options.release = 17
     }
