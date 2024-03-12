@@ -1,9 +1,12 @@
 package sh.okx.civmodern.common.macro;
 
+import com.google.common.eventbus.Subscribe;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
+import org.jetbrains.annotations.NotNull;
 import sh.okx.civmodern.common.AbstractCivModernMod;
 import sh.okx.civmodern.common.events.ClientTickEvent;
+import sh.okx.civmodern.common.events.ScrollEvent;
 import sh.okx.civmodern.common.mixins.KeyMappingAccessor;
 
 public class AttackMacro {
@@ -18,12 +21,15 @@ public class AttackMacro {
     private long lastAttack;
 
     public AttackMacro(AbstractCivModernMod mod, KeyMapping holdBinding, KeyMapping defaultBinding) {
-        mod.getEventBus().listen(ClientTickEvent.class, e -> tick());
+        mod.eventBus.register(this);
         this.holdBinding = holdBinding;
         this.defaultBinding = defaultBinding;
     }
 
-    public void tick() {
+    @Subscribe
+    private void tick(
+        final @NotNull ClientTickEvent event
+    ) {
         Minecraft mc = Minecraft.getInstance();
         if (mc.player == null) {
             return;
@@ -67,7 +73,10 @@ public class AttackMacro {
         }
     }
 
-    public void onScroll() {
+    @Subscribe
+    private void onScroll(
+        final @NotNull ScrollEvent event
+    ) {
         set(false);
     }
 

@@ -1,10 +1,21 @@
 package sh.okx.civmodern.common.events;
 
-import java.util.function.Consumer;
+import com.google.common.eventbus.DeadEvent;
+import org.jetbrains.annotations.NotNull;
 
-public interface EventBus {
+public final class EventBus extends com.google.common.eventbus.EventBus {
+    public EventBus(
+        final @NotNull String identifier
+    ) {
+        super(identifier);
+    }
 
-    void push(Event event);
-
-    <T extends Event> void listen(Class<T> event, Consumer<T> listener);
+    @Override
+    public void post(
+        final @NotNull Object event
+    ) {
+        if (!(event instanceof DeadEvent)) {
+            super.post(event);
+        }
+    }
 }
