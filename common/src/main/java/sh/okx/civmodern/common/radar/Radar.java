@@ -47,6 +47,7 @@ import net.minecraft.world.item.Items;
 import org.jetbrains.annotations.NotNull;
 import org.joml.Matrix4f;
 import sh.okx.civmodern.common.CivMapConfig;
+import sh.okx.civmodern.common.CivServer;
 import sh.okx.civmodern.common.ColourProvider;
 import sh.okx.civmodern.common.events.ClientTickEvent;
 import sh.okx.civmodern.common.events.EventBus;
@@ -58,18 +59,6 @@ import java.util.*;
 import static org.lwjgl.opengl.GL11.*;
 
 public class Radar {
-
-    private static boolean hideY;
-
-    static {
-        URL resource = Radar.class.getResource("/civmc");
-        if (resource != null) {
-            hideY = true;
-        } else {
-            hideY = false;
-        }
-    }
-
     private final EventBus eventBus;
     private final ColourProvider colourProvider;
     private final CivMapConfig config;
@@ -99,7 +88,7 @@ public class Radar {
     }
 
     private boolean hideY() {
-        return hideY;
+        return CivServer.isCivServer() == Boolean.TRUE;
     }
 
     @Subscribe
