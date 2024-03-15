@@ -17,6 +17,9 @@
     "entrypoints": {
         "client": [
             "sh.okx.civmodern.fabric.FabricCivModernBootstrap"
+        ],
+        "modmenu": [
+            "sh.okx.civmodern.fabric.integrations.modmenu.ModMenuIntegration"
         ]
     },
     "depends": {

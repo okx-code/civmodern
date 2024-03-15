@@ -1,15 +1,18 @@
 package sh.okx.civmodern.forge;
 
+import net.minecraftforge.client.ConfigScreenHandler;
 import net.minecraftforge.client.event.RenderGuiEvent;
 import net.minecraftforge.client.event.RenderLevelStageEvent;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.ModLoadingContext;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import sh.okx.civmodern.common.AbstractCivModernMod;
 import sh.okx.civmodern.common.events.ClientTickEvent;
 import sh.okx.civmodern.common.events.PostRenderGameOverlayEvent;
 import sh.okx.civmodern.common.events.WorldRenderEvent;
@@ -29,6 +32,14 @@ public class ForgeCivModernBootstrap {
     public void clientSetup(FMLClientSetupEvent event) {
         this.mod.init();
         this.mod.enable();
+
+        // Register hook for Forge's native mod list
+        ModLoadingContext.get().registerExtensionPoint(
+            ConfigScreenHandler.ConfigScreenFactory.class,
+            () -> new ConfigScreenHandler.ConfigScreenFactory(
+                (minecraft, previousScreen) -> AbstractCivModernMod.getInstance().newConfigGui(previousScreen)
+            )
+        );
     }
 
     @SubscribeEvent
