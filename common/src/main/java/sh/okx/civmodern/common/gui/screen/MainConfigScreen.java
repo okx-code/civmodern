@@ -1,6 +1,5 @@
 package sh.okx.civmodern.common.gui.screen;
 
-import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
@@ -35,8 +34,6 @@ public class MainConfigScreen extends Screen {
 
     @Override
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float delta) {
-        super.renderBackground(guiGraphics, mouseX, mouseY, delta);
-
         guiGraphics.drawString(this.font, this.title, (int) (this.width / 2f - this.font.width(this.title) / 2f), 15, 0xffffff);
         super.render(guiGraphics, mouseX, mouseY, delta);
     }

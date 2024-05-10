@@ -1,9 +1,5 @@
 package sh.okx.civmodern.common.gui.screen;
 
-import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.vertex.PoseStack;
-import java.text.DecimalFormat;
-import java.util.regex.Pattern;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
@@ -22,6 +18,9 @@ import sh.okx.civmodern.common.CivMapConfig;
 import sh.okx.civmodern.common.ColourProvider;
 import sh.okx.civmodern.common.gui.widget.HsbColourPicker;
 import sh.okx.civmodern.common.gui.widget.ImageButton;
+
+import java.text.DecimalFormat;
+import java.util.regex.Pattern;
 
 public class CompactedConfigScreen extends Screen {
     private static final DecimalFormat FORMAT = new DecimalFormat("##%");
@@ -102,8 +101,6 @@ public class CompactedConfigScreen extends Screen {
 
     @Override
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float delta) {
-        super.renderBackground(guiGraphics, mouseX, mouseY, delta);
-
         drawCentredText(guiGraphics, this.title, 0, 15, 0xffffff);
 
         drawItem(guiGraphics);
