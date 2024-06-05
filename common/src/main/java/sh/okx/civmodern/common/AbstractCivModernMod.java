@@ -14,6 +14,7 @@ import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.Options;
 import net.minecraft.client.gui.Gui;
+import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.renderer.entity.ItemRenderer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -150,6 +151,12 @@ public abstract class AbstractCivModernMod {
 
     public ColourProvider getColourProvider() {
         return colourProvider;
+    }
+
+    public @NotNull Screen newConfigGui(
+        final Screen previousScreen
+    ) {
+        return new MainConfigScreen(this, this.config);
     }
 
     public static AbstractCivModernMod getInstance() {
