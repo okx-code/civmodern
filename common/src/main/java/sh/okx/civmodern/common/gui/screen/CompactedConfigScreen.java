@@ -13,6 +13,7 @@ import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
+import org.lwjgl.glfw.GLFW;
 import sh.okx.civmodern.common.AbstractCivModernMod;
 import sh.okx.civmodern.common.CivMapConfig;
 import sh.okx.civmodern.common.ColourProvider;
@@ -113,14 +114,17 @@ public class CompactedConfigScreen extends Screen {
     }
 
     @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int button) {
-        LocalPlayer player = Minecraft.getInstance().player;
-        if (isCursorOverItem((int) mouseX, (int) mouseY) && button == 0 && player.isCreative()) {
+    public boolean mouseClicked(
+        final double mouseX,
+        final double mouseY,
+        final int button
+    ) {
+        final LocalPlayer player = Minecraft.getInstance().player;
+        if (player != null && isCursorOverItem((int) mouseX, (int) mouseY) && button == GLFW.GLFW_MOUSE_BUTTON_1 && player.isCreative()) {
             player.addItem(ITEM.copy());
             return true;
-        } else {
-            return super.mouseClicked(mouseX, mouseY, button);
         }
+        return super.mouseClicked(mouseX, mouseY, button);
     }
 
     @Override
