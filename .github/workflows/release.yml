@@ -1,0 +1,34 @@
+name: "CivModern Release Gradle CI"
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: "ubuntu-latest"
+    steps:
+      - uses: "actions/checkout@v3"
+
+      - name: "Set up JDK 17"
+        uses: "actions/setup-java@v3"
+        with:
+          java-version: 17
+          distribution: "corretto"
+          cache: "gradle"
+
+      - name: "Compiling CivModern"
+        run: "./gradlew build"
+
+      - name: "Publishing CivModern"
+        run: |
+          gh release upload ${{ github.event.release.tag_name }} "LICENSE.txt" --clobber
+          for file in $(find "dist/" -maxdepth 1 -type f -name "*.jar"); do
+            echo "Uploading $file"
+            gh release upload ${{ github.event.release.tag_name }} "$file" --clobber
+          done
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
