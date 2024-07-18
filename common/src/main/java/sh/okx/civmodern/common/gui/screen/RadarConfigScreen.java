@@ -1,14 +1,21 @@
 package sh.okx.civmodern.common.gui.screen;
 
 import java.text.DecimalFormat;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
+
+import com.google.common.collect.Lists;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
+import net.minecraft.client.gui.components.Renderable;
+import net.minecraft.client.gui.components.events.GuiEventListener;
+import net.minecraft.client.gui.narration.NarratableEntry;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.Component;
@@ -24,6 +31,7 @@ import sh.okx.civmodern.common.ColourProvider;
 public class RadarConfigScreen extends Screen implements ScreenCloseable {
 
     public static final ResourceLocation ROLLBACK_ICON = new ResourceLocation("civmodern", "gui/rollback.png");
+    private final List<Renderable> renderables = new ArrayList<>(); // copied from Screen because it's private there
     private final AbstractCivModernMod mod;
     private final CivMapConfig config;
     private final Screen parent;
@@ -315,7 +323,10 @@ public class RadarConfigScreen extends Screen implements ScreenCloseable {
 
         guiGraphics.drawCenteredString(this.font, this.title, this.width / 2, 15, 0xffffff);
 
-        super.render(guiGraphics, mouseX, mouseY, delta);
+        // Don't call super because we don't want the dark background to allow people to see the radar easily
+        for (Renderable renderable : this.renderables) {
+            renderable.render(guiGraphics, mouseX, mouseY, delta);
+        }
     }
 
     private Component getRadarToggleMessage() {
@@ -324,6 +335,12 @@ public class RadarConfigScreen extends Screen implements ScreenCloseable {
         } else {
             return Component.literal("Radar: Disabled");
         }
+    }
+
+    @Override
+    protected <T extends GuiEventListener & Renderable & NarratableEntry> T addRenderableWidget(T widget) {
+        this.renderables.add(widget);
+        return super.addRenderableWidget(widget);
     }
 
     @Override

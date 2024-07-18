@@ -1,7 +1,6 @@
 package sh.okx.civmodern.common.radar;
 
 import com.google.common.eventbus.Subscribe;
-import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.platform.Lighting;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.BufferBuilder;
@@ -283,28 +282,26 @@ public class Radar {
         }
 
         guiGraphics.pose().pushPose();
-        guiGraphics.pose().translate(dx * scale, dz * scale, 0);
+        guiGraphics.pose().translate(dx * scale, dz * scale, 150);
         if (config.isNorthUp()) {
             guiGraphics.pose().mulPose(Axis.ZP.rotationDegrees(180));
         } else {
             guiGraphics.pose().mulPose(Axis.ZP.rotationDegrees(player.getViewYRot(delta)));
         }
-        guiGraphics.pose().scale(config.getIconSize(), config.getIconSize(), 0);
-
         BakedModel bakedModel = Minecraft.getInstance().getItemRenderer().getModel(item, player.level(), player, 0);
+        guiGraphics.pose().scale(config.getIconSize(), config.getIconSize(), 1);
         guiGraphics.pose().mulPoseMatrix(new Matrix4f().scaling(1.0f, -1.0f, 1.0f));
         guiGraphics.pose().scale(16.0f, 16.0f, 16.0f);
 
         boolean notUseBlockLight = !bakedModel.usesBlockLight();
-
-        if (notUseBlockLight)
+        if (notUseBlockLight) {
             Lighting.setupForFlatItems();
-
+        }
         Minecraft.getInstance().getItemRenderer().render(item, ItemDisplayContext.GUI, false, guiGraphics.pose(), guiGraphics.bufferSource(), 0xF000F0, OverlayTexture.NO_OVERLAY, bakedModel);
-        guiGraphics.bufferSource().endBatch();
-
-        if (notUseBlockLight)
+        guiGraphics.flush();
+        if (notUseBlockLight) {
             Lighting.setupFor3DItems();
+        }
 
         guiGraphics.pose().popPose();
     }
