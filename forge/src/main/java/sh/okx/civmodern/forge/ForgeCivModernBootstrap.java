@@ -15,7 +15,6 @@ import org.apache.logging.log4j.Logger;
 import sh.okx.civmodern.common.AbstractCivModernMod;
 import sh.okx.civmodern.common.events.ClientTickEvent;
 import sh.okx.civmodern.common.events.PostRenderGameOverlayEvent;
-import sh.okx.civmodern.common.events.WorldRenderEvent;
 
 @Mod("civmodern")
 public class ForgeCivModernBootstrap {
