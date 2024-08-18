@@ -1,11 +1,13 @@
 package sh.okx.civmodern.common.mixins;
 
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.Style;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.component.ItemLore;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 import sh.okx.civmodern.common.features.ExtendedItemStack;
@@ -26,21 +28,12 @@ public abstract class ItemStackMixin implements ExtendedItemStack {
 
     @Unique
     private boolean civmodern$isCompacted() {
-        final CompoundTag itemTag = ((ItemStack) (Object) this).getTag();
-        if (itemTag == null) {
+        ItemLore lore = ((ItemStack) (Object) this).getComponents().get(DataComponents.LORE);
+        Component name = ((ItemStack) (Object) this).getComponents().get(DataComponents.ITEM_NAME);
+        if (lore == null || name == null) {
             return false;
         }
-        if (!(itemTag.get(ItemStack.TAG_DISPLAY) instanceof final CompoundTag displayTag)) {
-            return false;
-        }
-        if (!(displayTag.get(ItemStack.TAG_LORE) instanceof final ListTag loreTag)) {
-            return false;
-        }
-        if (loreTag.getElementType() != Tag.TAG_STRING) {
-            return false;
-        }
-        for (final Tag element : loreTag) {
-            final Component line = Component.Serializer.fromJson(element.getAsString());
+        for (Component line : lore.lines()) {
             if (line == null) {
                 continue;
             }

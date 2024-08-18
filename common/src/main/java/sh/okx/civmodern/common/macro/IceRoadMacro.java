@@ -3,6 +3,7 @@ package sh.okx.civmodern.common.macro;
 import com.google.common.eventbus.Subscribe;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.world.food.FoodProperties;
 import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.NotNull;
@@ -108,9 +109,9 @@ public class IceRoadMacro {
     private boolean tryEat(ItemStack item) {
         Minecraft mc = Minecraft.getInstance();
 
-        FoodProperties food = item.getItem().getFoodProperties();
-        if (food != null && food.getNutrition() > 0) {
-            if (mc.player.getFoodData().getFoodLevel() + food.getNutrition() <= 20) {
+        FoodProperties food = item.getItem().components().get(DataComponents.FOOD);
+        if (food != null && food.nutrition() > 0) {
+            if (mc.player.getFoodData().getFoodLevel() + food.nutrition() <= 20) {
                 return true;
             }
         }

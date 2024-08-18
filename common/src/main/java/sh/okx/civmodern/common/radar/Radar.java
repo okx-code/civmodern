@@ -290,7 +290,7 @@ public class Radar {
         }
         BakedModel bakedModel = Minecraft.getInstance().getItemRenderer().getModel(item, player.level(), player, 0);
         guiGraphics.pose().scale(config.getIconSize(), config.getIconSize(), 1);
-        guiGraphics.pose().mulPoseMatrix(new Matrix4f().scaling(1.0f, -1.0f, 1.0f));
+        guiGraphics.pose().mulPose(new Matrix4f().scaling(1.0f, -1.0f, 1.0f));
         guiGraphics.pose().scale(16.0f, 16.0f, 16.0f);
 
         boolean notUseBlockLight = !bakedModel.usesBlockLight();

@@ -42,7 +42,7 @@ public class CompactedConfigScreen extends Screen {
         display.put("Lore", lore);
         tag.put("display", display);
         item.put("tag", tag);
-        ITEM = ItemStack.of(item);
+        ITEM = ItemStack.parse(Minecraft.getInstance().level.registryAccess(), item).get();
     }
 
     private final AbstractCivModernMod mod;
