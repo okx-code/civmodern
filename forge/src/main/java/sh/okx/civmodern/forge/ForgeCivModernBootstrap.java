@@ -1,8 +1,6 @@
 package sh.okx.civmodern.forge;
 
 import net.minecraftforge.client.ConfigScreenHandler;
-import net.minecraftforge.client.event.RenderLevelStageEvent;
-import net.minecraftforge.client.event.ScreenEvent;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -14,7 +12,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import sh.okx.civmodern.common.AbstractCivModernMod;
 import sh.okx.civmodern.common.events.ClientTickEvent;
-import sh.okx.civmodern.common.events.PostRenderGameOverlayEvent;
 
 @Mod("civmodern")
 public class ForgeCivModernBootstrap {
@@ -46,10 +43,5 @@ public class ForgeCivModernBootstrap {
         if (event.phase == TickEvent.Phase.START) {
             mod.eventBus.post(new ClientTickEvent());
         }
-    }
-
-    @SubscribeEvent
-    public void onRender(ScreenEvent.Render event) {
-        mod.eventBus.post(new PostRenderGameOverlayEvent(event.getGuiGraphics(), event.getPartialTick()));
     }
 }

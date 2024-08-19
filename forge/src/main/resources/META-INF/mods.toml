@@ -1,5 +1,5 @@
 modLoader = "javafml"
-loaderVersion = "[49,)"
+loaderVersion = "[50,)"
 issueTrackerURL = "${mod_issues_url}"
 license = "${copyright_licence}"
 
@@ -15,7 +15,7 @@ authors = "Okx"
 [[dependencies.civmodern]]
 modId = "forge"
 mandatory = true
-versionRange = "[49,)"
+versionRange = "[50,)"
 ordering = "NONE"
 side = "CLIENT"
 
