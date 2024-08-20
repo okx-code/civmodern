@@ -17,6 +17,10 @@ This is a fork of CivModern specifically for [CivMC](https://civmc.net) on 1.21.
 You may open CivModern's configuration screen in-game with the `R` binding. Or you can modify the config file directly,
 which is located at `.minecraft/config/civmodern.properties`.
 
+## Added
+
+- Hold W/forward macro (bound to `[` by default).
+
 ## Removed
 
 - Radar has been removed. Why? Because it's duplicated effort. [CombatRadar](https://modrinth.com/mod/combatradar) and

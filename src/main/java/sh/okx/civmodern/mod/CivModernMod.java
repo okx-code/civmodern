@@ -44,6 +44,12 @@ public final class CivModernMod {
         GLFW.GLFW_KEY_EQUAL,
         "category.civmodern"
     );
+    private static final KeyMapping HOLD_FORWARD_BINDING = new KeyMapping(
+        "key.civmodern.autorun",
+        Type.KEYSYM,
+        GLFW.GLFW_KEY_LEFT_BRACKET,
+        "category.civmodern"
+    );
     private static final KeyMapping ICE_ROAD_BINDING = new KeyMapping(
         "key.civmodern.ice",
         Type.KEYSYM,
@@ -62,6 +68,7 @@ public final class CivModernMod {
         KeyBindingHelper.registerKeyBinding(CONFIG_BINDING);
         KeyBindingHelper.registerKeyBinding(HOLD_LEFT_BINDING);
         KeyBindingHelper.registerKeyBinding(HOLD_RIGHT_BINDING);
+        KeyBindingHelper.registerKeyBinding(HOLD_FORWARD_BINDING);
         KeyBindingHelper.registerKeyBinding(ATTACK_BINDING);
         KeyBindingHelper.registerKeyBinding(ICE_ROAD_BINDING);
 
@@ -85,6 +92,7 @@ public final class CivModernMod {
         final Options options = Minecraft.getInstance().options;
         EVENTS.register(new HoldKeyMacro(HOLD_LEFT_BINDING, options.keyAttack));
         EVENTS.register(new HoldKeyMacro(HOLD_RIGHT_BINDING, options.keyUse));
+        EVENTS.register(new HoldKeyMacro(HOLD_FORWARD_BINDING, options.keyUp));
         EVENTS.register(new IceRoadMacro(ICE_ROAD_BINDING));
         EVENTS.register(new AttackMacro(ATTACK_BINDING, options.keyAttack));
     }
