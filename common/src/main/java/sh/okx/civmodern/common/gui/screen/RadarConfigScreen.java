@@ -1,351 +1,441 @@
 package sh.okx.civmodern.common.gui.screen;
 
 import java.text.DecimalFormat;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Objects;
 import java.util.function.Consumer;
-import java.util.function.Supplier;
-import java.util.regex.Pattern;
-
-import com.google.common.collect.Lists;
+import java.util.function.IntConsumer;
+import java.util.function.IntSupplier;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
-import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.components.Renderable;
-import net.minecraft.client.gui.components.events.GuiEventListener;
-import net.minecraft.client.gui.narration.NarratableEntry;
-import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
-import sh.okx.civmodern.common.AbstractCivModernMod;
+import org.jetbrains.annotations.NotNull;
 import sh.okx.civmodern.common.CivMapConfig;
-import sh.okx.civmodern.common.gui.widget.DoubleOptionUpdateableSliderWidget;
+import sh.okx.civmodern.common.ColourProvider;
+import sh.okx.civmodern.common.gui.Alignment;
 import sh.okx.civmodern.common.gui.DoubleValue;
+import sh.okx.civmodern.common.gui.widget.ColourTextEditBox;
+import sh.okx.civmodern.common.gui.widget.DoubleOptionUpdateableSliderWidget;
 import sh.okx.civmodern.common.gui.widget.HsbColourPicker;
 import sh.okx.civmodern.common.gui.widget.ImageButton;
-import sh.okx.civmodern.common.ColourProvider;
+import sh.okx.civmodern.common.gui.widget.TextRenderable;
+import sh.okx.civmodern.common.gui.widget.ToggleButton;
+import sh.okx.civmodern.common.mixins.ScreenAccessor;
 
-public class RadarConfigScreen extends Screen implements ScreenCloseable {
-
+final class RadarConfigScreen extends AbstractConfigScreen {
     public static final ResourceLocation ROLLBACK_ICON = ResourceLocation.tryBuild("civmodern", "gui/rollback.png");
-    private final List<Renderable> renderables = new ArrayList<>(); // copied from Screen because it's private there
-    private final AbstractCivModernMod mod;
-    private final CivMapConfig config;
-    private final Screen parent;
-    private int foregroundColourY;
-    private int backgroundColourY;
+
+    private final ColourProvider colourProvider;
 
     // for passing move events
     private HsbColourPicker bgPicker;
     private HsbColourPicker fgPicker;
 
-    public RadarConfigScreen(AbstractCivModernMod mod, CivMapConfig config, Screen parent) {
-        super(Component.translatable("civmodern.screen.radar.title"));
-        this.mod = mod;
-        this.config = config;
-        this.parent = parent;
+    public RadarConfigScreen(
+        final @NotNull CivMapConfig config,
+        final @NotNull ColourProvider colourProvider,
+        final @NotNull MainConfigScreen parent
+    ) {
+        super(
+            config,
+            Objects.requireNonNull(parent),
+            Component.translatable("civmodern.screen.radar.title")
+        );
+        this.colourProvider = Objects.requireNonNull(colourProvider);
     }
 
     @Override
     protected void init() {
         super.init();
-        int left = this.width / 2 - 155;
-        int centre = left + 80;
-        int right = left + 160;
-        int offset = this.height / 6 - 18;
 
-        ColourProvider colourProvider = mod.getColourProvider();
-        bgPicker = addColourPicker(left, offset + 178, CivMapConfig.DEFAULT_RADAR_BG_COLOUR, config::getRadarBgColour, config::setRadarBgColour,
-            colourProvider::setTemporaryRadarBackgroundColour);
-        fgPicker = addColourPicker(right, offset + 178, CivMapConfig.DEFAULT_RADAR_FG_COLOUR, config::getRadarColour, config::setRadarColour,
-            colourProvider::setTemporaryRadarForegroundColour);
+        addRenderableOnly(new TextRenderable.CentreAligned(
+            this.font,
+            this.centreX,
+            getHeaderY(),
+            this.title
+        ));
 
-        addRenderableWidget(Button.builder(getRadarToggleMessage(), button -> {
-            config.setRadarEnabled(!config.isRadarEnabled());
-            button.setMessage(getRadarToggleMessage());
-        }).pos(centre, offset).size(150, 20).build());
-        offset += 24;
-        addRenderableWidget(Button.builder(getPingToggleMessage(), button -> {
-            config.setPingEnabled(!config.isPingEnabled());
-            button.setMessage(getPingToggleMessage());
-        }).pos(left, offset).size(150, 20).build());
-        addRenderableWidget(Button.builder(getPingSoundMessage(), button -> {
-            config.setPingSoundEnabled(!config.isPingSoundEnabled());
-            button.setMessage(getPingSoundMessage());
-        }).pos(right, offset).size(150, 20).build());
-        offset += 24;
-        addRenderableWidget(Button.builder(Component.translatable("civmodern.screen.radar.alignment", config.getAlignment().toString()), button -> {
-            config.setAlignment(config.getAlignment().next());
-            button.setMessage(Component.translatable("civmodern.screen.radar.alignment", config.getAlignment().toString()));
-        }).pos(left, offset).size(150, 20).build());
-        addRenderableWidget(Button.builder(getItemToggleMessage(), button -> {
-            config.setShowItems(!config.isShowItems());
-            button.setMessage(getItemToggleMessage());
-        }).pos(right, offset).size(150, 20).build());
-        offset += 24;
-        addRenderableWidget(new DoubleOptionUpdateableSliderWidget(right, offset, 150, 20, 0, 1, 0.01, new DoubleValue() {
-            private final DecimalFormat format = new DecimalFormat("##%");
+        final int leftSideX = this.centreX - 5 - Button.DEFAULT_WIDTH;
+        final int rightSideX = this.centreX + 5;
 
-            @Override
-            public double get() {
-                return config.getTransparency();
+        int offsetY = getBodyY(this.height / 8);
+
+        addRenderableWidget(new ToggleButton(
+            this.centreX - (Button.DEFAULT_WIDTH / 2),
+            offsetY,
+            Button.DEFAULT_WIDTH,
+            Component.translatable("civmodern.screen.radar.enabled"),
+            this.config::isRadarEnabled,
+            this.config::setRadarEnabled,
+            Tooltip.create(Component.translatable("civmodern.screen.radar.enabled.tooltip")),
+            ToggleButton.DEFAULT_NARRATION
+        ));
+        offsetY += Button.DEFAULT_HEIGHT + 4;
+
+        addRenderableWidget(new ToggleButton(
+            leftSideX,
+            offsetY,
+            ToggleButton.DEFAULT_BUTTON_WIDTH,
+            Component.translatable("civmodern.screen.radar.messages"),
+            this.config::isPingSoundEnabled,
+            this.config::setPingSoundEnabled,
+            Tooltip.create(Component.translatable("civmodern.screen.radar.messages.tooltip")),
+            ToggleButton.DEFAULT_NARRATION
+        ));
+        addRenderableWidget(new ToggleButton(
+            rightSideX,
+            offsetY,
+            ToggleButton.DEFAULT_BUTTON_WIDTH,
+            Component.translatable("civmodern.screen.radar.pings"),
+            this.config::isPingSoundEnabled,
+            this.config::setPingSoundEnabled,
+            Tooltip.create(Component.translatable("civmodern.screen.radar.pings.tooltip")),
+            ToggleButton.DEFAULT_NARRATION
+        ));
+        offsetY += Button.DEFAULT_HEIGHT + 4;
+
+        addRenderableWidget(
+            Button
+                .builder(
+                    Component.translatable("civmodern.screen.radar.alignment", this.config.getAlignment().toString()),
+                    (button) -> {
+                        final Alignment next = this.config.getAlignment().next();
+                        this.config.setAlignment(next);
+                        button.setMessage(Component.translatable("civmodern.screen.radar.alignment", next.toString()));
+                    }
+                )
+                .pos(leftSideX, offsetY)
+                .build()
+        );
+        addRenderableWidget(new ToggleButton(
+            rightSideX,
+            offsetY,
+            ToggleButton.DEFAULT_BUTTON_WIDTH,
+            Component.translatable("civmodern.screen.radar.items"),
+            this.config::isShowItems,
+            this.config::setShowItems,
+            Tooltip.create(Component.translatable("civmodern.screen.radar.items.tooltip")),
+            ToggleButton.DEFAULT_NARRATION
+        ));
+        offsetY += Button.DEFAULT_HEIGHT + 4;
+
+        addRenderableWidget(new DoubleOptionUpdateableSliderWidget(
+            rightSideX,
+            offsetY,
+            Button.DEFAULT_WIDTH,
+            Button.DEFAULT_HEIGHT,
+            0, 1, 0.01,
+            new DoubleValue() {
+                private final DecimalFormat format = new DecimalFormat("##%");
+                @Override
+                public double get() {
+                    return RadarConfigScreen.this.config.getTransparency();
+                }
+                @Override
+                public void set(final double value) {
+                    RadarConfigScreen.this.config.setTransparency((float) value);
+                }
+                @Override
+                public @NotNull Component getText(final double value) {
+                    return Component.translatable("civmodern.screen.radar.transparency", this.format.format(value));
+                }
             }
-
-            @Override
-            public void set(double value) {
-                config.setTransparency((float) value);
+        ));
+        addRenderableWidget(new DoubleOptionUpdateableSliderWidget(
+            leftSideX,
+            offsetY,
+            Button.DEFAULT_WIDTH,
+            Button.DEFAULT_HEIGHT,
+            0, 1, 0.01,
+            new DoubleValue() {
+                private final DecimalFormat format = new DecimalFormat("##%");
+                @Override
+                public double get() {
+                    return RadarConfigScreen.this.config.getBackgroundTransparency();
+                }
+                @Override
+                public void set(final double value) {
+                    RadarConfigScreen.this.config.setBackgroundTransparency((float) value);
+                }
+                @Override
+                public @NotNull Component getText(final double value) {
+                    return Component.translatable("civmodern.screen.radar.background_transparency", this.format.format(value));
+                }
             }
+        ));
+        offsetY += Button.DEFAULT_HEIGHT + 4;
 
-            @Override
-            public Component getText(double value) {
-                return Component.translatable("civmodern.screen.radar.transparency", format.format(value));
+        addRenderableWidget(new DoubleOptionUpdateableSliderWidget(
+            leftSideX,
+            offsetY,
+            Button.DEFAULT_WIDTH,
+            Button.DEFAULT_HEIGHT,
+            0.5, 2, 0.1,
+            new DoubleValue() {
+                private final DecimalFormat format = new DecimalFormat("#.#");
+                @Override
+                public double get() {
+                    return RadarConfigScreen.this.config.getIconSize();
+                }
+                @Override
+                public void set(final double value) {
+                    RadarConfigScreen.this.config.setIconSize((float) value);
+                }
+                @Override
+                public @NotNull Component getText(final double value) {
+                    return Component.translatable("civmodern.screen.radar.iconsize", this.format.format(value));
+                }
             }
-        }));
-        addRenderableWidget(new DoubleOptionUpdateableSliderWidget(left, offset, 150, 20, 0, 1, 0.01, new DoubleValue() {
-            private final DecimalFormat format = new DecimalFormat("##%");
-
-            @Override
-            public double get() {
-                return config.getBackgroundTransparency();
+        ));
+        addRenderableWidget(new DoubleOptionUpdateableSliderWidget(
+            rightSideX,
+            offsetY,
+            Button.DEFAULT_WIDTH,
+            Button.DEFAULT_HEIGHT,
+            20, 150, 1,
+            new DoubleValue() {
+                @Override
+                public double get() {
+                    return RadarConfigScreen.this.config.getRange();
+                }
+                @Override
+                public void set(final double value) {
+                    RadarConfigScreen.this.config.setRange(value);
+                }
+                @Override
+                public @NotNull Component getText(final double value) {
+                    return Component.translatable("civmodern.screen.radar.range", String.valueOf((int) value));
+                }
             }
+        ));
+        offsetY += Button.DEFAULT_HEIGHT + 4;
 
-            @Override
-            public void set(double value) {
-                config.setBackgroundTransparency((float) value);
+        addRenderableWidget(new DoubleOptionUpdateableSliderWidget(
+            leftSideX,
+            offsetY,
+            Button.DEFAULT_WIDTH,
+            Button.DEFAULT_HEIGHT,
+            25, 250, 1,
+            new DoubleValue() {
+                @Override
+                public double get() {
+                    return RadarConfigScreen.this.config.getRadarSize();
+                }
+                @Override
+                public void set(final double value) {
+                    RadarConfigScreen.this.config.setRadarSize((int) value);
+                }
+                @Override
+                public @NotNull Component getText(final double value) {
+                    return Component.translatable("civmodern.screen.radar.size", Integer.toString((int) value));
+                }
             }
-
-            @Override
-            public Component getText(double value) {
-                return Component.translatable("civmodern.screen.radar.background_transparency", format.format(value));
+        ));
+        addRenderableWidget(new DoubleOptionUpdateableSliderWidget(
+            rightSideX,
+            offsetY,
+            Button.DEFAULT_WIDTH,
+            Button.DEFAULT_HEIGHT,
+            1, 8, 1,
+            new DoubleValue() {
+                @Override
+                public double get() {
+                    return RadarConfigScreen.this.config.getRadarCircles();
+                }
+                @Override
+                public void set(final double value) {
+                    RadarConfigScreen.this.config.setRadarCircles((int) value);
+                }
+                @Override
+                public @NotNull Component getText(final double value) {
+                    return Component.translatable("civmodern.screen.radar.circles", Integer.toString((int) value));
+                }
             }
-        }));
-        offset += 24;
-        addRenderableWidget(new DoubleOptionUpdateableSliderWidget(left, offset, 150, 20, 0.5, 2, 0.1, new DoubleValue() {
-            private final DecimalFormat format = new DecimalFormat("#.#");
+        ));
+        offsetY += Button.DEFAULT_HEIGHT + 4;
 
-            @Override
-            public double get() {
-                return config.getIconSize();
+        addRenderableWidget(new DoubleOptionUpdateableSliderWidget(
+            leftSideX,
+            offsetY,
+            Button.DEFAULT_WIDTH,
+            Button.DEFAULT_HEIGHT,
+            0, 300, 1,
+            new DoubleValue() {
+                @Override
+                public double get() {
+                    return RadarConfigScreen.this.config.getX();
+                }
+                @Override
+                public void set(final double value) {
+                    RadarConfigScreen.this.config.setX((int) value);
+                }
+                @Override
+                public @NotNull Component getText(final double value) {
+                    return Component.translatable("civmodern.screen.radar.x", String.valueOf((int) value));
+                }
             }
-
-            @Override
-            public void set(double value) {
-                config.setIconSize((float) value);
+        ));
+        addRenderableWidget(new DoubleOptionUpdateableSliderWidget(
+            rightSideX,
+            offsetY,
+            Button.DEFAULT_WIDTH,
+            Button.DEFAULT_HEIGHT,
+            0, 300, 1,
+            new DoubleValue() {
+                @Override
+                public double get() {
+                    return RadarConfigScreen.this.config.getY();
+                }
+                @Override
+                public void set(final double value) {
+                    RadarConfigScreen.this.config.setY((int) value);
+                }
+                @Override
+                public @NotNull Component getText(final double value) {
+                    return Component.translatable("civmodern.screen.radar.y", String.valueOf((int) value));
+                }
             }
+        ));
+        offsetY += Button.DEFAULT_HEIGHT + 2;
 
-            @Override
-            public Component getText(double value) {
-                return Component.translatable("civmodern.screen.radar.iconsize", format.format(value));
-            }
-        }));
-        addRenderableWidget(new DoubleOptionUpdateableSliderWidget(right, offset, 150, 20, 20, 150, 1, new DoubleValue() {
+        this.bgPicker = addColourPicker(
+            leftSideX,
+            offsetY,
+            CivMapConfig.DEFAULT_RADAR_BG_COLOUR,
+            Component.literal("Background colour"),
+            this.config::getRadarBgColour,
+            this.config::setRadarBgColour,
+            this.colourProvider::setTemporaryRadarBackgroundColour
+        );
+        this.fgPicker = addColourPicker(
+            rightSideX,
+            offsetY,
+            CivMapConfig.DEFAULT_RADAR_FG_COLOUR,
+            Component.literal("Line colour"),
+            this.config::getRadarColour,
+            this.config::setRadarColour,
+            this.colourProvider::setTemporaryRadarForegroundColour
+        );
+        offsetY += 30 + 2;
 
-            @Override
-            public double get() {
-                return config.getRange();
-            }
-
-            @Override
-            public void set(double value) {
-                config.setRange((int) value);
-            }
-
-            @Override
-            public Component getText(double value) {
-                return Component.translatable("civmodern.screen.radar.range", String.valueOf((int) value));
-            }
-        }));
-        offset += 24;
-        addRenderableWidget(new DoubleOptionUpdateableSliderWidget(left, offset, 150, 20, 25, 250, 1, new DoubleValue() {
-            @Override
-            public double get() {
-                return config.getRadarSize();
-            }
-
-            @Override
-            public void set(double value) {
-                config.setRadarSize((int) value);
-            }
-
-            @Override
-            public Component getText(double value) {
-                return Component.translatable("civmodern.screen.radar.size",
-                    Integer.toString((int) value));
-            }
-        }));
-        addRenderableWidget(new DoubleOptionUpdateableSliderWidget(right, offset, 150, 20, 1, 8, 1, new DoubleValue() {
-            @Override
-            public double get() {
-                return config.getRadarCircles();
-            }
-
-            @Override
-            public void set(double value) {
-                config.setRadarCircles((int) value);
-            }
-
-            @Override
-            public Component getText(double value) {
-                return Component.translatable("civmodern.screen.radar.circles",
-                    Integer.toString((int) value));
-            }
-        }));
-        offset += 24;
-        addRenderableWidget(new DoubleOptionUpdateableSliderWidget(left, offset, 150, 20, 0, 300, 1, new DoubleValue() {
-
-            @Override
-            public double get() {
-                return config.getX();
-            }
-
-            @Override
-            public void set(double value) {
-                config.setX((int) value);
-            }
-
-            @Override
-            public Component getText(double value) {
-                return Component.translatable("civmodern.screen.radar.x", String.valueOf((int) value));
-            }
-        }));
-        addRenderableWidget(new DoubleOptionUpdateableSliderWidget(right, offset, 150, 20, 0, 300, 1, new DoubleValue() {
-
-            @Override
-            public double get() {
-                return config.getY();
-            }
-
-            @Override
-            public void set(double value) {
-                config.setY((int) value);
-            }
-
-            @Override
-            public Component getText(double value) {
-                return Component.translatable("civmodern.screen.radar.y", String.valueOf((int) value));
-            }
-        }));
-        offset += 24;
-
-        foregroundColourY = backgroundColourY = offset;
-
-        offset += 12;
-
-        offset += 36;
-        addRenderableWidget(Button.builder(CommonComponents.GUI_DONE, button -> {
-            config.save();
-            Minecraft.getInstance().setScreen(parent);
-        }).pos(centre, offset).size(150, 20).build());
+        addRenderableWidget(
+            Button
+                .builder(
+                    CommonComponents.GUI_DONE,
+                    (button) -> {
+                        this.config.save();
+                        Minecraft.getInstance().setScreen(this.parent);
+                    }
+                )
+                .pos(this.centreX - (Button.DEFAULT_WIDTH / 2), getFooterY(offsetY))
+                .build()
+        );
     }
 
-    private HsbColourPicker addColourPicker(int x, int y, int defaultColour, Supplier<Integer> colourGet, Consumer<Integer> colourSet, Consumer<Integer> preview) {
-        int left = (x + 75) - (60 + 8 + 20 + 8 + 20) / 2;
-        EditBox widget = new EditBox(font, left, y, 60, 20, Component.empty());
-        widget.setValue("#" + String.format("%06X", colourGet.get()));
-        widget.setMaxLength(7);
-        Pattern pattern = Pattern.compile("^(#[0-9A-F]{0,6})?$", Pattern.CASE_INSENSITIVE);
-        widget.setFilter(string -> pattern.matcher(string).matches());
-        widget.setResponder(val -> {
-            if (val.length() == 7) {
-                int rgb = Integer.parseInt(val.substring(1), 16);
-                colourSet.accept(rgb);
-            }
-        });
-        addRenderableWidget(widget);
+    private @NotNull HsbColourPicker addColourPicker(
+        final int offsetX,
+        int offsetY,
+        final int defaultColour,
+        final @NotNull Component label,
+        final @NotNull IntSupplier colourGetter,
+        final @NotNull IntConsumer colourSetter,
+        final @NotNull Consumer<Integer> preview
+    ) {
+        final int innerCenterX = offsetX + (Button.DEFAULT_WIDTH / 2);
 
-        HsbColourPicker hsb = new HsbColourPicker(left + 60 + 8, y,
-            20, 20, colourGet.get(), colour -> {
-            widget.setValue("#" + String.format("%06X", colour));
-            colourSet.accept(colour);
-        }, preview, this);
-        addRenderableWidget(new ImageButton(left + 60 + 8 + 20 + 8, y, 20, 20, ROLLBACK_ICON, imbg -> {
-            widget.setValue("#" + String.format("%06X", defaultColour));
-            colourSet.accept(defaultColour);
-            hsb.close();
-        }));
-        addRenderableWidget(hsb);
+        addRenderableOnly(new TextRenderable.CentreAligned(
+            this.font,
+            innerCenterX,
+            offsetY,
+            label
+        ));
+        offsetY += this.font.lineHeight + 2;
+
+        final var colourEditBox = addRenderableWidget(new ColourTextEditBox(
+            this.font,
+            innerCenterX - 30,
+            offsetY,
+            60,
+            Button.DEFAULT_HEIGHT,
+            colourGetter,
+            colourSetter
+        ));
+
+        final var hsb = addRenderableWidget(new HsbColourPicker(
+            innerCenterX - 30 - 4 - 20,
+            offsetY,
+            20,
+            20,
+            colourGetter.getAsInt(),
+            (colour) -> {
+                colourEditBox.setColourFromInt(colour);
+                colourSetter.accept(colour);
+            },
+            preview,
+            this::closePickers
+        ));
+
+        addRenderableWidget(new ImageButton(
+            innerCenterX + 30 + 4,
+            offsetY,
+            20,
+            20,
+            ROLLBACK_ICON,
+            (button) -> {
+                colourEditBox.setColourFromInt(defaultColour);
+                colourSetter.accept(defaultColour);
+                hsb.close();
+            }
+        ));
+
         return hsb;
-    }
-
-    private Component getPingToggleMessage() {
-        if (config.isPingEnabled()) {
-            return Component.translatable("civmodern.screen.radar.pings.enable");
-        } else {
-            return Component.translatable("civmodern.screen.radar.pings.disable");
-        }
-    }
-
-    private Component getItemToggleMessage() {
-        if (config.isShowItems()) {
-            return Component.translatable("civmodern.screen.radar.items.enable");
-        } else {
-            return Component.translatable("civmodern.screen.radar.items.disable");
-        }
-    }
-
-    private Component getPingSoundMessage() {
-        if (config.isPingSoundEnabled()) {
-            return Component.translatable("civmodern.screen.radar.sound.enable");
-        } else {
-            return Component.translatable("civmodern.screen.radar.sound.disable");
-        }
     }
 
     @Override
     public void onClose() {
-        config.save();
-        mod.getColourProvider().setTemporaryRadarBackgroundColour(null);
-        mod.getColourProvider().setTemporaryRadarForegroundColour(null);
+        this.config.save();
+        this.colourProvider.setTemporaryRadarBackgroundColour(null);
+        this.colourProvider.setTemporaryRadarForegroundColour(null);
         super.onClose();
     }
 
     @Override
-    public void mouseMoved(double d, double e) {
-        super.mouseMoved(d, e);
-        if (fgPicker != null) {
-            fgPicker.mouseMoved(d, e);
+    public void mouseMoved(
+        final double mouseX,
+        final double mouseY
+    ) {
+        super.mouseMoved(mouseX, mouseY);
+        if (this.fgPicker != null) {
+            this.fgPicker.mouseMoved(mouseX, mouseY);
         }
-        if (bgPicker != null) {
-            bgPicker.mouseMoved(d, e);
-        }
-    }
-
-    @Override
-    public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float delta) {
-        Component lineColour = Component.literal("Line colour");
-        Component backgroundColour = Component.literal("Background colour");
-
-        this.font.drawInBatch(lineColour, this.width / 2f + 75 - font.width(lineColour) / 2f, foregroundColourY, 0xffffff, true, guiGraphics.pose().last().pose(), guiGraphics.bufferSource(), Font.DisplayMode.NORMAL, 0, 0xF000F0);
-        this.font.drawInBatch(backgroundColour, this.width / 2f - 75 - font.width(backgroundColour) / 2f, backgroundColourY, 0xffffff, true, guiGraphics.pose().last().pose(), guiGraphics.bufferSource(), Font.DisplayMode.NORMAL, 0, 0xF000F0);
-
-        guiGraphics.drawCenteredString(this.font, this.title, this.width / 2, 15, 0xffffff);
-
-        // Don't call super because we don't want the dark background to allow people to see the radar easily
-        for (Renderable renderable : this.renderables) {
-            renderable.render(guiGraphics, mouseX, mouseY, delta);
-        }
-    }
-
-    private Component getRadarToggleMessage() {
-        if (config.isRadarEnabled()) {
-            return Component.literal("Radar: Enabled");
-        } else {
-            return Component.literal("Radar: Disabled");
+        if (this.bgPicker != null) {
+            this.bgPicker.mouseMoved(mouseX, mouseY);
         }
     }
 
     @Override
-    protected <T extends GuiEventListener & Renderable & NarratableEntry> T addRenderableWidget(T widget) {
-        this.renderables.add(widget);
-        return super.addRenderableWidget(widget);
+    public void render(
+        final @NotNull GuiGraphics guiGraphics,
+        final int mouseX,
+        final int mouseY,
+        final float partialTick
+    ) {
+        // Don't call super since we don't want the dark or blurred background to obscure changes to the radar
+        for (final Renderable renderable : ((ScreenAccessor) (Object) this).civmodern$getRenderables()) {
+            renderable.render(guiGraphics, mouseX, mouseY, partialTick);
+        }
     }
 
-    @Override
-    public void close() {
-        fgPicker.close();
-        bgPicker.close();
+    private void closePickers() {
+        if (this.fgPicker != null) {
+            this.fgPicker.close();
+        }
+        if (this.bgPicker != null) {
+            this.bgPicker.close();
+        }
     }
 }

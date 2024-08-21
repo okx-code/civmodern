@@ -18,7 +18,6 @@ import net.minecraft.util.Mth;
 import org.joml.Matrix4f;
 import org.lwjgl.opengl.GLUtil;
 import sh.okx.civmodern.common.gui.Texture;
-import sh.okx.civmodern.common.gui.screen.ScreenCloseable;
 
 public class HsbColourPicker extends AbstractWidget {
 
@@ -39,11 +38,11 @@ public class HsbColourPicker extends AbstractWidget {
     private boolean updateTexture = true;
     private boolean hueMouseDown = false;
 
-    private final ScreenCloseable closeable;
+    private final Runnable closeable;
 
     private int renderY;
 
-    public HsbColourPicker(int x, int y, int width, int height, int colour, Consumer<Integer> colourConsumer, Consumer<Integer> previewConsumer, ScreenCloseable closeable) {
+    public HsbColourPicker(int x, int y, int width, int height, int colour, Consumer<Integer> colourConsumer, Consumer<Integer> previewConsumer, Runnable closeable) {
         super(x, y, width, height, Component.literal("HSB Colour Picker"));
 
         this.hue = getHue(colour);
@@ -129,7 +128,7 @@ public class HsbColourPicker extends AbstractWidget {
     @Override
     public void onClick(double mouseX, double mouseY) {
         if (!showPalette) {
-            closeable.close();
+            closeable.run();
         }
         showPalette = !showPalette;
     }

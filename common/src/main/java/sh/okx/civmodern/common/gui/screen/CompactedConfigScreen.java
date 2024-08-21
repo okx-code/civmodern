@@ -1,116 +1,146 @@
 package sh.okx.civmodern.common.gui.screen;
 
-import net.minecraft.client.Minecraft;
+import java.util.List;
+import java.util.Objects;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
-import net.minecraft.client.gui.components.EditBox;
-import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.player.LocalPlayer;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.ListTag;
-import net.minecraft.nbt.StringTag;
+import net.minecraft.core.component.DataComponentMap;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.item.component.ItemLore;
+import org.jetbrains.annotations.NotNull;
 import org.lwjgl.glfw.GLFW;
-import sh.okx.civmodern.common.AbstractCivModernMod;
 import sh.okx.civmodern.common.CivMapConfig;
 import sh.okx.civmodern.common.ColourProvider;
+import sh.okx.civmodern.common.features.ExtendedItemStack;
+import sh.okx.civmodern.common.gui.widget.ColourTextEditBox;
 import sh.okx.civmodern.common.gui.widget.HsbColourPicker;
 import sh.okx.civmodern.common.gui.widget.ImageButton;
+import sh.okx.civmodern.common.gui.widget.TextRenderable;
 
-import java.text.DecimalFormat;
-import java.util.regex.Pattern;
+final class CompactedConfigScreen extends AbstractConfigScreen {
+    private static final ItemStack ITEM; static {
+        ITEM = new ItemStack(Items.STONE);
+        ITEM.applyComponents(
+            DataComponentMap.builder()
+                .set(DataComponents.LORE, new ItemLore(
+                    List.of(Component.literal(ExtendedItemStack.COMPACTED_ITEM_LORE))
+                ))
+                .build()
+        );
+    }
 
-public class CompactedConfigScreen extends Screen {
-    private static final DecimalFormat FORMAT = new DecimalFormat("##%");
+    private final ColourProvider colourProvider;
 
-    private static final ItemStack ITEM;
-
+    private HsbColourPicker colourPicker;
     private int itemX;
     private int itemY;
 
-    static {
-        CompoundTag item = new CompoundTag();
-        item.putString("id", "stone");
-        item.putInt("Count", 64);
-        CompoundTag tag = new CompoundTag();
-        ListTag lore = new ListTag();
-        lore.add(StringTag.valueOf("\"Compacted Item\""));
-        CompoundTag display = new CompoundTag();
-        display.put("Lore", lore);
-        tag.put("display", display);
-        item.put("tag", tag);
-        ITEM = ItemStack.parse(Minecraft.getInstance().level.registryAccess(), item).get();
-    }
-
-    private final AbstractCivModernMod mod;
-    private final CivMapConfig config;
-    private final Screen parent;
-
-    private HsbColourPicker picker;
-
-    public CompactedConfigScreen(AbstractCivModernMod mod, CivMapConfig config, Screen parent) {
-        super(Component.translatable("civmodern.screen.compacted.title"));
-        this.mod = mod;
-        this.config = config;
-        this.parent = parent;
+    CompactedConfigScreen(
+        final @NotNull CivMapConfig config,
+        final @NotNull ColourProvider colourProvider,
+        final @NotNull MainConfigScreen parent
+    ) {
+        super(
+            config,
+            Objects.requireNonNull(parent),
+            Component.translatable("civmodern.screen.compacted.title")
+        );
+        this.colourProvider = Objects.requireNonNull(colourProvider);
     }
 
     @Override
     protected void init() {
-        itemX = this.width / 2 - 16 / 2;
-        itemY = this.height / 6 - 24;
+        super.init();
 
-        int leftWidth = width / 2 - (60 + 8 + 20 + 8 + 20) / 2;
+        addRenderableOnly(new TextRenderable.CentreAligned(
+            this.font,
+            this.centreX,
+            getHeaderY(),
+            this.title
+        ));
 
-        EditBox widget = new EditBox(font, leftWidth, height / 6, 60, 20, Component.empty());
-        widget.setValue("#" + String.format("%06X", config.getColour()));
-        widget.setMaxLength(7);
-        Pattern pattern = Pattern.compile("^(#[0-9A-F]{0,6})?$", Pattern.CASE_INSENSITIVE);
-        widget.setFilter(string -> pattern.matcher(string).matches());
-        widget.setResponder(val -> {
-            if (val.length() == 7) {
-                int rgb = Integer.parseInt(val.substring(1), 16);
-                config.setColour(rgb);
+        int offsetY = getBodyY();
+
+        this.itemX = centreX - 8; // Items have a render size of 16x16
+        this.itemY = offsetY;
+        offsetY += 16 + 10;
+
+        final var compactedColourEditBox = addRenderableWidget(new ColourTextEditBox(
+            this.font,
+            this.centreX - 30,
+            offsetY,
+            60, // width
+            20, // height
+            this.config::getColour,
+            this.config::setColour
+        ));
+        addRenderableWidget(this.colourPicker = new HsbColourPicker(
+            this.centreX - (compactedColourEditBox.getWidth() / 2) - 5 - 20,
+            offsetY,
+            20,
+            20,
+            this.config.getColour(),
+            (colour) -> {
+                compactedColourEditBox.setValue("#" + "%06X".formatted(colour));
+                this.config.setColour(colour);
+            },
+            this.colourProvider::setTemporaryCompactedColour,
+            () -> {}
+        ));
+        addRenderableWidget(new ImageButton(
+            this.centreX + (compactedColourEditBox.getWidth() / 2) + 5,
+            offsetY,
+            20,
+            20,
+            ResourceLocation.tryBuild("civmodern", "gui/rollback.png"),
+            (button) -> {
+                final int colour = 0xffff58;
+                compactedColourEditBox.setValue("#FFFF58");
+                this.config.setColour(colour);
+                this.colourPicker.close();
             }
-        });
-        addRenderableWidget(widget);
+        ));
+        offsetY += Button.DEFAULT_HEIGHT + 10;
 
-        ColourProvider colourProvider = mod.getColourProvider();
-        HsbColourPicker hsb = new HsbColourPicker(leftWidth + 60 + 8, height / 6, 20, 20, config.getColour(),
-            colour -> {
-                widget.setValue("#" + String.format("%06X", colour));
-                config.setColour(colour);
-            }, colourProvider::setTemporaryCompactedColour, () -> {});
-
-        addRenderableWidget(new ImageButton(leftWidth + 60 + 8 + 20 + 8, height / 6, 20, 20, ResourceLocation.tryBuild("civmodern", "gui/rollback.png"), imbg -> {
-            int colour = 0xffff58;
-            widget.setValue("#FFFF58");
-            config.setColour(colour);
-            hsb.close();
-        }));
-
-        addRenderableWidget(picker = hsb);
-
-        addRenderableWidget(Button.builder(CommonComponents.GUI_DONE, button -> {
-            config.save();
-            minecraft.setScreen(parent);
-        }).pos(this.width / 2 - 49, this.height / 6 + 169).size(98, 20).build());
+        addRenderableWidget(
+            Button
+                .builder(
+                    CommonComponents.GUI_DONE,
+                    (button) -> {
+                        this.config.save();
+                        this.minecraft.setScreen(this.parent);
+                    }
+                )
+                .width(98)
+                .pos(
+                    this.centreX - 49,
+                    getFooterY(offsetY)
+                )
+                .build()
+        );
     }
 
     @Override
-    public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float delta) {
-        drawCentredText(guiGraphics, this.title, 0, 15, 0xffffff);
+    public void render(
+        final @NotNull GuiGraphics guiGraphics,
+        final int mouseX,
+        final int mouseY,
+        final float delta
+    ) {
+        super.render(guiGraphics, mouseX, mouseY, delta);
 
-        drawItem(guiGraphics);
+        guiGraphics.renderItem(ITEM, this.itemX, this.itemY);
+        guiGraphics.renderItemDecorations(this.font, ITEM, this.itemX, this.itemY);
 
         if (isCursorOverItem(mouseX, mouseY)) {
-            guiGraphics.renderTooltip(font, ITEM, mouseX, mouseY);
+            guiGraphics.renderTooltip(this.font, ITEM, mouseX, mouseY);
         }
-
-        super.render(guiGraphics, mouseX, mouseY, delta);
     }
 
     @Override
@@ -119,41 +149,41 @@ public class CompactedConfigScreen extends Screen {
         final double mouseY,
         final int button
     ) {
-        final LocalPlayer player = Minecraft.getInstance().player;
-        if (player != null && isCursorOverItem((int) mouseX, (int) mouseY) && button == GLFW.GLFW_MOUSE_BUTTON_1 && player.isCreative()) {
-            player.addItem(ITEM.copy());
-            return true;
+        if (this.minecraft != null) {
+            final LocalPlayer player = this.minecraft.player;
+            if (player != null && isCursorOverItem((int) mouseX, (int) mouseY) && button == GLFW.GLFW_MOUSE_BUTTON_1 && player.isCreative()) {
+                player.addItem(ITEM.copy());
+                return true;
+            }
         }
         return super.mouseClicked(mouseX, mouseY, button);
     }
 
+    private boolean isCursorOverItem(
+        final int mouseX,
+        final int mouseY
+    ) {
+        return mouseX >= this.itemX - 1
+            && mouseX < this.itemX + 17
+            && mouseY > this.itemY - 1
+            && mouseY < this.itemY + 17;
+    }
+
     @Override
-    public void mouseMoved(double d, double e) {
-        super.mouseMoved(d, e);
-        if (picker != null) {
-            picker.mouseMoved(d, e);
+    public void mouseMoved(
+        final double mouseX,
+        final double mouseY
+    ) {
+        super.mouseMoved(mouseX, mouseY);
+        if (this.colourPicker != null) {
+            this.colourPicker.mouseMoved(mouseX, mouseY);
         }
     }
 
     @Override
     public void onClose() {
         super.onClose();
-        mod.getColourProvider().setTemporaryCompactedColour(null);
-        config.save();
-    }
-
-    private boolean isCursorOverItem(int mouseX, int mouseY) {
-        return mouseX >= itemX - 1  && mouseX < itemX + 17 && mouseY > itemY - 1 && mouseY < itemY + 17;
-    }
-
-    private void drawItem(GuiGraphics guiGraphics) {
-        guiGraphics.renderItem(ITEM, itemX, itemY);
-        guiGraphics.renderItemDecorations(font, ITEM, itemX, itemY);
-    }
-
-    private void drawCentredText(GuiGraphics guiGraphics, Component text, int xOffsetCentre, int yOffsetTop, int colour) {
-        int width = Minecraft.getInstance().getWindow().getGuiScaledWidth();
-        int centre = width / 2 - font.width(text) / 2;
-        guiGraphics.drawString(this.font, text, centre + xOffsetCentre, yOffsetTop, colour);
+        this.colourProvider.setTemporaryCompactedColour(null);
+        this.config.save();
     }
 }

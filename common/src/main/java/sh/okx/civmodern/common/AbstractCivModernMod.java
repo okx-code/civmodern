@@ -115,8 +115,8 @@ public abstract class AbstractCivModernMod {
     private void tick(
         final @NotNull ClientTickEvent event
     ) {
-        while (configBinding.consumeClick()) {
-            Minecraft.getInstance().setScreen(new MainConfigScreen(this, config));
+        while (this.configBinding.consumeClick()) {
+            Minecraft.getInstance().setScreen(newConfigGui(null));
         }
     }
 
@@ -156,7 +156,7 @@ public abstract class AbstractCivModernMod {
     public @NotNull Screen newConfigGui(
         final Screen previousScreen
     ) {
-        return new MainConfigScreen(this, this.config);
+        return new MainConfigScreen(this.config, this.colourProvider, previousScreen);
     }
 
     public static AbstractCivModernMod getInstance() {
