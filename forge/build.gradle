@@ -9,7 +9,8 @@ architectury {
 
 loom {
     forge {
-        mixinConfig "civmodern.mixins.json"
+        mixinConfig "civmodern.common.mixins.json"
+        mixinConfig "civmodern.forge.mixins.json"
     }
 }
 
@@ -19,6 +20,12 @@ configurations {
     compileClasspath.extendsFrom common
     runtimeClasspath.extendsFrom common
     developmentForge.extendsFrom common
+
+    // Bizarre hack to make Forge work on Forge 50+
+    // https://discord.com/channels/792699517631594506/792701725106634783/1272848116864909314
+    configureEach {
+        resolutionStrategy.force("net.sf.jopt-simple:jopt-simple:5.0.4")
+    }
 }
 
 dependencies {

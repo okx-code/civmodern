@@ -28,6 +28,6 @@
         "fabric": "*"
     },
     "mixins": [
-        "civmodern.mixins.json"
+        "civmodern.common.mixins.json"
     ]
 }
