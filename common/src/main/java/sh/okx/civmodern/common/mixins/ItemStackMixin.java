@@ -1,19 +1,21 @@
 package sh.okx.civmodern.common.mixins;
 
+import net.minecraft.core.component.DataComponentMap;
 import net.minecraft.core.component.DataComponents;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.ListTag;
-import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.Style;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.component.ItemLore;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
 import sh.okx.civmodern.common.features.ExtendedItemStack;
 
 @Mixin(ItemStack.class)
 public abstract class ItemStackMixin implements ExtendedItemStack {
+    @Shadow
+    public abstract DataComponentMap getComponents();
+
     @Unique
     private Boolean civmodern$isCompacted = null;
 
@@ -28,12 +30,11 @@ public abstract class ItemStackMixin implements ExtendedItemStack {
 
     @Unique
     private boolean civmodern$isCompacted() {
-        ItemLore lore = ((ItemStack) (Object) this).getComponents().get(DataComponents.LORE);
-        Component name = ((ItemStack) (Object) this).getComponents().get(DataComponents.ITEM_NAME);
-        if (lore == null || name == null) {
+        final ItemLore lore = getComponents().get(DataComponents.LORE);
+        if (lore == null) {
             return false;
         }
-        for (Component line : lore.lines()) {
+        for (final Component line : lore.lines()) {
             if (line == null) {
                 continue;
             }
