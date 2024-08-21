@@ -47,9 +47,8 @@ public class IceRoadConfigScreen extends Screen {
 
     @Override
     public void render(GuiGraphics guiGraphics, int i, int j, float f) {
-        super.render(guiGraphics, i, j, f);
-
         guiGraphics.drawString(font, this.title, (int) (this.width / 2f - font.width(this.title) / 2f), 15, 0xffffff);
+        super.render(guiGraphics, i, j, f);
     }
 
     @Override

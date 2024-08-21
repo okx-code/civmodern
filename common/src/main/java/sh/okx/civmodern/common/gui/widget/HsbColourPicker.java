@@ -22,7 +22,7 @@ import sh.okx.civmodern.common.gui.screen.ScreenCloseable;
 
 public class HsbColourPicker extends AbstractWidget {
 
-    private static final ResourceLocation COLOUR_PICKER_ICON = new ResourceLocation("civmodern", "gui/colour.png");
+    private static final ResourceLocation COLOUR_PICKER_ICON = ResourceLocation.tryBuild("civmodern", "gui/colour.png");
 
     private final Texture hueSelector;
     private final Texture saturationBrightnessTexture;
@@ -81,25 +81,24 @@ public class HsbColourPicker extends AbstractWidget {
             // Saturation and brightness selector
             RenderSystem.setShader(GameRenderer::getPositionTexShader);
             Matrix4f matrix4f = guiGraphics.pose().last().pose();
-            BufferBuilder bufferBuilder = Tesselator.getInstance().getBuilder();
+            BufferBuilder bufferBuilder = Tesselator.getInstance().begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX);
 
-            bufferBuilder.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX);
-            bufferBuilder.vertex(matrix4f, this.getX(), renderY + height, 0).uv(0, 0).endVertex();
-            bufferBuilder.vertex(matrix4f, this.getX(), renderY + height + 128, 0).uv(0, 1).endVertex();
-            bufferBuilder.vertex(matrix4f, this.getX() + 128, renderY + height + 128, 0).uv(1, 1).endVertex();
-            bufferBuilder.vertex(matrix4f, this.getX() + 128, renderY + height, 0).uv(1, 0).endVertex();
-            BufferUploader.drawWithShader(bufferBuilder.end());
+            bufferBuilder.addVertex(matrix4f, this.getX(), renderY + height, 0).setUv(0, 0);
+            bufferBuilder.addVertex(matrix4f, this.getX(), renderY + height + 128, 0).setUv(0, 1);
+            bufferBuilder.addVertex(matrix4f, this.getX() + 128, renderY + height + 128, 0).setUv(1, 1);
+            bufferBuilder.addVertex(matrix4f, this.getX() + 128, renderY + height, 0).setUv(1, 0);
+            BufferUploader.drawWithShader(bufferBuilder.buildOrThrow());
 //      guiGraphics.blit(this.saturationBrightnessTexture, this.getX(), renderY + height, 0, 0, 0, 101, 101, 128, 128);
 
             // Hue selector
             hueSelector.bind();
             RenderSystem.setShader(GameRenderer::getPositionTexShader);
-            bufferBuilder.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX);
-            bufferBuilder.vertex(matrix4f, this.getX() + 106, renderY + height, 0).uv(0, 0).endVertex();
-            bufferBuilder.vertex(matrix4f, this.getX() + 106, renderY + height + 101, 0).uv(0, 1).endVertex();
-            bufferBuilder.vertex(matrix4f, this.getX() + 106 + 10, renderY + height + 101, 0).uv(1, 1).endVertex();
-            bufferBuilder.vertex(matrix4f, this.getX() + 106 + 10, renderY + height, 0).uv(1, 0).endVertex();
-            BufferUploader.drawWithShader(bufferBuilder.end());
+            bufferBuilder = Tesselator.getInstance().begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX);
+            bufferBuilder.addVertex(matrix4f, this.getX() + 106, renderY + height, 0).setUv(0, 0);
+            bufferBuilder.addVertex(matrix4f, this.getX() + 106, renderY + height + 101, 0).setUv(0, 1);
+            bufferBuilder.addVertex(matrix4f, this.getX() + 106 + 10, renderY + height + 101, 0).setUv(1, 1);
+            bufferBuilder.addVertex(matrix4f, this.getX() + 106 + 10, renderY + height, 0).setUv(1, 0);
+            BufferUploader.drawWithShader(bufferBuilder.buildOrThrow());
 //      Gui.blit(matrixStack, this.x + 106, renderY + height, 10, 101, 0, 0, 1, 360, 1, 360);
 
             RenderSystem.disableBlend();

@@ -4,6 +4,7 @@ import com.google.common.eventbus.Subscribe;
 import com.mojang.blaze3d.platform.Lighting;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.BufferBuilder;
+import com.mojang.blaze3d.vertex.BufferUploader;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.Tesselator;
@@ -343,14 +344,14 @@ public class Radar {
             if (entry != null) {
                 location = entry.getSkin().texture();
             } else {
-                location = new ResourceLocation("textures/entity/steve.png");
+                location = ResourceLocation.withDefaultNamespace("textures/entity/steve.png");
             }
             guiGraphics.blit(location, -4, -4, 8, 8, 8.0F, 8, 8, 8, 64, 64);
             RenderSystem.disableBlend();
             guiGraphics.pose().scale(0.6f, 0.6f, 0);
             Component component = Component.literal(
                 player.getScoreboardName() + " (" + (hideY() ? ((int) Math.round(Math.sqrt(dx * dx + dz * dz))) : (int) player.getY()) + ")");
-            minecraft.font.drawInBatch(component, -minecraft.font.width(component) / 2f, 7, 0xffffff, false, guiGraphics.pose().last().pose(), guiGraphics.bufferSource(), Font.DisplayMode.NORMAL, 0, 0);
+            minecraft.font.drawInBatch(component, -minecraft.font.width(component) / 2f, 7, 0xffffff, false, guiGraphics.pose().last().pose(), guiGraphics.bufferSource(), Font.DisplayMode.NORMAL, 0, 0xff);
 
             guiGraphics.pose().popPose();
         }
@@ -363,16 +364,15 @@ public class Radar {
         RenderSystem.setShader(GameRenderer::getPositionColorShader);
 
         Tesselator tessellator = Tesselator.getInstance();
-        BufferBuilder buffer = tessellator.getBuilder();
-        buffer.begin(Mode.TRIANGLE_FAN, DefaultVertexFormat.POSITION_COLOR);
+        BufferBuilder buffer = tessellator.begin(Mode.TRIANGLE_FAN, DefaultVertexFormat.POSITION_COLOR);
 
         float radius = radius() + 0.5f;
         for (int i = 0; i <= 360; i++) {
             float x = (float) Math.sin(i * Math.PI / 180.0D) * radius;
             float y = (float) Math.cos(i * Math.PI / 180.0D) * radius;
-            buffer.vertex(stack.last().pose(), x, y, 0).color(bgColour).endVertex();
+            buffer.addVertex(stack.last().pose(), x, y, 0).setColor(bgColour);
         }
-        tessellator.end();
+        BufferUploader.drawWithShader(buffer.buildOrThrow());
 
         RenderSystem.disableBlend();
     }
@@ -384,8 +384,7 @@ public class Radar {
         RenderSystem.setShader(GameRenderer::getPositionColorShader);
 
         Tesselator tessellator = Tesselator.getInstance();
-        BufferBuilder buffer = tessellator.getBuilder();
-        buffer.begin(Mode.TRIANGLE_STRIP, DefaultVertexFormat.POSITION_COLOR);
+        BufferBuilder buffer = tessellator.begin(Mode.TRIANGLE_STRIP, DefaultVertexFormat.POSITION_COLOR);
 
         float thickness = radius == radius() ? 1f : 0.5f;
 
@@ -396,10 +395,10 @@ public class Radar {
 
             float x1 = (float) Math.sin(i * Math.PI / 180.0D) * (radius + thickness);
             float y1 = (float) Math.cos(i * Math.PI / 180.0D) * (radius + thickness);
-            buffer.vertex(pose, x0, y0, 0).color(fgColour).endVertex();
-            buffer.vertex(pose, x1, y1, 0).color(fgColour).endVertex();
+            buffer.addVertex(pose, x0, y0, 0).setColor(fgColour);
+            buffer.addVertex(pose, x1, y1, 0).setColor(fgColour);
         }
-        tessellator.end();
+        BufferUploader.drawWithShader(buffer.buildOrThrow());
 
         glDisable(GL_POLYGON_SMOOTH);
         RenderSystem.disableBlend();
@@ -414,8 +413,7 @@ public class Radar {
         float radius = radius() + 0.5f;
 
         Tesselator tesselator = Tesselator.getInstance();
-        BufferBuilder buffer = tesselator.getBuilder();
-        buffer.begin(Mode.QUADS, DefaultVertexFormat.POSITION_COLOR);
+        BufferBuilder buffer = tesselator.begin(Mode.QUADS, DefaultVertexFormat.POSITION_COLOR);
 
         float thickness = 1f;
         float left = -thickness / 2;
@@ -425,13 +423,13 @@ public class Radar {
         Matrix4f last = matrixStack.last().pose();
 
         last.mul(Axis.ZP.rotationDegrees(Minecraft.getInstance().player.getViewYRot(delta)).get(new Matrix4f()));
-        buffer.vertex(last, left, -radius, 0).color(fgColour).endVertex();
-        buffer.vertex(last, left, 0, 0).color(fgColour).endVertex();
-        buffer.vertex(last, right, 0, 0).color(fgColour).endVertex();
-        buffer.vertex(last, right, -radius, 0).color(fgColour).endVertex();
+        buffer.addVertex(last, left, -radius, 0).setColor(fgColour);
+        buffer.addVertex(last, left, 0, 0).setColor(fgColour);
+        buffer.addVertex(last, right, 0, 0).setColor(fgColour);
+        buffer.addVertex(last, right, -radius, 0).setColor(fgColour);
 
         matrixStack.popPose();
-        tesselator.end();
+        BufferUploader.drawWithShader(buffer.buildOrThrow());
         glDisable(GL_POLYGON_SMOOTH);
         RenderSystem.disableBlend();
     }
@@ -445,8 +443,7 @@ public class Radar {
         float radius = radius() + 0.5f;
 
         Tesselator tesselator = Tesselator.getInstance();
-        BufferBuilder buffer = tesselator.getBuilder();
-        buffer.begin(Mode.QUADS, DefaultVertexFormat.POSITION_COLOR);
+        BufferBuilder buffer = tesselator.begin(Mode.QUADS, DefaultVertexFormat.POSITION_COLOR);
 
         float thickness = 0.5f;
         float left = -thickness / 2;
@@ -457,23 +454,23 @@ public class Radar {
         int numberOfLines = 4;
         float rotationRadians = (float) Math.PI / numberOfLines;
         for (int i = 0; i < numberOfLines; i++) {
-            buffer.vertex(last, left, -radius, 0f).color(fgColour).endVertex();
-            buffer.vertex(last, left, radius, 0f).color(fgColour).endVertex();
-            buffer.vertex(last, right, radius, 0f).color(fgColour).endVertex();
-            buffer.vertex(last, right, -radius, 0f).color(fgColour).endVertex();
+            buffer.addVertex(last, left, -radius, 0f).setColor(fgColour);
+            buffer.addVertex(last, left, radius, 0f).setColor(fgColour);
+            buffer.addVertex(last, right, radius, 0f).setColor(fgColour);
+            buffer.addVertex(last, right, -radius, 0f).setColor(fgColour);
             Matrix4f mul = new Matrix4f();
             last.mul(Axis.ZP.rotation(rotationRadians).get(mul));
         }
         matrixStack.popPose();
 
-        tesselator.end();
+        BufferUploader.drawWithShader(buffer.buildOrThrow());
 
         glDisable(GL_POLYGON_SMOOTH);
         RenderSystem.disableBlend();
     }
 
     public static void playPlayerSound(String soundName, UUID playerKey) {
-        SoundEvent soundEvent = BuiltInRegistries.SOUND_EVENT.get(new ResourceLocation("block.note_block." + soundName));
+        SoundEvent soundEvent = BuiltInRegistries.SOUND_EVENT.get(ResourceLocation.withDefaultNamespace("block.note_block." + soundName));
         if (soundEvent == null) return;
 
         float pitch = .5f + 1.5f * new Random(playerKey.hashCode()).nextFloat();

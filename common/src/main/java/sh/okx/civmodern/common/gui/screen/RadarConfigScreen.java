@@ -30,7 +30,7 @@ import sh.okx.civmodern.common.ColourProvider;
 
 public class RadarConfigScreen extends Screen implements ScreenCloseable {
 
-    public static final ResourceLocation ROLLBACK_ICON = new ResourceLocation("civmodern", "gui/rollback.png");
+    public static final ResourceLocation ROLLBACK_ICON = ResourceLocation.tryBuild("civmodern", "gui/rollback.png");
     private final List<Renderable> renderables = new ArrayList<>(); // copied from Screen because it's private there
     private final AbstractCivModernMod mod;
     private final CivMapConfig config;
