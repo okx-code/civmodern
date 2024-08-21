@@ -78,7 +78,7 @@ public class CivMapConfig {
             properties.setProperty("y", Integer.toString(y));
             properties.setProperty("radar_enabled", Boolean.toString(radarEnabled));
             properties.setProperty("ping_enabled", Boolean.toString(pingEnabled));
-            properties.setProperty("ping_sound_enabled", Boolean.toString(pingEnabled));
+            properties.setProperty("ping_sound_enabled", Boolean.toString(pingSoundEnabled));
             properties.setProperty("ice_road_cardinal_pitch", Boolean.toString(iceRoadPitchCardinalEnabled));
             properties.setProperty("ice_road_cardinal_yaw", Boolean.toString(iceRoadYawCardinalEnabled));
             properties.setProperty("ice_road_auto_eat", Boolean.toString(iceRoadAutoEat));
