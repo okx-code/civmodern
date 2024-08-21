@@ -1,21 +1,21 @@
 modLoader = "javafml"
-loaderVersion = "[50,)"
+loaderVersion = "[${forge_loader_major_version},)"
 issueTrackerURL = "${mod_issues_url}"
 license = "${copyright_licence}"
 
 [[mods]]
 modId = "civmodern"
 version = "${mod_version}"
-displayName = "CivModern"
+displayName = "${mod_name}"
 description = "${mod_description}"
 displayURL = "${mod_home_url}"
-authors = "Okx"
+authors = "${mod_authors}"
 #logoFile = ""
 
 [[dependencies.civmodern]]
 modId = "forge"
 mandatory = true
-versionRange = "[50,)"
+versionRange = "[${forge_loader_major_version},)"
 ordering = "NONE"
 side = "CLIENT"
 

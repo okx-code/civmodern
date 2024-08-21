@@ -14,6 +14,14 @@ java {
     withSourcesJar()
 }
 
+processResources {
+    filesMatching("assets/civmodern/lang/en_us.json") {
+        expand([
+            "mod_name": rootProject.mod_name,
+        ])
+    }
+}
+
 publishing {
     publications {
         mavenCommon(MavenPublication) {
