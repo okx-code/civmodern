@@ -2,13 +2,13 @@ package sh.okx.civmodern.common;
 
 import com.google.common.eventbus.Subscribe;
 import com.mojang.blaze3d.platform.InputConstants.Type;
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileOutputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Field;
-import java.nio.file.Path;
 import java.util.Properties;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
@@ -16,6 +16,7 @@ import net.minecraft.client.Options;
 import net.minecraft.client.gui.Gui;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.renderer.entity.ItemRenderer;
+import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -111,6 +112,12 @@ public abstract class AbstractCivModernMod {
 
     public abstract void registerKeyBinding(KeyMapping mapping);
 
+    /**
+     * Even though this will almost certainly be `.minecraft/config/` for all mod loaders, it's best practice
+     * nonetheless to use what the mod loader gives you.
+     */
+    protected abstract @NotNull File getConfigFolder();
+
     @Subscribe
     private void tick(
         final @NotNull ClientTickEvent event
@@ -121,27 +128,37 @@ public abstract class AbstractCivModernMod {
     }
 
     private void loadConfig() {
-        Properties properties = new Properties();
-        Path gameDir = Minecraft.getInstance().gameDirectory.toPath();
-        File configFile = gameDir.resolve("config").resolve("civmodern.properties").toFile();
+        final File configDir = getConfigFolder();
+        final var configFile = new File(configDir, "civmodern.properties");
+        InputStream configReadStream;
         try {
-            if (!configFile.exists()) {
-                InputStream resource = AbstractCivModernMod.class
-                    .getResourceAsStream("/civmodern.properties");
-                byte[] buffer = new byte[resource.available()];
-                resource.read(buffer);
-                FileOutputStream fos = new FileOutputStream(configFile);
-                fos.write(buffer);
-            }
-
-            FileInputStream input = new FileInputStream(configFile);
-            properties.load(input);
-        } catch (IOException ex) {
-            ex.printStackTrace();
+            configReadStream = new FileInputStream(configFile);
         }
-
+        catch (final FileNotFoundException ignored) {
+            final byte[] raw;
+            try (final InputStream defaultConfigResource = AbstractCivModernMod.class.getResourceAsStream("/civmodern.properties")) {
+                raw = defaultConfigResource.readAllBytes(); // Ignore highlighter
+            }
+            catch (final IOException e) {
+                throw new IllegalStateException("Could not read CivModern's default config resource!", e);
+            }
+            configDir.mkdirs(); // Just in case
+            try {
+                FileUtils.writeByteArrayToFile(configFile, raw);
+            }
+            catch (final IOException e) {
+                throw new IllegalStateException("Could not save CivModern's default config resource!", e);
+            }
+            configReadStream = new ByteArrayInputStream(raw);
+        }
+        final var properties = new Properties();
+        try {
+            properties.load(configReadStream);
+        }
+        catch (final IOException e) {
+            throw new IllegalStateException("Could not parse CivModern's default config resource!", e);
+        }
         this.config = new CivMapConfig(configFile, properties);
-
     }
 
     private void loadRadar() {
