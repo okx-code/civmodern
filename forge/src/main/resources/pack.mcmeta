@@ -1,6 +1,6 @@
 {
     "pack": {
-        "description": "CivModern",
+        "description": "${mod_name}",
         "pack_format": 6
     }
 }

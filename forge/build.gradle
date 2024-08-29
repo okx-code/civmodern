@@ -29,7 +29,7 @@ configurations {
 }
 
 dependencies {
-    forge("net.minecraftforge:forge:${rootProject.forge_version}")
+    forge("net.minecraftforge:forge:${rootProject.forge_loader_version}")
 
     common(project(path: ":common", configuration: "namedElements")) { transitive = false }
     shadowCommon(project(path: ":common", configuration: "transformProductionForge")) { transitive = false }
@@ -41,11 +41,19 @@ processResources {
             "mod_issues_url": rootProject.mod_issues_url,
             "copyright_licence": rootProject.copyright_licence,
 
+            "mod_name": rootProject.mod_name,
             "mod_version": rootProject.mod_version,
             "mod_description": rootProject.mod_description,
             "mod_home_url": rootProject.mod_home_url,
+            "mod_authors": rootProject.mod_authors,
 
-            "minecraft_version": rootProject.minecraft_version
+            "forge_loader_major_version": rootProject.forge_loader_major_version,
+            "minecraft_version": rootProject.minecraft_version,
+        ])
+    }
+    filesMatching("pack.mcmeta") {
+        expand([
+            "mod_name": rootProject.mod_name,
         ])
     }
 }

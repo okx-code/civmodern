@@ -4,7 +4,7 @@
     "key.civmodern.ice": "Toggle ice road macro",
     "key.civmodern.attack": "Toggle attack macro",
     "key.civmodern.config": "Open Civ Modern configuration",
-    "category.civmodern": "Civ Modern",
+    "category.civmodern": "${mod_name}",
     "civmodern.screen.main.title": "Civ Modern Config",
     "civmodern.screen.main.radar": "Radar Settings",
     "civmodern.screen.main.ice": "Ice Road Macro",
