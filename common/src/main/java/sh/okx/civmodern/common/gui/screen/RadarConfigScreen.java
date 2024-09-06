@@ -64,6 +64,26 @@ final class RadarConfigScreen extends AbstractConfigScreen {
 
         int offsetY = getBodyY(this.height / 8);
 
+        // Colour pickers must be renderered first as they are displayed on top of other buttons, and so
+        this.bgPicker = addColourPicker(
+            leftSideX,
+            offsetY + 166,
+            CivMapConfig.DEFAULT_RADAR_BG_COLOUR,
+            Component.literal("Background colour"),
+            this.config::getRadarBgColour,
+            this.config::setRadarBgColour,
+            this.colourProvider::setTemporaryRadarBackgroundColour
+        );
+        this.fgPicker = addColourPicker(
+            rightSideX,
+            offsetY + 166,
+            CivMapConfig.DEFAULT_RADAR_FG_COLOUR,
+            Component.literal("Line colour"),
+            this.config::getRadarColour,
+            this.config::setRadarColour,
+            this.colourProvider::setTemporaryRadarForegroundColour
+        );
+
         addRenderableWidget(new ToggleButton(
             this.centreX - (Button.DEFAULT_WIDTH / 2),
             offsetY,
@@ -302,24 +322,6 @@ final class RadarConfigScreen extends AbstractConfigScreen {
         ));
         offsetY += Button.DEFAULT_HEIGHT + 2;
 
-        this.bgPicker = addColourPicker(
-            leftSideX,
-            offsetY,
-            CivMapConfig.DEFAULT_RADAR_BG_COLOUR,
-            Component.literal("Background colour"),
-            this.config::getRadarBgColour,
-            this.config::setRadarBgColour,
-            this.colourProvider::setTemporaryRadarBackgroundColour
-        );
-        this.fgPicker = addColourPicker(
-            rightSideX,
-            offsetY,
-            CivMapConfig.DEFAULT_RADAR_FG_COLOUR,
-            Component.literal("Line colour"),
-            this.config::getRadarColour,
-            this.config::setRadarColour,
-            this.colourProvider::setTemporaryRadarForegroundColour
-        );
         offsetY += 30 + 2;
 
         addRenderableWidget(

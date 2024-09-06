@@ -25,7 +25,7 @@ import sh.okx.civmodern.common.gui.widget.TextRenderable;
 
 final class CompactedConfigScreen extends AbstractConfigScreen {
     private static final ItemStack ITEM; static {
-        ITEM = new ItemStack(Items.STONE);
+        ITEM = new ItemStack(Items.STONE, 64);
         ITEM.applyComponents(
             DataComponentMap.builder()
                 .set(DataComponents.LORE, new ItemLore(
@@ -149,14 +149,18 @@ final class CompactedConfigScreen extends AbstractConfigScreen {
         final double mouseY,
         final int button
     ) {
-        if (this.minecraft != null) {
-            final LocalPlayer player = this.minecraft.player;
-            if (player != null && isCursorOverItem((int) mouseX, (int) mouseY) && button == GLFW.GLFW_MOUSE_BUTTON_1 && player.isCreative()) {
-                player.addItem(ITEM.copy());
-                return true;
+        if (!super.mouseClicked(mouseX, mouseY, button)) {
+            if (this.minecraft != null) {
+                final LocalPlayer player = this.minecraft.player;
+                if (player != null && isCursorOverItem((int) mouseX, (int) mouseY) && button == GLFW.GLFW_MOUSE_BUTTON_1 && player.isCreative()) {
+                    player.addItem(ITEM.copy());
+                    return true;
+                }
             }
+            return false;
+        } else {
+            return true;
         }
-        return super.mouseClicked(mouseX, mouseY, button);
     }
 
     private boolean isCursorOverItem(
