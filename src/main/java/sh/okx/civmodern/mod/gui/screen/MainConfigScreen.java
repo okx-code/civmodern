@@ -14,7 +14,7 @@ public class MainConfigScreen extends Screen {
     protected void init() {
         int col0 = this.width / 2 - 150 / 2;
         addRenderableWidget(Button.builder(Component.translatable("civmodern.screen.main.compacted"), button -> {
-            minecraft.setScreen(new CompactedConfigScreen(this));
+            minecraft.setScreen(new ItemConfigScreen(this));
         }).pos(col0, this.height / 6).size(150, 20).build());
         addRenderableWidget(Button.builder(Component.translatable("civmodern.screen.main.ice"), button -> {
             minecraft.setScreen(new IceRoadConfigScreen(this));

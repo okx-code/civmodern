@@ -10,7 +10,9 @@
     "civmodern.screen.main.title": "Civ Modern Config",
     "civmodern.screen.main.ice": "Ice Road Macro",
     "civmodern.screen.main.compacted": "Compacted Item Settings",
-    "civmodern.screen.compacted.title": "Civ Modern Config (Compacted Items)",
+    "civmodern.screen.items.title": "Civ Modern Config (Items)",
+    "civmodern.screen.items.repair.enabled": "Show repair level: ON",
+    "civmodern.screen.items.repair.disabled": "Show repair level: OFF",
     "civmodern.screen.ice.title": "Civ Modern Config (Ice Road Macro)",
     "civmodern.screen.ice.cardinal.pitch.enable": "Snap pitch: Enabled",
     "civmodern.screen.ice.cardinal.pitch.disable": "Snap pitch: Disabled",
@@ -19,5 +21,6 @@
     "civmodern.screen.ice.eat.enable": "Auto eat held item: Enabled",
     "civmodern.screen.ice.eat.disable": "Auto eat held item: Disabled",
     "civmodern.screen.ice.stop.enable": "Stop on low food: Enabled",
-    "civmodern.screen.ice.stop.disable": "Stop on low food: Disabled"
+    "civmodern.screen.ice.stop.disable": "Stop on low food: Disabled",
+    "civmodern.repair.level": "§fRepair level: %s"
 }

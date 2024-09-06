@@ -19,6 +19,7 @@ public final class CivModernConfig {
     public static @NotNull File CONFIG_DIR = null, CONFIG_FILE = null; // Will be set during mod init
 
     public static int compactedItemColour;
+    public static boolean showItemRepairLevel;
 
     public static boolean iceRoadPitchCardinalEnabled;
     public static boolean iceRoadYawCardinalEnabled;
@@ -63,6 +64,7 @@ public final class CivModernConfig {
         final @NotNull Properties properties
     ) {
         compactedItemColour = Integer.parseInt(properties.getProperty("compacted_colour", "16777048"));
+        showItemRepairLevel = Boolean.parseBoolean(properties.getProperty("show_repair_level", "true"));
 
         iceRoadPitchCardinalEnabled = Boolean.parseBoolean(properties.getProperty("ice_road_cardinal_pitch", "true"));
         iceRoadYawCardinalEnabled = Boolean.parseBoolean(properties.getProperty("ice_road_cardinal_yaw", "true"));
@@ -74,6 +76,7 @@ public final class CivModernConfig {
     public static void save() {
         final var properties = new Properties();
         properties.setProperty("compacted_colour", Integer.toString(compactedItemColour));
+        properties.setProperty("show_repair_level", Boolean.toString(showItemRepairLevel));
 
         properties.setProperty("ice_road_cardinal_pitch", Boolean.toString(iceRoadPitchCardinalEnabled));
         properties.setProperty("ice_road_cardinal_yaw", Boolean.toString(iceRoadYawCardinalEnabled));

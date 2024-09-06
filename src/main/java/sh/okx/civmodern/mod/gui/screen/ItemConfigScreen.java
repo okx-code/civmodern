@@ -18,10 +18,11 @@ import net.minecraft.world.item.ItemStack;
 import org.lwjgl.glfw.GLFW;
 import sh.okx.civmodern.mod.CivModernConfig;
 import sh.okx.civmodern.mod.ColourProvider;
+import sh.okx.civmodern.mod.gui.widget.CyclicButton;
 import sh.okx.civmodern.mod.gui.widget.HsbColourPicker;
 import sh.okx.civmodern.mod.gui.widget.ImageButton;
 
-public class CompactedConfigScreen extends Screen {
+public class ItemConfigScreen extends Screen {
     private static final DecimalFormat FORMAT = new DecimalFormat("##%");
 
     private static final ItemStack ITEM; static {
@@ -44,8 +45,8 @@ public class CompactedConfigScreen extends Screen {
     private final Screen parent;
     private HsbColourPicker picker;
 
-    public CompactedConfigScreen(Screen parent) {
-        super(Component.translatable("civmodern.screen.compacted.title"));
+    public ItemConfigScreen(Screen parent) {
+        super(Component.translatable("civmodern.screen.items.title"));
         this.parent = parent;
     }
 
@@ -90,6 +91,17 @@ public class CompactedConfigScreen extends Screen {
         }));
 
         addRenderableWidget(picker = hsb);
+
+        addRenderableWidget(new CyclicButton(
+            this.width / 2 - 80,
+            this.height / 6 + 72,
+            160,
+            Button.DEFAULT_HEIGHT,
+            CivModernConfig.showItemRepairLevel ? 0 : 1,
+            (button) -> CivModernConfig.showItemRepairLevel = button.getIndex() == 0,
+            Component.translatable("civmodern.screen.items.repair.enabled"),
+            Component.translatable("civmodern.screen.items.repair.disabled")
+        ));
 
         addRenderableWidget(Button.builder(CommonComponents.GUI_DONE, button -> {
             CivModernConfig.save();
