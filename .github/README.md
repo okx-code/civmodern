@@ -1,5 +1,7 @@
 # CivModern
 
+This is a fork of CivModern specifically for [CivMC](https://civmc.net) on 1.21.1.
+
 ## Features
 
 - Compacted items will have a configurably-coloured stack count.
@@ -21,14 +23,9 @@ which is located at `.minecraft/config/civmodern.properties`.
 
 ## Requirements
 
-| Fabric                                                                         | Forge                                    |
-|--------------------------------------------------------------------------------|------------------------------------------|
-| Fabric Loader: `0.15.11` (or newer)                                            | Forge Loader: `1.20.6-50.1.0` (or newer) |
-| [Fabric API](https://modrinth.com/mod/fabric-api): `0.100.8+1.20.6` (or newer) |                                          |
-
+- Fabric Loader: `0.16.4` (or newer)
+- [Fabric API](https://modrinth.com/mod/fabric-api): `0.103.0+1.21.1` (or newer)
 
 ## Recommendations
 
-| Fabric                                                           |
-|------------------------------------------------------------------|
-| [ModMenu](https://modrinth.com/mod/modmenu): `10.0.0` (or newer) |
+- [ModMenu](https://modrinth.com/mod/modmenu): `11.0.2` (or newer)

@@ -1,0 +1,17 @@
+{
+    "required": true,
+    "minVersion": "0.8",
+    "package": "sh.okx.civmodern.mod.mixins",
+    "compatibilityLevel": "JAVA_21",
+    "mixins": [],
+    "client": [
+        "GuiGraphicsMixin",
+        "InventoryMixin",
+        "ItemStackMixin",
+        "KeyMappingAccessor"
+    ],
+    "server": [],
+    "injectors": {
+        "defaultRequire": 1
+    }
+}
