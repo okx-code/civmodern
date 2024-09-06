@@ -42,7 +42,7 @@ public abstract class GuiGraphicsMixin {
         final int decorationColour
     ) {
         if (this.civmodern$isCompactedItem) {
-            return CivModernMod.getInstance().getColourProvider().getCompactedColour();
+            return CivModernMod.getColourProvider().getCompactedColour();
         }
         return decorationColour;
     }

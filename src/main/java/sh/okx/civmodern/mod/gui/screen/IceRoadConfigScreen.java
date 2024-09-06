@@ -5,18 +5,15 @@ import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.Component;
-import sh.okx.civmodern.mod.CivModernMod;
 import sh.okx.civmodern.mod.CivMapConfig;
 import sh.okx.civmodern.mod.gui.widget.CyclicButton;
 
 public class IceRoadConfigScreen extends Screen {
-    private final CivModernMod mod;
     private final CivMapConfig config;
     private final Screen parent;
 
-    protected IceRoadConfigScreen(CivModernMod mod, CivMapConfig config, Screen parent) {
+    protected IceRoadConfigScreen(CivMapConfig config, Screen parent) {
         super(Component.translatable("civmodern.screen.ice.title"));
-        this.mod = mod;
         this.config = config;
         this.parent = parent;
     }

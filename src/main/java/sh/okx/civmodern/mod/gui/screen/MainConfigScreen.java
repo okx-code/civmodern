@@ -4,17 +4,14 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
-import sh.okx.civmodern.mod.CivModernMod;
 import sh.okx.civmodern.mod.CivMapConfig;
 
 public class MainConfigScreen extends Screen {
 
-    private final CivModernMod mod;
     private final CivMapConfig config;
 
-    public MainConfigScreen(CivModernMod mod, CivMapConfig config) {
+    public MainConfigScreen(CivMapConfig config) {
         super(Component.translatable("civmodern.screen.main.title"));
-        this.mod = mod;
         this.config = config;
     }
 
@@ -22,13 +19,13 @@ public class MainConfigScreen extends Screen {
     protected void init() {
         int col0 = this.width / 2 - 150 / 2;
         addRenderableWidget(Button.builder(Component.translatable("civmodern.screen.main.compacted"), button -> {
-            minecraft.setScreen(new CompactedConfigScreen(mod, config, this));
+            minecraft.setScreen(new CompactedConfigScreen(config, this));
         }).pos(col0, this.height / 6).size(150, 20).build());
         addRenderableWidget(Button.builder(Component.translatable("civmodern.screen.main.radar"), button -> {
-            minecraft.setScreen(new RadarConfigScreen(mod, config, this));
+            minecraft.setScreen(new RadarConfigScreen(config, this));
         }).pos(col0, this.height / 6 + 24).size(150, 20).build());
         addRenderableWidget(Button.builder(Component.translatable("civmodern.screen.main.ice"), button -> {
-            minecraft.setScreen(new IceRoadConfigScreen(mod, config, this));
+            minecraft.setScreen(new IceRoadConfigScreen(config, this));
         }).pos(col0, this.height / 6 + 48).size(150, 20).build());
     }
 

@@ -4,7 +4,6 @@ import com.google.common.eventbus.Subscribe;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import org.jetbrains.annotations.NotNull;
-import sh.okx.civmodern.mod.CivModernMod;
 import sh.okx.civmodern.mod.events.ClientTickEvent;
 import sh.okx.civmodern.mod.events.ScrollEvent;
 
@@ -14,8 +13,7 @@ public class HoldKeyMacro {
     private final KeyMapping defaultBinding;
     private boolean down = false;
 
-    public HoldKeyMacro(CivModernMod mod, KeyMapping holdBinding, KeyMapping defaultBinding) {
-        mod.eventBus.register(this);
+    public HoldKeyMacro(KeyMapping holdBinding, KeyMapping defaultBinding) {
         this.holdBinding = holdBinding;
         this.defaultBinding = defaultBinding;
     }

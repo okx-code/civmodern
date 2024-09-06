@@ -31,7 +31,6 @@ public class RadarConfigScreen extends Screen implements ScreenCloseable {
 
     public static final ResourceLocation ROLLBACK_ICON = ResourceLocation.tryBuild("civmodern", "gui/rollback.png");
     private final List<Renderable> renderables = new ArrayList<>(); // copied from Screen because it's private there
-    private final CivModernMod mod;
     private final CivMapConfig config;
     private final Screen parent;
     private int foregroundColourY;
@@ -41,9 +40,8 @@ public class RadarConfigScreen extends Screen implements ScreenCloseable {
     private HsbColourPicker bgPicker;
     private HsbColourPicker fgPicker;
 
-    public RadarConfigScreen(CivModernMod mod, CivMapConfig config, Screen parent) {
+    public RadarConfigScreen(CivMapConfig config, Screen parent) {
         super(Component.translatable("civmodern.screen.radar.title"));
-        this.mod = mod;
         this.config = config;
         this.parent = parent;
     }
@@ -56,7 +54,7 @@ public class RadarConfigScreen extends Screen implements ScreenCloseable {
         int right = left + 160;
         int offset = this.height / 6 - 18;
 
-        ColourProvider colourProvider = mod.getColourProvider();
+        ColourProvider colourProvider = CivModernMod.getColourProvider();
         bgPicker = addColourPicker(left, offset + 178, CivMapConfig.DEFAULT_RADAR_BG_COLOUR, config::getRadarBgColour, config::setRadarBgColour,
             colourProvider::setTemporaryRadarBackgroundColour);
         fgPicker = addColourPicker(right, offset + 178, CivMapConfig.DEFAULT_RADAR_FG_COLOUR, config::getRadarColour, config::setRadarColour,
@@ -296,8 +294,8 @@ public class RadarConfigScreen extends Screen implements ScreenCloseable {
     @Override
     public void onClose() {
         config.save();
-        mod.getColourProvider().setTemporaryRadarBackgroundColour(null);
-        mod.getColourProvider().setTemporaryRadarForegroundColour(null);
+        CivModernMod.getColourProvider().setTemporaryRadarBackgroundColour(null);
+        CivModernMod.getColourProvider().setTemporaryRadarForegroundColour(null);
         super.onClose();
     }
 

@@ -68,7 +68,6 @@ public class Radar {
         }
     }
 
-    private final EventBus eventBus;
     private final ColourProvider colourProvider;
     private final CivMapConfig config;
 
@@ -79,11 +78,9 @@ public class Radar {
     private int bgColour;
     private int fgColour;
 
-    public Radar(CivMapConfig config, EventBus eventBus, ColourProvider colourProvider) {
+    public Radar(CivMapConfig config, ColourProvider colourProvider) {
         this.config = config;
-        this.eventBus = eventBus;
         this.colourProvider = colourProvider;
-        eventBus.register(this);
     }
 
     @Subscribe

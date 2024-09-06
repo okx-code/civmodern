@@ -12,6 +12,6 @@ import sh.okx.civmodern.mod.events.ScrollEvent;
 public class InventoryMixin {
     @Inject(at = @At("HEAD"), method = "swapPaint(D)V")
     private void swapPaint(double direction, CallbackInfo info) {
-        CivModernMod.getInstance().eventBus.post(new ScrollEvent(direction > 0));
+        CivModernMod.EVENTS.post(new ScrollEvent(direction > 0));
     }
 }

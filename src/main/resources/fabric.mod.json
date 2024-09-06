@@ -15,7 +15,7 @@
 	"environment": "client",
 	"entrypoints": {
 		"client": [
-			"sh.okx.civmodern.mod.CivModernMod"
+			"sh.okx.civmodern.mod.CivModernMod::bootstrap"
 		],
 		"modmenu": [
 			"sh.okx.civmodern.mod.hooks.modmenu.ModMenuIntegration"

@@ -14,8 +14,8 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 import org.lwjgl.glfw.GLFW;
-import sh.okx.civmodern.mod.CivModernMod;
 import sh.okx.civmodern.mod.CivMapConfig;
+import sh.okx.civmodern.mod.CivModernMod;
 import sh.okx.civmodern.mod.ColourProvider;
 import sh.okx.civmodern.mod.gui.widget.HsbColourPicker;
 import sh.okx.civmodern.mod.gui.widget.ImageButton;
@@ -45,15 +45,13 @@ public class CompactedConfigScreen extends Screen {
         ITEM = ItemStack.parse(Minecraft.getInstance().level.registryAccess(), item).get();
     }
 
-    private final CivModernMod mod;
     private final CivMapConfig config;
     private final Screen parent;
 
     private HsbColourPicker picker;
 
-    public CompactedConfigScreen(CivModernMod mod, CivMapConfig config, Screen parent) {
+    public CompactedConfigScreen(CivMapConfig config, Screen parent) {
         super(Component.translatable("civmodern.screen.compacted.title"));
-        this.mod = mod;
         this.config = config;
         this.parent = parent;
     }
@@ -78,7 +76,7 @@ public class CompactedConfigScreen extends Screen {
         });
         addRenderableWidget(widget);
 
-        ColourProvider colourProvider = mod.getColourProvider();
+        ColourProvider colourProvider = CivModernMod.getColourProvider();
         HsbColourPicker hsb = new HsbColourPicker(leftWidth + 60 + 8, height / 6, 20, 20, config.getColour(),
             colour -> {
                 widget.setValue("#" + String.format("%06X", colour));
@@ -138,7 +136,7 @@ public class CompactedConfigScreen extends Screen {
     @Override
     public void onClose() {
         super.onClose();
-        mod.getColourProvider().setTemporaryCompactedColour(null);
+        CivModernMod.getColourProvider().setTemporaryCompactedColour(null);
         config.save();
     }
 

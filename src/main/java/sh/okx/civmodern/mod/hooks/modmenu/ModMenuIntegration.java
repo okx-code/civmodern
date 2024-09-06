@@ -8,6 +8,6 @@ import sh.okx.civmodern.mod.CivModernMod;
 public final class ModMenuIntegration implements ModMenuApi {
     @Override
     public @NotNull ConfigScreenFactory<?> getModConfigScreenFactory() {
-        return (previousScreen) -> CivModernMod.getInstance().newConfigGui(previousScreen);
+        return CivModernMod::newConfigGui;
     }
 }
