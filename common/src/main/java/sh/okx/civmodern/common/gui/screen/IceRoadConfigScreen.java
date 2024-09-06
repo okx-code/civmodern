@@ -1,59 +1,110 @@
 package sh.okx.civmodern.common.gui.screen;
 
-import net.minecraft.client.gui.GuiGraphics;
+import java.util.Objects;
 import net.minecraft.client.gui.components.Button;
-import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.Component;
-import sh.okx.civmodern.common.AbstractCivModernMod;
+import org.jetbrains.annotations.NotNull;
 import sh.okx.civmodern.common.CivMapConfig;
-import sh.okx.civmodern.common.gui.widget.CyclicButton;
+import sh.okx.civmodern.common.gui.widget.TextRenderable;
+import sh.okx.civmodern.common.gui.widget.ToggleButton;
 
-public class IceRoadConfigScreen extends Screen {
-    private final AbstractCivModernMod mod;
-    private final CivMapConfig config;
-    private final Screen parent;
-
-    protected IceRoadConfigScreen(AbstractCivModernMod mod, CivMapConfig config, Screen parent) {
-        super(Component.translatable("civmodern.screen.ice.title"));
-        this.mod = mod;
-        this.config = config;
-        this.parent = parent;
+final class IceRoadConfigScreen extends AbstractConfigScreen {
+    IceRoadConfigScreen(
+        final @NotNull CivMapConfig config,
+        final @NotNull MainConfigScreen parent
+    ) {
+        super(
+            config,
+            Objects.requireNonNull(parent),
+            Component.translatable("civmodern.screen.ice.title")
+        );
     }
 
     @Override
     protected void init() {
-        addRenderableWidget(new CyclicButton(this.width / 2 - 85, this.height / 6 + 24, 165, 20, config.iceRoadPitchCardinalEnabled() ? 0 : 1, cycl -> {
-            config.setIceRoadPitchCardinalEnabled(cycl.getIndex() == 0);
-        }, Component.translatable("civmodern.screen.ice.cardinal.pitch.enable"), Component.translatable("civmodern.screen.ice.cardinal.pitch.disable")));
+        super.init();
 
-        addRenderableWidget(new CyclicButton(this.width / 2 - 85, this.height / 6 + 48, 165, 20, config.iceRoadYawCardinalEnabled() ? 0 : 1, cycl -> {
-            config.setIceRoadYawCardinalEnabled(cycl.getIndex() == 0);
-        }, Component.translatable("civmodern.screen.ice.cardinal.yaw.enable"), Component.translatable("civmodern.screen.ice.cardinal.yaw.disable")));
+        addRenderableOnly(new TextRenderable.CentreAligned(
+            this.font,
+            this.centreX,
+            getHeaderY(),
+            this.title
+        ));
 
-        addRenderableWidget(new CyclicButton(this.width / 2 - 85, this.height / 6 + 72, 165, 20, config.isIceRoadAutoEat() ? 0 : 1, cycl -> {
-            config.setIceRoadAutoEat(cycl.getIndex() == 0);
-        }, Component.translatable("civmodern.screen.ice.eat.enable"), Component.translatable("civmodern.screen.ice.eat.disable")));
+        final int offsetX = this.centreX - Button.DEFAULT_WIDTH / 2;
+        int offsetY = getBodyY();
 
-        addRenderableWidget(new CyclicButton(this.width / 2 - 85, this.height / 6 + 96, 165, 20, config.isIceRoadStop() ? 0 : 1, cycl -> {
-            config.setIceRoadStop(cycl.getIndex() == 0);
-        }, Component.translatable("civmodern.screen.ice.stop.enable"), Component.translatable("civmodern.screen.ice.stop.disable")));
+        addRenderableWidget(new ToggleButton(
+            offsetX,
+            offsetY,
+            ToggleButton.DEFAULT_BUTTON_WIDTH,
+            Component.translatable("civmodern.screen.ice.cardinal.pitch"),
+            this.config::iceRoadPitchCardinalEnabled,
+            this.config::setIceRoadPitchCardinalEnabled,
+            Tooltip.create(Component.translatable("civmodern.screen.ice.cardinal.pitch.tooltip")),
+            ToggleButton.DEFAULT_NARRATION
+        ));
+        offsetY += Button.DEFAULT_HEIGHT + 4;
 
-        addRenderableWidget(Button.builder(CommonComponents.GUI_DONE, button -> {
-            config.save();
-            minecraft.setScreen(parent);
-        }).pos(this.width / 2 - 49, this.height / 6 + 169).size(98, 20).build());
-    }
+        addRenderableWidget(new ToggleButton(
+            offsetX,
+            offsetY,
+            ToggleButton.DEFAULT_BUTTON_WIDTH,
+            Component.translatable("civmodern.screen.ice.cardinal.yaw"),
+            this.config::iceRoadYawCardinalEnabled,
+            this.config::setIceRoadYawCardinalEnabled,
+            Tooltip.create(Component.translatable("civmodern.screen.ice.cardinal.yaw.tooltip")),
+            ToggleButton.DEFAULT_NARRATION
+        ));
+        offsetY += Button.DEFAULT_HEIGHT + 4;
 
-    @Override
-    public void render(GuiGraphics guiGraphics, int i, int j, float f) {
-        guiGraphics.drawString(font, this.title, (int) (this.width / 2f - font.width(this.title) / 2f), 15, 0xffffff);
-        super.render(guiGraphics, i, j, f);
+        addRenderableWidget(new ToggleButton(
+            offsetX,
+            offsetY,
+            ToggleButton.DEFAULT_BUTTON_WIDTH,
+            Component.translatable("civmodern.screen.ice.eat"),
+            this.config::isIceRoadAutoEat,
+            this.config::setIceRoadAutoEat,
+            null,
+            ToggleButton.DEFAULT_NARRATION
+        ));
+        offsetY += Button.DEFAULT_HEIGHT + 4;
+
+        addRenderableWidget(new ToggleButton(
+            offsetX,
+            offsetY,
+            ToggleButton.DEFAULT_BUTTON_WIDTH,
+            Component.translatable("civmodern.screen.ice.stop"),
+            this.config::isIceRoadStop,
+            this.config::setIceRoadStop,
+            Tooltip.create(Component.translatable("civmodern.screen.ice.stop.tooltip")),
+            ToggleButton.DEFAULT_NARRATION
+        ));
+        offsetY += Button.DEFAULT_HEIGHT + 4;
+
+        addRenderableWidget(
+            Button
+                .builder(
+                    CommonComponents.GUI_DONE,
+                    (button) -> {
+                        this.config.save();
+                        this.minecraft.setScreen(this.parent);
+                    }
+                )
+                .width(98)
+                .pos(
+                    this.centreX - 49,
+                    getFooterY(offsetY)
+                )
+                .build()
+        );
     }
 
     @Override
     public void onClose() {
+        this.config.save();
         super.onClose();
-        config.save();
     }
 }

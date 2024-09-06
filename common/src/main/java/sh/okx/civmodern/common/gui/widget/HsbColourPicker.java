@@ -18,7 +18,6 @@ import net.minecraft.util.Mth;
 import org.joml.Matrix4f;
 import org.lwjgl.opengl.GLUtil;
 import sh.okx.civmodern.common.gui.Texture;
-import sh.okx.civmodern.common.gui.screen.ScreenCloseable;
 
 public class HsbColourPicker extends AbstractWidget {
 
@@ -39,11 +38,11 @@ public class HsbColourPicker extends AbstractWidget {
     private boolean updateTexture = true;
     private boolean hueMouseDown = false;
 
-    private final ScreenCloseable closeable;
+    private final Runnable closeable;
 
     private int renderY;
 
-    public HsbColourPicker(int x, int y, int width, int height, int colour, Consumer<Integer> colourConsumer, Consumer<Integer> previewConsumer, ScreenCloseable closeable) {
+    public HsbColourPicker(int x, int y, int width, int height, int colour, Consumer<Integer> colourConsumer, Consumer<Integer> previewConsumer, Runnable closeable) {
         super(x, y, width, height, Component.literal("HSB Colour Picker"));
 
         this.hue = getHue(colour);
@@ -58,7 +57,7 @@ public class HsbColourPicker extends AbstractWidget {
     @Override
     public void renderWidget(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTicks) {
         // Render colour picker above button if it would exceed the screen height otherwise
-        this.renderY = (this.getX() + 101 > Minecraft.getInstance().getWindow().getGuiScaledHeight()) ? this.getY() - 101 - this.height : this.getY();
+        this.renderY = (this.getY() + 101 > Minecraft.getInstance().getWindow().getGuiScaledHeight()) ? this.getY() - 101 - this.height : this.getY();
 
         RenderSystem.setShaderTexture(0, COLOUR_PICKER_ICON);
         RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
@@ -88,7 +87,6 @@ public class HsbColourPicker extends AbstractWidget {
             bufferBuilder.addVertex(matrix4f, this.getX() + 128, renderY + height + 128, 0).setUv(1, 1);
             bufferBuilder.addVertex(matrix4f, this.getX() + 128, renderY + height, 0).setUv(1, 0);
             BufferUploader.drawWithShader(bufferBuilder.buildOrThrow());
-//      guiGraphics.blit(this.saturationBrightnessTexture, this.getX(), renderY + height, 0, 0, 0, 101, 101, 128, 128);
 
             // Hue selector
             hueSelector.bind();
@@ -99,7 +97,6 @@ public class HsbColourPicker extends AbstractWidget {
             bufferBuilder.addVertex(matrix4f, this.getX() + 106 + 10, renderY + height + 101, 0).setUv(1, 1);
             bufferBuilder.addVertex(matrix4f, this.getX() + 106 + 10, renderY + height, 0).setUv(1, 0);
             BufferUploader.drawWithShader(bufferBuilder.buildOrThrow());
-//      Gui.blit(matrixStack, this.x + 106, renderY + height, 10, 101, 0, 0, 1, 360, 1, 360);
 
             RenderSystem.disableBlend();
 
@@ -129,7 +126,7 @@ public class HsbColourPicker extends AbstractWidget {
     @Override
     public void onClick(double mouseX, double mouseY) {
         if (!showPalette) {
-            closeable.close();
+            closeable.run();
         }
         showPalette = !showPalette;
     }
@@ -208,7 +205,6 @@ public class HsbColourPicker extends AbstractWidget {
     }
 
     private int toRgb(int hue, int sat, int bright) {
-        //return Color.HSBtoRGB(this.hue / 360f, this.saturation / 100f, this.brightness / 100f) & 0xFFFFFF;
         double[] rgbArr = HUSLColorConverter.hsluvToRgb(new double[] {hue, sat, bright});
         return ((int) (rgbArr[0] * 255) << 16) | ((int) (rgbArr[1] * 255) << 8) | ((int) (rgbArr[2] * 255));
     }
@@ -218,14 +214,12 @@ public class HsbColourPicker extends AbstractWidget {
         int g = colour >> 8 & 0xFF;
         int b = colour & 0xFF;
         return (int) Math.round(HUSLColorConverter.rgbToHsluv(new double[] {r/255d, g/255d, b/255d})[0]);
-        //return Math.round(Color.RGBtoHSB(r, g, b, null)[0] * 360);
     }
 
     private Texture getHueSelector() {
         Texture hueSelector = new Texture(1, 360);
         int[] rgbaValues = new int[360];
         for (int i = 0; i < 360; i++) {
-            //int rgb = Color.HSBtoRGB(i / 360f, 1, 1);
             int rgb = toRgb(i, 100, 50);
             rgbaValues[i] = rgb << 8 | 0xFF;
         }
