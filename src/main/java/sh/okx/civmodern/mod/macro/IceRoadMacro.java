@@ -7,11 +7,10 @@ import net.minecraft.core.component.DataComponents;
 import net.minecraft.world.food.FoodProperties;
 import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.NotNull;
-import sh.okx.civmodern.mod.CivMapConfig;
+import sh.okx.civmodern.mod.CivModernConfig;
 import sh.okx.civmodern.mod.events.ClientTickEvent;
 
 public class IceRoadMacro {
-    private final CivMapConfig config;
     private final KeyMapping key;
     // alternate between true and false for maximum jumpage
     private boolean enabled = false;
@@ -20,8 +19,7 @@ public class IceRoadMacro {
 
     private ItemStack eating;
 
-    public IceRoadMacro(CivMapConfig config, KeyMapping key) {
-        this.config = config;
+    public IceRoadMacro(KeyMapping key) {
         this.key = key;
     }
 
@@ -47,11 +45,11 @@ public class IceRoadMacro {
                 eating = null;
                 enabled = false;
             } else {
-                if (config.iceRoadYawCardinalEnabled()) {
+                if (CivModernConfig.iceRoadYawCardinalEnabled) {
                     float roty = Math.round(mc.player.getYRot() / 45) * 45;
                     mc.player.setYRot(roty);
                 }
-                if (config.iceRoadPitchCardinalEnabled()) {
+                if (CivModernConfig.iceRoadPitchCardinalEnabled) {
                     float rotx = Math.round(mc.player.getXRot() / 45) * 45;
                     mc.player.setXRot(rotx);
                 }
@@ -63,7 +61,7 @@ public class IceRoadMacro {
         if (enabled) {
             if (!jump) {
                 AUTO_EAT:
-                if (config.isIceRoadAutoEat()) {
+                if (CivModernConfig.iceRoadAutoEat) {
                     if (this.eating != null) {
                         if (!mc.player.isUsingItem() || !this.eating.equals(mc.player.getUseItem())) {
                             this.eating = null;
@@ -81,7 +79,7 @@ public class IceRoadMacro {
                     }
                 }
 
-                if (config.isIceRoadStop() && mc.player.getFoodData().getFoodLevel() <= 6) {
+                if (CivModernConfig.iceRoadStop && mc.player.getFoodData().getFoodLevel() <= 6) {
                     waitingForFood = true;
                     mc.options.keyUp.setDown(false);
                     return;

@@ -9,8 +9,8 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Constant;
 import org.spongepowered.asm.mixin.injection.ModifyConstant;
 import org.spongepowered.asm.mixin.injection.Redirect;
+import sh.okx.civmodern.mod.ColourProvider;
 import sh.okx.civmodern.mod.features.ExtendedItemStack;
-import sh.okx.civmodern.mod.CivModernMod;
 
 @Mixin(GuiGraphics.class)
 public abstract class GuiGraphicsMixin {
@@ -42,7 +42,7 @@ public abstract class GuiGraphicsMixin {
         final int decorationColour
     ) {
         if (this.civmodern$isCompactedItem) {
-            return CivModernMod.getColourProvider().getCompactedColour();
+            return ColourProvider.getCompactedItemColour();
         }
         return decorationColour;
     }

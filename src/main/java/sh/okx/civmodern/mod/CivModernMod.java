@@ -2,13 +2,7 @@ package sh.okx.civmodern.mod;
 
 import com.google.common.eventbus.Subscribe;
 import com.mojang.blaze3d.platform.InputConstants.Type;
-import java.io.ByteArrayInputStream;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.Properties;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
@@ -18,7 +12,6 @@ import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.Options;
 import net.minecraft.client.gui.screens.Screen;
-import org.apache.commons.io.FileUtils;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.lwjgl.glfw.GLFW;
@@ -73,6 +66,9 @@ public final class CivModernMod {
         KeyBindingHelper.registerKeyBinding(ATTACK_BINDING);
         KeyBindingHelper.registerKeyBinding(ICE_ROAD_BINDING);
 
+        CivModernConfig.CONFIG_DIR = FabricLoader.getInstance().getConfigDir().toFile();
+        CivModernConfig.CONFIG_FILE = new File(CivModernConfig.CONFIG_DIR, "civmodern.properties");
+
         ClientLifecycleEvents.CLIENT_STARTED.register((e) -> enable());
         ClientTickEvents.START_CLIENT_TICK.register((client) -> {
             EVENTS.post(new ClientTickEvent());
@@ -82,21 +78,17 @@ public final class CivModernMod {
         });
     }
 
-    private static CivMapConfig config;
-    private static ColourProvider colourProvider;
-
     private static void enable() {
-        loadConfig();
+        CivModernConfig.parse(CivModernConfig.load());
 
-        colourProvider = new ColourProvider(config);
-        EVENTS.register(new Radar(config, colourProvider));
+        EVENTS.register(new Radar());
 
         EVENTS.register(new Listener());
 
         final Options options = Minecraft.getInstance().options;
         EVENTS.register(new HoldKeyMacro(HOLD_LEFT_BINDING, options.keyAttack));
         EVENTS.register(new HoldKeyMacro(HOLD_RIGHT_BINDING, options.keyUse));
-        EVENTS.register(new IceRoadMacro(config, ICE_ROAD_BINDING));
+        EVENTS.register(new IceRoadMacro(ICE_ROAD_BINDING));
         EVENTS.register(new AttackMacro(ATTACK_BINDING, options.keyAttack));
     }
 
@@ -111,47 +103,9 @@ public final class CivModernMod {
         }
     }
 
-    private static void loadConfig() {
-        final File configDir = FabricLoader.getInstance().getConfigDir().toFile();
-        final var configFile = new File(configDir, "civmodern.properties");
-        InputStream configReadStream;
-        try {
-            configReadStream = new FileInputStream(configFile);
-        }
-        catch (final FileNotFoundException ignored) {
-            final byte[] raw;
-            try (final InputStream defaultConfigResource = CivModernMod.class.getResourceAsStream("/civmodern.properties")) {
-                raw = defaultConfigResource.readAllBytes(); // Ignore highlighter
-            }
-            catch (final IOException e) {
-                throw new IllegalStateException("Could not read CivModern's default config resource!", e);
-            }
-            configDir.mkdirs(); // Just in case
-            try {
-                FileUtils.writeByteArrayToFile(configFile, raw);
-            }
-            catch (final IOException e) {
-                throw new IllegalStateException("Could not save CivModern's default config resource!", e);
-            }
-            configReadStream = new ByteArrayInputStream(raw);
-        }
-        final var properties = new Properties();
-        try {
-            properties.load(configReadStream);
-        }
-        catch (final IOException e) {
-            throw new IllegalStateException("Could not parse CivModern's default config resource!", e);
-        }
-        config = new CivMapConfig(configFile, properties);
-    }
-
-    public static @NotNull ColourProvider getColourProvider() {
-        return colourProvider;
-    }
-
     public static @NotNull Screen newConfigGui(
         final Screen previousScreen
     ) {
-        return new MainConfigScreen(config);
+        return new MainConfigScreen();
     }
 }

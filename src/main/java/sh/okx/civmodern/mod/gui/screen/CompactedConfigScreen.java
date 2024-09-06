@@ -1,5 +1,7 @@
 package sh.okx.civmodern.mod.gui.screen;
 
+import java.text.DecimalFormat;
+import java.util.regex.Pattern;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
@@ -14,24 +16,15 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 import org.lwjgl.glfw.GLFW;
-import sh.okx.civmodern.mod.CivMapConfig;
-import sh.okx.civmodern.mod.CivModernMod;
+import sh.okx.civmodern.mod.CivModernConfig;
 import sh.okx.civmodern.mod.ColourProvider;
 import sh.okx.civmodern.mod.gui.widget.HsbColourPicker;
 import sh.okx.civmodern.mod.gui.widget.ImageButton;
 
-import java.text.DecimalFormat;
-import java.util.regex.Pattern;
-
 public class CompactedConfigScreen extends Screen {
     private static final DecimalFormat FORMAT = new DecimalFormat("##%");
 
-    private static final ItemStack ITEM;
-
-    private int itemX;
-    private int itemY;
-
-    static {
+    private static final ItemStack ITEM; static {
         CompoundTag item = new CompoundTag();
         item.putString("id", "stone");
         item.putInt("Count", 64);
@@ -45,14 +38,14 @@ public class CompactedConfigScreen extends Screen {
         ITEM = ItemStack.parse(Minecraft.getInstance().level.registryAccess(), item).get();
     }
 
-    private final CivMapConfig config;
-    private final Screen parent;
+    private int itemX;
+    private int itemY;
 
+    private final Screen parent;
     private HsbColourPicker picker;
 
-    public CompactedConfigScreen(CivMapConfig config, Screen parent) {
+    public CompactedConfigScreen(Screen parent) {
         super(Component.translatable("civmodern.screen.compacted.title"));
-        this.config = config;
         this.parent = parent;
     }
 
@@ -64,36 +57,42 @@ public class CompactedConfigScreen extends Screen {
         int leftWidth = width / 2 - (60 + 8 + 20 + 8 + 20) / 2;
 
         EditBox widget = new EditBox(font, leftWidth, height / 6, 60, 20, Component.empty());
-        widget.setValue("#" + String.format("%06X", config.getColour()));
+        widget.setValue("#" + String.format("%06X", CivModernConfig.compactedItemColour));
         widget.setMaxLength(7);
         Pattern pattern = Pattern.compile("^(#[0-9A-F]{0,6})?$", Pattern.CASE_INSENSITIVE);
         widget.setFilter(string -> pattern.matcher(string).matches());
         widget.setResponder(val -> {
             if (val.length() == 7) {
-                int rgb = Integer.parseInt(val.substring(1), 16);
-                config.setColour(rgb);
+                CivModernConfig.compactedItemColour = Integer.parseInt(val.substring(1), 16);
             }
         });
         addRenderableWidget(widget);
 
-        ColourProvider colourProvider = CivModernMod.getColourProvider();
-        HsbColourPicker hsb = new HsbColourPicker(leftWidth + 60 + 8, height / 6, 20, 20, config.getColour(),
+        HsbColourPicker hsb = new HsbColourPicker(
+            leftWidth + 60 + 8,
+            height / 6,
+            20,
+            20,
+            CivModernConfig.compactedItemColour,
             colour -> {
                 widget.setValue("#" + String.format("%06X", colour));
-                config.setColour(colour);
-            }, colourProvider::setTemporaryCompactedColour, () -> {});
+                CivModernConfig.compactedItemColour = colour;
+            },
+            ColourProvider::setTemporaryCompactedItemColour,
+            () -> {}
+        );
 
         addRenderableWidget(new ImageButton(leftWidth + 60 + 8 + 20 + 8, height / 6, 20, 20, ResourceLocation.tryBuild("civmodern", "gui/rollback.png"), imbg -> {
             int colour = 0xffff58;
             widget.setValue("#FFFF58");
-            config.setColour(colour);
+            CivModernConfig.compactedItemColour = colour;
             hsb.close();
         }));
 
         addRenderableWidget(picker = hsb);
 
         addRenderableWidget(Button.builder(CommonComponents.GUI_DONE, button -> {
-            config.save();
+            CivModernConfig.save();
             minecraft.setScreen(parent);
         }).pos(this.width / 2 - 49, this.height / 6 + 169).size(98, 20).build());
     }
@@ -136,8 +135,8 @@ public class CompactedConfigScreen extends Screen {
     @Override
     public void onClose() {
         super.onClose();
-        CivModernMod.getColourProvider().setTemporaryCompactedColour(null);
-        config.save();
+        ColourProvider.setTemporaryCompactedItemColour(null);
+        CivModernConfig.save();
     }
 
     private boolean isCursorOverItem(int mouseX, int mouseY) {

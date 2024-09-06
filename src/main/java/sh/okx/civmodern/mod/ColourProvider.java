@@ -2,38 +2,38 @@ package sh.okx.civmodern.mod;
 
 import java.util.Objects;
 
-public class ColourProvider {
+public final class ColourProvider {
+    private static Integer compactedItemColour;
+    private static Integer radarFg;
+    private static Integer radarBg;
 
-    private final CivMapConfig config;
-    private Integer radarFg;
-    private Integer radarBg;
-    private Integer compacted;
-
-    public ColourProvider(CivMapConfig config) {
-        this.config = config;
+    public static int getCompactedItemColour() {
+        return Objects.requireNonNullElse(compactedItemColour, CivModernConfig.compactedItemColour);
     }
 
-    public int getCompactedColour() {
-        return Objects.requireNonNullElseGet(compacted, config::getColour);
+    public static int getRadarForegroundColour() {
+        return Objects.requireNonNullElse(radarFg, CivModernConfig.radarFgColour);
     }
 
-    public int getForegroundColour() {
-        return Objects.requireNonNullElseGet(radarFg, config::getRadarColour);
+    public static int getRadarBackgroundColour() {
+        return Objects.requireNonNullElse(radarBg, CivModernConfig.radarBgColour);
     }
 
-    public int getBackgroundColour() {
-        return Objects.requireNonNullElseGet(radarBg, config::getRadarBgColour);
+    public static void setTemporaryCompactedItemColour(
+        final Integer colour
+    ) {
+        compactedItemColour = colour;
     }
 
-    public void setTemporaryRadarForegroundColour(Integer colour) {
+    public static void setTemporaryRadarForegroundColour(
+        Integer colour
+    ) {
         radarFg = colour;
     }
 
-    public void setTemporaryRadarBackgroundColour(Integer colour) {
+    public static void setTemporaryRadarBackgroundColour(
+        Integer colour
+    ) {
         radarBg = colour;
-    }
-
-    public void setTemporaryCompactedColour(Integer colour) {
-        compacted = colour;
     }
 }

@@ -1,12 +1,10 @@
 package sh.okx.civmodern.mod.gui.screen;
-
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
-
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
@@ -19,19 +17,17 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
-import sh.okx.civmodern.mod.CivModernMod;
-import sh.okx.civmodern.mod.CivMapConfig;
-import sh.okx.civmodern.mod.gui.widget.DoubleOptionUpdateableSliderWidget;
+import sh.okx.civmodern.mod.CivModernConfig;
+import sh.okx.civmodern.mod.ColourProvider;
 import sh.okx.civmodern.mod.gui.DoubleValue;
+import sh.okx.civmodern.mod.gui.widget.DoubleOptionUpdateableSliderWidget;
 import sh.okx.civmodern.mod.gui.widget.HsbColourPicker;
 import sh.okx.civmodern.mod.gui.widget.ImageButton;
-import sh.okx.civmodern.mod.ColourProvider;
 
 public class RadarConfigScreen extends Screen implements ScreenCloseable {
 
     public static final ResourceLocation ROLLBACK_ICON = ResourceLocation.tryBuild("civmodern", "gui/rollback.png");
     private final List<Renderable> renderables = new ArrayList<>(); // copied from Screen because it's private there
-    private final CivMapConfig config;
     private final Screen parent;
     private int foregroundColourY;
     private int backgroundColourY;
@@ -40,9 +36,8 @@ public class RadarConfigScreen extends Screen implements ScreenCloseable {
     private HsbColourPicker bgPicker;
     private HsbColourPicker fgPicker;
 
-    public RadarConfigScreen(CivMapConfig config, Screen parent) {
+    public RadarConfigScreen(Screen parent) {
         super(Component.translatable("civmodern.screen.radar.title"));
-        this.config = config;
         this.parent = parent;
     }
 
@@ -54,187 +49,194 @@ public class RadarConfigScreen extends Screen implements ScreenCloseable {
         int right = left + 160;
         int offset = this.height / 6 - 18;
 
-        ColourProvider colourProvider = CivModernMod.getColourProvider();
-        bgPicker = addColourPicker(left, offset + 178, CivMapConfig.DEFAULT_RADAR_BG_COLOUR, config::getRadarBgColour, config::setRadarBgColour,
-            colourProvider::setTemporaryRadarBackgroundColour);
-        fgPicker = addColourPicker(right, offset + 178, CivMapConfig.DEFAULT_RADAR_FG_COLOUR, config::getRadarColour, config::setRadarColour,
-            colourProvider::setTemporaryRadarForegroundColour);
+        this.bgPicker = addColourPicker(
+            left,
+            offset + 178,
+            CivModernConfig.DEFAULT_RADAR_BG_COLOUR,
+            () -> CivModernConfig.radarBgColour,
+            (value) -> CivModernConfig.radarBgColour = value,
+            ColourProvider::setTemporaryRadarBackgroundColour
+        );
+        this.fgPicker = addColourPicker(
+            right,
+            offset + 178,
+            CivModernConfig.DEFAULT_RADAR_FG_COLOUR,
+            () -> CivModernConfig.radarFgColour,
+            (value) -> CivModernConfig.radarFgColour = value,
+            ColourProvider::setTemporaryRadarForegroundColour
+        );
 
         addRenderableWidget(Button.builder(getRadarToggleMessage(), button -> {
-            config.setRadarEnabled(!config.isRadarEnabled());
+            CivModernConfig.radarEnabled = !CivModernConfig.radarEnabled;
             button.setMessage(getRadarToggleMessage());
         }).pos(centre, offset).size(150, 20).build());
+
         offset += 24;
+
         addRenderableWidget(Button.builder(getPingToggleMessage(), button -> {
-            config.setPingEnabled(!config.isPingEnabled());
+            CivModernConfig.radarPingsEnabled = !CivModernConfig.radarPingsEnabled;
             button.setMessage(getPingToggleMessage());
         }).pos(left, offset).size(150, 20).build());
+
         addRenderableWidget(Button.builder(getPingSoundMessage(), button -> {
-            config.setPingSoundEnabled(!config.isPingSoundEnabled());
+            CivModernConfig.radarPingSoundEnabled = !CivModernConfig.radarPingSoundEnabled;
             button.setMessage(getPingSoundMessage());
         }).pos(right, offset).size(150, 20).build());
+
         offset += 24;
-        addRenderableWidget(Button.builder(Component.translatable("civmodern.screen.radar.alignment", config.getAlignment().toString()), button -> {
-            config.setAlignment(config.getAlignment().next());
-            button.setMessage(Component.translatable("civmodern.screen.radar.alignment", config.getAlignment().toString()));
+
+        addRenderableWidget(Button.builder(Component.translatable("civmodern.screen.radar.alignment", CivModernConfig.radarAlignment.toString()), button -> {
+            CivModernConfig.radarAlignment = CivModernConfig.radarAlignment.next();
+            button.setMessage(Component.translatable("civmodern.screen.radar.alignment", CivModernConfig.radarAlignment.toString()));
         }).pos(left, offset).size(150, 20).build());
+
         addRenderableWidget(Button.builder(getItemToggleMessage(), button -> {
-            config.setShowItems(!config.isShowItems());
+            CivModernConfig.radarShowItems = !CivModernConfig.radarShowItems;
             button.setMessage(getItemToggleMessage());
         }).pos(right, offset).size(150, 20).build());
+
         offset += 24;
+
         addRenderableWidget(new DoubleOptionUpdateableSliderWidget(right, offset, 150, 20, 0, 1, 0.01, new DoubleValue() {
             private final DecimalFormat format = new DecimalFormat("##%");
-
             @Override
             public double get() {
-                return config.getTransparency();
+                return CivModernConfig.radarTransparency;
             }
-
             @Override
             public void set(double value) {
-                config.setTransparency((float) value);
+                CivModernConfig.radarTransparency = (float) value;
             }
-
             @Override
             public Component getText(double value) {
-                return Component.translatable("civmodern.screen.radar.transparency", format.format(value));
+                return Component.translatable("civmodern.screen.radar.transparency", this.format.format(value));
             }
         }));
+
         addRenderableWidget(new DoubleOptionUpdateableSliderWidget(left, offset, 150, 20, 0, 1, 0.01, new DoubleValue() {
             private final DecimalFormat format = new DecimalFormat("##%");
-
             @Override
             public double get() {
-                return config.getBackgroundTransparency();
+                return CivModernConfig.radarBackgroundTransparency;
             }
-
             @Override
             public void set(double value) {
-                config.setBackgroundTransparency((float) value);
+                CivModernConfig.radarBackgroundTransparency = (float) value;
             }
-
             @Override
             public Component getText(double value) {
-                return Component.translatable("civmodern.screen.radar.background_transparency", format.format(value));
+                return Component.translatable("civmodern.screen.radar.background_transparency", this.format.format(value));
             }
         }));
+
         offset += 24;
+
         addRenderableWidget(new DoubleOptionUpdateableSliderWidget(left, offset, 150, 20, 0.5, 2, 0.1, new DoubleValue() {
             private final DecimalFormat format = new DecimalFormat("#.#");
-
             @Override
             public double get() {
-                return config.getIconSize();
+                return CivModernConfig.radarIconSize;
             }
-
             @Override
             public void set(double value) {
-                config.setIconSize((float) value);
+                CivModernConfig.radarIconSize = (float) value;
             }
-
             @Override
             public Component getText(double value) {
-                return Component.translatable("civmodern.screen.radar.iconsize", format.format(value));
+                return Component.translatable("civmodern.screen.radar.iconsize", this.format.format(value));
             }
         }));
-        addRenderableWidget(new DoubleOptionUpdateableSliderWidget(right, offset, 150, 20, 20, 150, 1, new DoubleValue() {
 
+        addRenderableWidget(new DoubleOptionUpdateableSliderWidget(right, offset, 150, 20, 20, 150, 1, new DoubleValue() {
             @Override
             public double get() {
-                return config.getRange();
+                return CivModernConfig.radarRange;
             }
-
             @Override
             public void set(double value) {
-                config.setRange((int) value);
+                CivModernConfig.radarRange = value;
             }
-
             @Override
             public Component getText(double value) {
                 return Component.translatable("civmodern.screen.radar.range", String.valueOf((int) value));
             }
         }));
+
         offset += 24;
+
         addRenderableWidget(new DoubleOptionUpdateableSliderWidget(left, offset, 150, 20, 25, 250, 1, new DoubleValue() {
             @Override
             public double get() {
-                return config.getRadarSize();
+                return CivModernConfig.radarSize;
             }
-
             @Override
             public void set(double value) {
-                config.setRadarSize((int) value);
+                CivModernConfig.radarSize = (int) value;
             }
-
             @Override
             public Component getText(double value) {
-                return Component.translatable("civmodern.screen.radar.size",
-                    Integer.toString((int) value));
+                return Component.translatable("civmodern.screen.radar.size", Integer.toString((int) value));
             }
         }));
+
         addRenderableWidget(new DoubleOptionUpdateableSliderWidget(right, offset, 150, 20, 1, 8, 1, new DoubleValue() {
             @Override
             public double get() {
-                return config.getRadarCircles();
+                return CivModernConfig.radarCircles;
             }
-
             @Override
             public void set(double value) {
-                config.setRadarCircles((int) value);
+                CivModernConfig.radarCircles = (int) value;
             }
-
             @Override
             public Component getText(double value) {
-                return Component.translatable("civmodern.screen.radar.circles",
-                    Integer.toString((int) value));
+                return Component.translatable("civmodern.screen.radar.circles", Integer.toString((int) value));
             }
         }));
-        offset += 24;
-        addRenderableWidget(new DoubleOptionUpdateableSliderWidget(left, offset, 150, 20, 0, 300, 1, new DoubleValue() {
 
+        offset += 24;
+
+        addRenderableWidget(new DoubleOptionUpdateableSliderWidget(left, offset, 150, 20, 0, 300, 1, new DoubleValue() {
             @Override
             public double get() {
-                return config.getX();
+                return CivModernConfig.radarX;
             }
-
             @Override
             public void set(double value) {
-                config.setX((int) value);
+                CivModernConfig.radarX = (int) value;
             }
-
             @Override
             public Component getText(double value) {
                 return Component.translatable("civmodern.screen.radar.x", String.valueOf((int) value));
             }
         }));
-        addRenderableWidget(new DoubleOptionUpdateableSliderWidget(right, offset, 150, 20, 0, 300, 1, new DoubleValue() {
 
+        addRenderableWidget(new DoubleOptionUpdateableSliderWidget(right, offset, 150, 20, 0, 300, 1, new DoubleValue() {
             @Override
             public double get() {
-                return config.getY();
+                return CivModernConfig.radarY;
             }
-
             @Override
             public void set(double value) {
-                config.setY((int) value);
+                CivModernConfig.radarY = (int) value;
             }
-
             @Override
             public Component getText(double value) {
                 return Component.translatable("civmodern.screen.radar.y", String.valueOf((int) value));
             }
         }));
+
         offset += 24;
 
-        foregroundColourY = backgroundColourY = offset;
+        this.foregroundColourY = this.backgroundColourY = offset;
 
         offset += 12;
 
         offset += 36;
+
         addRenderableWidget(Button.builder(CommonComponents.GUI_DONE, button -> {
-            config.save();
-            Minecraft.getInstance().setScreen(parent);
+            CivModernConfig.save();
+            Minecraft.getInstance().setScreen(this.parent);
         }).pos(centre, offset).size(150, 20).build());
     }
 
@@ -268,7 +270,7 @@ public class RadarConfigScreen extends Screen implements ScreenCloseable {
     }
 
     private Component getPingToggleMessage() {
-        if (config.isPingEnabled()) {
+        if (CivModernConfig.radarPingsEnabled) {
             return Component.translatable("civmodern.screen.radar.pings.enable");
         } else {
             return Component.translatable("civmodern.screen.radar.pings.disable");
@@ -276,7 +278,7 @@ public class RadarConfigScreen extends Screen implements ScreenCloseable {
     }
 
     private Component getItemToggleMessage() {
-        if (config.isShowItems()) {
+        if (CivModernConfig.radarShowItems) {
             return Component.translatable("civmodern.screen.radar.items.enable");
         } else {
             return Component.translatable("civmodern.screen.radar.items.disable");
@@ -284,7 +286,7 @@ public class RadarConfigScreen extends Screen implements ScreenCloseable {
     }
 
     private Component getPingSoundMessage() {
-        if (config.isPingSoundEnabled()) {
+        if (CivModernConfig.radarPingSoundEnabled) {
             return Component.translatable("civmodern.screen.radar.sound.enable");
         } else {
             return Component.translatable("civmodern.screen.radar.sound.disable");
@@ -293,9 +295,9 @@ public class RadarConfigScreen extends Screen implements ScreenCloseable {
 
     @Override
     public void onClose() {
-        config.save();
-        CivModernMod.getColourProvider().setTemporaryRadarBackgroundColour(null);
-        CivModernMod.getColourProvider().setTemporaryRadarForegroundColour(null);
+        CivModernConfig.save();
+        ColourProvider.setTemporaryRadarBackgroundColour(null);
+        ColourProvider.setTemporaryRadarForegroundColour(null);
         super.onClose();
     }
 
@@ -327,7 +329,7 @@ public class RadarConfigScreen extends Screen implements ScreenCloseable {
     }
 
     private Component getRadarToggleMessage() {
-        if (config.isRadarEnabled()) {
+        if (CivModernConfig.radarEnabled) {
             return Component.literal("Radar: Enabled");
         } else {
             return Component.literal("Radar: Disabled");

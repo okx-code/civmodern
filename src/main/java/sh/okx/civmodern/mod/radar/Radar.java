@@ -40,10 +40,9 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import org.jetbrains.annotations.NotNull;
 import org.joml.Matrix4f;
-import sh.okx.civmodern.mod.CivMapConfig;
+import sh.okx.civmodern.mod.CivModernConfig;
 import sh.okx.civmodern.mod.ColourProvider;
 import sh.okx.civmodern.mod.events.ClientTickEvent;
-import sh.okx.civmodern.mod.events.EventBus;
 import sh.okx.civmodern.mod.events.PostRenderGameOverlayEvent;
 
 import java.net.URL;
@@ -68,20 +67,12 @@ public class Radar {
         }
     }
 
-    private final ColourProvider colourProvider;
-    private final CivMapConfig config;
-
     private Set<RemotePlayer> playersInRange = new HashSet<>();
 
     private int translateX;
     private int translateY;
     private int bgColour;
     private int fgColour;
-
-    public Radar(CivMapConfig config, ColourProvider colourProvider) {
-        this.config = config;
-        this.colourProvider = colourProvider;
-    }
 
     @Subscribe
     private void onClientTick(
@@ -113,7 +104,7 @@ public class Radar {
 
                 newPlayersInRange.add(player);
                 if (!playersInRange.contains(player)) {
-                    if (config.isPingEnabled()) {
+                    if (CivModernConfig.radarPingsEnabled) {
                         BlockPos pos = player.blockPosition();
                         String lastWaypointCommand =
                             "/newWaypoint x:" + pos.getX() + ",y:" + (hideY() ? Minecraft.getInstance().player.getBlockY() : pos.getY()) + ",z:" + pos.getZ() + ",name:"
@@ -131,14 +122,14 @@ public class Radar {
                                         Component.translatable("civmodern.radar.hover")))),
                             false);
                     }
-                    if (config.isPingSoundEnabled()) {
+                    if (CivModernConfig.radarPingSoundEnabled) {
                         playPlayerSound("pling", player.getUUID());
                     }
                 }
             }
         }
 
-        if (config.isPingEnabled()) {
+        if (CivModernConfig.radarPingsEnabled) {
             for (RemotePlayer player : playersInRange) {
                 if (!newPlayersInRange.contains(player)) {
                     BlockPos pos = player.blockPosition();
@@ -172,18 +163,18 @@ public class Radar {
             return;
         }
 
-        if (config.isRadarEnabled()) {
+        if (CivModernConfig.radarEnabled) {
             render(event.guiGraphics(), event.deltaTick());
         }
     }
 
     private int radius() {
-        return config.getRadarSize();
+        return CivModernConfig.radarSize;
     }
 
     public void render(GuiGraphics guiGraphics, float delta) {
-        bgColour = (colourProvider.getBackgroundColour() & 0xFF_FF_FF) | (int) ((1 - config.getBackgroundTransparency()) * 255) << 24;
-        fgColour = (colourProvider.getForegroundColour() & 0xFF_FF_FF) | (int) ((1 - config.getTransparency()) * 255) << 24;
+        bgColour = (ColourProvider.getRadarBackgroundColour() & 0xFF_FF_FF) | (int) ((1 - CivModernConfig.radarBackgroundTransparency) * 255) << 24;
+        fgColour = (ColourProvider.getRadarForegroundColour() & 0xFF_FF_FF) | (int) ((1 - CivModernConfig.radarTransparency) * 255) << 24;
 
         RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1);
         RenderSystem.enableBlend();
@@ -194,12 +185,12 @@ public class Radar {
         LocalPlayer player = client.player;
         guiGraphics.pose().pushPose();
 
-        int offsetX = config.getX() + config.getRadarSize();
-        int offsetY = config.getY() + config.getRadarSize();
+        int offsetX = CivModernConfig.radarX + CivModernConfig.radarSize;
+        int offsetY = CivModernConfig.radarY + CivModernConfig.radarSize;
 
         int height = client.getWindow().getGuiScaledHeight();
         int width = client.getWindow().getGuiScaledWidth();
-        switch (config.getAlignment()) {
+        switch (CivModernConfig.radarAlignment) {
             case TOP_LEFT -> {
                 translateX = offsetX;
                 translateY = offsetY;
@@ -219,10 +210,10 @@ public class Radar {
         }
         guiGraphics.pose().translate(translateX, translateY, 100);
         renderCircleBackground(guiGraphics.pose());
-        for (int i = 1; i <= config.getRadarCircles(); i++) {
-            renderCircleBorder(guiGraphics.pose(), radius() * (i / (float) config.getRadarCircles()));
+        for (int i = 1; i <= CivModernConfig.radarCircles; i++) {
+            renderCircleBorder(guiGraphics.pose(), radius() * (i / (float) CivModernConfig.radarCircles));
         }
-        if (config.isNorthUp()) {
+        if (CivModernConfig.radarIsNorthUp) {
             guiGraphics.pose().mulPose(Axis.ZP.rotationDegrees(180));
             renderAngle(guiGraphics.pose(), delta);
         } else {
@@ -230,7 +221,7 @@ public class Radar {
         }
         renderLines(guiGraphics.pose());
 
-        if (config.isShowItems()) {
+        if (CivModernConfig.radarShowItems) {
             renderItems(guiGraphics, delta);
         }
         renderBoatsMinecarts(guiGraphics, delta);
@@ -266,7 +257,7 @@ public class Radar {
     }
 
     private void renderEntity(GuiGraphics guiGraphics, Player player, Entity entity, float delta, ItemStack item, float blit) {
-        double scale = config.getRadarSize() / config.getRange();
+        double scale = CivModernConfig.radarSize / CivModernConfig.radarRange;
 
         double px = player.xOld + (player.getX() - player.xOld) * delta;
         double pz =
@@ -275,19 +266,19 @@ public class Radar {
         double z = entity.zOld + (entity.getZ() - entity.zOld) * delta;
         double dx = px - x;
         double dz = pz - z;
-        if (dx * dx + dz * dz > config.getRange() * config.getRange()) {
+        if (dx * dx + dz * dz > CivModernConfig.radarRange * CivModernConfig.radarRange) {
             return;
         }
 
         guiGraphics.pose().pushPose();
         guiGraphics.pose().translate(dx * scale, dz * scale, 150);
-        if (config.isNorthUp()) {
+        if (CivModernConfig.radarIsNorthUp) {
             guiGraphics.pose().mulPose(Axis.ZP.rotationDegrees(180));
         } else {
             guiGraphics.pose().mulPose(Axis.ZP.rotationDegrees(player.getViewYRot(delta)));
         }
         BakedModel bakedModel = Minecraft.getInstance().getItemRenderer().getModel(item, player.level(), player, 0);
-        guiGraphics.pose().scale(config.getIconSize(), config.getIconSize(), 1);
+        guiGraphics.pose().scale(CivModernConfig.radarIconSize, CivModernConfig.radarIconSize, 1);
         guiGraphics.pose().mulPose(new Matrix4f().scaling(1.0f, -1.0f, 1.0f));
         guiGraphics.pose().scale(16.0f, 16.0f, 16.0f);
 
@@ -311,7 +302,7 @@ public class Radar {
             if (!player.isAlive()) {
                 continue;
             }
-            double v = config.getRadarSize() / config.getRange();
+            double v = CivModernConfig.radarSize / CivModernConfig.radarRange;
 
             double px = minecraft.player.xOld + (minecraft.player.getX() - minecraft.player.xOld) * delta;
             double pz = minecraft.player.zOld + (minecraft.player.getZ() - minecraft.player.zOld) * delta;
@@ -319,7 +310,7 @@ public class Radar {
             double z = player.zOld + (player.getZ() - player.zOld) * delta;
             double dx = px - x;
             double dz = pz - z;
-            if (dx * dx + dz * dz > config.getRange() * config.getRange()) {
+            if (dx * dx + dz * dz > CivModernConfig.radarRange * CivModernConfig.radarRange) {
                 continue;
             }
             RenderSystem.enableBlend();
@@ -331,8 +322,8 @@ public class Radar {
             guiGraphics.pose().scale(0.9f, 0.9f, 0);
 
             PlayerInfo entry = minecraft.player.connection.getPlayerInfo(player.getUUID());
-            guiGraphics.pose().scale(config.getIconSize(), config.getIconSize(), 0);
-            if (config.isNorthUp()) {
+            guiGraphics.pose().scale(CivModernConfig.radarIconSize, CivModernConfig.radarIconSize, 0);
+            if (CivModernConfig.radarIsNorthUp) {
                 guiGraphics.pose().mulPose(Axis.ZP.rotationDegrees(180));
             } else {
                 guiGraphics.pose().mulPose(Axis.ZP.rotationDegrees(minecraft.player.getViewYRot(delta)));
