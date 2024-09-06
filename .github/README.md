@@ -21,6 +21,9 @@ which is located at `.minecraft/config/civmodern.properties`.
 
 - Hold W/forward macro (bound to `[` by default).
 
+- Better toggle-sneak (bound to `]` by default). Will automatically deactivate itself if you manually `SHIFT` sneak, or
+  if you enter water, or start swimming, sprinting, elytra gliding, or creative flying.
+
 ## Removed
 
 - Radar has been removed. Why? Because it's duplicated effort. [CombatRadar](https://modrinth.com/mod/combatradar) and

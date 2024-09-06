@@ -22,6 +22,7 @@ import sh.okx.civmodern.mod.gui.screen.MainConfigScreen;
 import sh.okx.civmodern.mod.macro.AttackMacro;
 import sh.okx.civmodern.mod.macro.HoldKeyMacro;
 import sh.okx.civmodern.mod.macro.IceRoadMacro;
+import sh.okx.civmodern.mod.macro.ToggleSneakMacro;
 
 public final class CivModernMod {
     public static final EventBus EVENTS = new EventBus("CivModernEvents");
@@ -50,6 +51,12 @@ public final class CivModernMod {
         GLFW.GLFW_KEY_LEFT_BRACKET,
         "category.civmodern"
     );
+    private static final KeyMapping HOLD_SNEAK_BINDING = new KeyMapping(
+        "key.civmodern.holdsneak",
+        Type.KEYSYM,
+        GLFW.GLFW_KEY_RIGHT_BRACKET,
+        "category.civmodern"
+    );
     private static final KeyMapping ICE_ROAD_BINDING = new KeyMapping(
         "key.civmodern.ice",
         Type.KEYSYM,
@@ -69,6 +76,7 @@ public final class CivModernMod {
         KeyBindingHelper.registerKeyBinding(HOLD_LEFT_BINDING);
         KeyBindingHelper.registerKeyBinding(HOLD_RIGHT_BINDING);
         KeyBindingHelper.registerKeyBinding(HOLD_FORWARD_BINDING);
+        KeyBindingHelper.registerKeyBinding(HOLD_SNEAK_BINDING);
         KeyBindingHelper.registerKeyBinding(ATTACK_BINDING);
         KeyBindingHelper.registerKeyBinding(ICE_ROAD_BINDING);
 
@@ -93,6 +101,7 @@ public final class CivModernMod {
         EVENTS.register(new HoldKeyMacro(HOLD_LEFT_BINDING, options.keyAttack));
         EVENTS.register(new HoldKeyMacro(HOLD_RIGHT_BINDING, options.keyUse));
         EVENTS.register(new HoldKeyMacro(HOLD_FORWARD_BINDING, options.keyUp));
+        EVENTS.register(new ToggleSneakMacro(HOLD_SNEAK_BINDING));
         EVENTS.register(new IceRoadMacro(ICE_ROAD_BINDING));
         EVENTS.register(new AttackMacro(ATTACK_BINDING, options.keyAttack));
     }
