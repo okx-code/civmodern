@@ -22,7 +22,6 @@ import sh.okx.civmodern.mod.gui.screen.MainConfigScreen;
 import sh.okx.civmodern.mod.macro.AttackMacro;
 import sh.okx.civmodern.mod.macro.HoldKeyMacro;
 import sh.okx.civmodern.mod.macro.IceRoadMacro;
-import sh.okx.civmodern.mod.radar.Radar;
 
 public final class CivModernMod {
     public static final EventBus EVENTS = new EventBus("CivModernEvents");
@@ -80,8 +79,6 @@ public final class CivModernMod {
 
     private static void enable() {
         CivModernConfig.parse(CivModernConfig.load());
-
-        EVENTS.register(new Radar());
 
         EVENTS.register(new Listener());
 

@@ -6,8 +6,6 @@ This is a fork of CivModern specifically for [CivMC](https://civmc.net) on 1.21.
 
 - Compacted items will have a configurably-coloured stack count.
 
-- Combat radar that displays players displays nearby players, boats, minecarts, and items.
-
 - Ice-road macro (bound to `BACKSPACE` by default).
 
 - Auto-attack macro (bound to `0` by default).
@@ -19,7 +17,10 @@ This is a fork of CivModern specifically for [CivMC](https://civmc.net) on 1.21.
 You may open CivModern's configuration screen in-game with the `R` binding. Or you can modify the config file directly,
 which is located at `.minecraft/config/civmodern.properties`.
 
-![The radar configuration screen](./assets/screenshot.png)
+## Removed
+
+- Radar has been removed. Why? Because it's duplicated effort. [CombatRadar](https://modrinth.com/mod/combatradar) and
+  [CivVoxelMap](https://github.com/Protonull/CivVoxelMap) both provide radars that are legal on CivMC.
 
 ## Requirements
 

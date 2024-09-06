@@ -16,12 +16,9 @@ public class MainConfigScreen extends Screen {
         addRenderableWidget(Button.builder(Component.translatable("civmodern.screen.main.compacted"), button -> {
             minecraft.setScreen(new CompactedConfigScreen(this));
         }).pos(col0, this.height / 6).size(150, 20).build());
-        addRenderableWidget(Button.builder(Component.translatable("civmodern.screen.main.radar"), button -> {
-            minecraft.setScreen(new RadarConfigScreen(this));
-        }).pos(col0, this.height / 6 + 24).size(150, 20).build());
         addRenderableWidget(Button.builder(Component.translatable("civmodern.screen.main.ice"), button -> {
             minecraft.setScreen(new IceRoadConfigScreen(this));
-        }).pos(col0, this.height / 6 + 48).size(150, 20).build());
+        }).pos(col0, this.height / 6 + 24).size(150, 20).build());
     }
 
     @Override
