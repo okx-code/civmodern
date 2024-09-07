@@ -7,7 +7,8 @@ import net.minecraft.core.component.DataComponents;
 import net.minecraft.world.food.FoodProperties;
 import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.NotNull;
-import sh.okx.civmodern.mod.CivModernConfig;
+import sh.okx.civmodern.mod.config.CivModernConfig;
+import sh.okx.civmodern.mod.config.IceRoadSettings;
 import sh.okx.civmodern.mod.events.ClientTickEvent;
 
 public class IceRoadMacro {
@@ -30,6 +31,8 @@ public class IceRoadMacro {
         Minecraft mc = Minecraft.getInstance();
         if (mc.player == null) return;
 
+        final IceRoadSettings settings = CivModernConfig.HANDLER.instance().iceRoadSettings;
+
         while (this.key.consumeClick()) {
             if (enabled) {
                 mc.options.keySprint.setDown(false);
@@ -45,11 +48,11 @@ public class IceRoadMacro {
                 eating = null;
                 enabled = false;
             } else {
-                if (CivModernConfig.iceRoadYawCardinalEnabled) {
+                if (settings.snapYaw) {
                     float roty = Math.round(mc.player.getYRot() / 45) * 45;
                     mc.player.setYRot(roty);
                 }
-                if (CivModernConfig.iceRoadPitchCardinalEnabled) {
+                if (settings.snapPitch) {
                     float rotx = Math.round(mc.player.getXRot() / 45) * 45;
                     mc.player.setXRot(rotx);
                 }
@@ -61,7 +64,7 @@ public class IceRoadMacro {
         if (enabled) {
             if (!jump) {
                 AUTO_EAT:
-                if (CivModernConfig.iceRoadAutoEat) {
+                if (settings.autoEat) {
                     if (this.eating != null) {
                         if (!mc.player.isUsingItem() || !this.eating.equals(mc.player.getUseItem())) {
                             this.eating = null;
@@ -79,7 +82,7 @@ public class IceRoadMacro {
                     }
                 }
 
-                if (CivModernConfig.iceRoadStop && mc.player.getFoodData().getFoodLevel() <= 6) {
+                if (settings.stopWhenHungry && mc.player.getFoodData().getFoodLevel() <= 6) {
                     waitingForFood = true;
                     mc.options.keyUp.setDown(false);
                     return;

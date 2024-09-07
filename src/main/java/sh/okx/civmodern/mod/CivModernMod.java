@@ -2,12 +2,10 @@ package sh.okx.civmodern.mod;
 
 import com.google.common.eventbus.Subscribe;
 import com.mojang.blaze3d.platform.InputConstants.Type;
-import java.io.File;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
 import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
-import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.Options;
@@ -15,10 +13,10 @@ import net.minecraft.client.gui.screens.Screen;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.lwjgl.glfw.GLFW;
+import sh.okx.civmodern.mod.config.CivModernConfig;
 import sh.okx.civmodern.mod.events.ClientTickEvent;
 import sh.okx.civmodern.mod.events.EventBus;
 import sh.okx.civmodern.mod.events.PostRenderGameOverlayEvent;
-import sh.okx.civmodern.mod.gui.screen.MainConfigScreen;
 import sh.okx.civmodern.mod.macro.AttackMacro;
 import sh.okx.civmodern.mod.macro.HoldKeyMacro;
 import sh.okx.civmodern.mod.macro.IceRoadMacro;
@@ -80,9 +78,6 @@ public final class CivModernMod {
         KeyBindingHelper.registerKeyBinding(ATTACK_BINDING);
         KeyBindingHelper.registerKeyBinding(ICE_ROAD_BINDING);
 
-        CivModernConfig.CONFIG_DIR = FabricLoader.getInstance().getConfigDir().toFile();
-        CivModernConfig.CONFIG_FILE = new File(CivModernConfig.CONFIG_DIR, "civmodern.properties");
-
         ClientLifecycleEvents.CLIENT_STARTED.register((e) -> enable());
         ClientTickEvents.START_CLIENT_TICK.register((client) -> {
             EVENTS.post(new ClientTickEvent());
@@ -93,7 +88,8 @@ public final class CivModernMod {
     }
 
     private static void enable() {
-        CivModernConfig.parse(CivModernConfig.load());
+        CivModernConfig.HANDLER.load();
+        CivModernConfig.apply(CivModernConfig.HANDLER.instance());
 
         EVENTS.register(new Listener());
 
@@ -120,6 +116,6 @@ public final class CivModernMod {
     public static @NotNull Screen newConfigGui(
         final Screen previousScreen
     ) {
-        return new MainConfigScreen();
+        return CivModernConfig.generateScreenGenerator(CivModernConfig.HANDLER.instance()).generateScreen(previousScreen);
     }
 }

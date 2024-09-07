@@ -22,6 +22,7 @@ dependencies {
     modImplementation("net.fabricmc:fabric-loader:${project.extra["fabric_loader_version"]}")
     modImplementation("net.fabricmc.fabric-api:fabric-api:${project.extra["fabric_api_version"]}")
 
+    modImplementation("dev.isxander:yet-another-config-lib:${project.extra["yacl_version"]}")
     modImplementation("com.terraformersmc:modmenu:${project.extra["modmenu_version"]}")
 }
 
@@ -34,6 +35,10 @@ repositories {
         content {
             includeGroup("maven.modrinth")
         }
+    }
+    // For YACL
+    maven("https://maven.isxander.dev/releases/") {
+        name = "Xander Maven"
     }
     // For ModMenu
     maven(url = "https://maven.terraformersmc.com/") {

@@ -9,8 +9,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Constant;
 import org.spongepowered.asm.mixin.injection.ModifyConstant;
 import org.spongepowered.asm.mixin.injection.Redirect;
-import sh.okx.civmodern.mod.ColourProvider;
-import sh.okx.civmodern.mod.features.ExtendedItemStack;
+import sh.okx.civmodern.mod.features.CompactedItem;
 
 @Mixin(GuiGraphics.class)
 public abstract class GuiGraphicsMixin {
@@ -28,7 +27,7 @@ public abstract class GuiGraphicsMixin {
     protected int civmodern$alwaysShowItemAmountIfCompacted(
         final @NotNull ItemStack stack
     ) {
-        if (this.civmodern$isCompactedItem = ((ExtendedItemStack) (Object) stack).isMarkedAsCompacted()) {
+        if (this.civmodern$isCompactedItem = CompactedItem.isMarkedAsCompacted(stack)) {
             return 0; // Will force the real count to be displayed since it's a !=1 check
         }
         return stack.getCount();
@@ -42,7 +41,7 @@ public abstract class GuiGraphicsMixin {
         final int decorationColour
     ) {
         if (this.civmodern$isCompactedItem) {
-            return ColourProvider.getCompactedItemColour();
+            return CompactedItem.COLOUR;
         }
         return decorationColour;
     }

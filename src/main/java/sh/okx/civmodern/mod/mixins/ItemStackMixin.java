@@ -4,9 +4,7 @@ import java.util.List;
 import net.minecraft.core.component.DataComponentMap;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.Style;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.component.ItemLore;
 import org.jetbrains.annotations.NotNull;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -15,11 +13,11 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.ModifyVariable;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
-import sh.okx.civmodern.mod.CivModernConfig;
-import sh.okx.civmodern.mod.features.ExtendedItemStack;
+import sh.okx.civmodern.mod.config.CivModernConfig;
+import sh.okx.civmodern.mod.features.CompactedItem;
 
 @Mixin(ItemStack.class)
-public abstract class ItemStackMixin implements ExtendedItemStack {
+public abstract class ItemStackMixin implements CompactedItem.PotentiallyCompactedItem {
     @Shadow
     public abstract DataComponentMap getComponents();
 
@@ -32,35 +30,11 @@ public abstract class ItemStackMixin implements ExtendedItemStack {
 
     @Unique
     @Override
-    public boolean isMarkedAsCompacted() {
+    public boolean civmodern$isMarkedAsCompacted() {
         if (this.civmodern$isCompacted == null) {
-            this.civmodern$isCompacted = civmodern$isCompacted();
+            this.civmodern$isCompacted = CompactedItem.hasCompactedItemLore((ItemStack) (Object) this);
         }
         return this.civmodern$isCompacted;
-    }
-
-    @Unique
-    private boolean civmodern$isCompacted() {
-        final ItemLore lore = getComponents().get(DataComponents.LORE);
-        if (lore == null) {
-            return false;
-        }
-        for (final Component line : lore.lines()) {
-            if (line == null) {
-                continue;
-            }
-            final var content = new StringBuilder();
-            for (final Component child : line.toFlatList()) {
-                if (!Style.EMPTY.equals(child.getStyle())) {
-                    return false;
-                }
-                content.append(child.getString());
-            }
-            if (ExtendedItemStack.COMPACTED_ITEM_LORE.contentEquals(content)) {
-                return true;
-            }
-        }
-        return false;
     }
 
     // ============================================================
@@ -96,7 +70,7 @@ public abstract class ItemStackMixin implements ExtendedItemStack {
     private void civmodern$showRepairLevel(
         final @NotNull CallbackInfoReturnable<List<Component>> cir
     ) {
-        if (CivModernConfig.showItemRepairLevel) {
+        if (CivModernConfig.HANDLER.instance().itemSettings.showRepairLevel) {
             final int repairCost = getComponents().getOrDefault(DataComponents.REPAIR_COST, 0);
             if (repairCost > 0) {
                 this.civmodern$tooltipLines.add(Component.translatable(

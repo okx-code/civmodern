@@ -8,7 +8,8 @@
         "GuiGraphicsMixin",
         "InventoryMixin",
         "ItemStackMixin",
-        "KeyMappingAccessor"
+        "KeyMappingAccessor",
+        "YaclAllowMiddleClickMixin"
     ],
     "server": [],
     "injectors": {

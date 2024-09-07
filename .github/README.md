@@ -26,6 +26,10 @@ which is located at `.minecraft/config/civmodern.properties`.
 
 - Shows an item's base repair level by default in advanced-tooltips mode.
 
+## Changed
+
+- Switched the config to YACL. This is a breaking change: your previous configs will no longer work.
+
 ## Removed
 
 - Radar has been removed. Why? Because it's duplicated effort. [CombatRadar](https://modrinth.com/mod/combatradar) and
@@ -35,6 +39,7 @@ which is located at `.minecraft/config/civmodern.properties`.
 
 - Fabric Loader: `0.16.4` (or newer)
 - [Fabric API](https://modrinth.com/mod/fabric-api): `0.103.0+1.21.1` (or newer)
+- [YetAnotherConfigLibrary](https://modrinth.com/mod/yacl): `3.5.0+1.21-fabric` (or newer)
 
 ## Recommendations
 
