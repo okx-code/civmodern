@@ -14,6 +14,7 @@ import dev.isxander.yacl3.gui.controllers.ColorController;
 import java.awt.Color;
 import java.util.List;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.screens.inventory.CreativeInventoryListener;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.core.component.DataComponentMap;
 import net.minecraft.core.component.DataComponents;
@@ -154,7 +155,16 @@ public final class ItemSettings {
                     if (!player.isCreative()) {
                         return true; // Do nothing, not allowed
                     }
-                    player.addItem(ITEM.copy());
+                    if (player.addItem(ITEM.copy())) {
+                        // This is directly copy-pasted from [net.minecraft.client.gui.screens.inventory.CreativeModeInventoryScreen]
+                        // since whenever you open your creative inventory after adding a couple of compacted items, it
+                        // will send a [net.minecraft.network.protocol.game.ServerboundSetCreativeModeSlotPacket] for
+                        // each of the changed slots.
+                        final var listener = new CreativeInventoryListener(this.client);
+                        player.inventoryMenu.addSlotListener(listener);
+                        player.inventoryMenu.broadcastChanges();
+                        player.inventoryMenu.removeSlotListener(listener);
+                    }
                     return true;
                 }
                 return super.mouseClicked(mouseX, mouseY, button);
