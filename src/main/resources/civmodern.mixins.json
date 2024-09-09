@@ -9,6 +9,7 @@
         "InventoryMixin",
         "ItemStackMixin",
         "KeyMappingAccessor",
+        "KeyMappingMixin",
         "YaclAllowMiddleClickMixin"
     ],
     "server": [],

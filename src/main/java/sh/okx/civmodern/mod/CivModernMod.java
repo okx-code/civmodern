@@ -17,6 +17,7 @@ import sh.okx.civmodern.mod.events.ClientTickEvent;
 import sh.okx.civmodern.mod.events.EventBus;
 import sh.okx.civmodern.mod.events.PostRenderGameOverlayEvent;
 import sh.okx.civmodern.mod.macro.AttackMacro;
+import sh.okx.civmodern.mod.macro.HoldForwardMacro;
 import sh.okx.civmodern.mod.macro.HoldKeyMacro;
 import sh.okx.civmodern.mod.macro.IceRoadMacro;
 import sh.okx.civmodern.mod.macro.ToggleSneakMacro;
@@ -96,7 +97,7 @@ public final class CivModernMod {
 
         EVENTS.register(new HoldKeyMacro(HOLD_LEFT_BINDING, minecraft.options.keyAttack));
         EVENTS.register(new HoldKeyMacro(HOLD_RIGHT_BINDING, minecraft.options.keyUse));
-        EVENTS.register(new HoldKeyMacro(HOLD_FORWARD_BINDING, minecraft.options.keyUp));
+        EVENTS.register(new HoldForwardMacro(minecraft, HOLD_FORWARD_BINDING));
         EVENTS.register(new ToggleSneakMacro(minecraft, HOLD_SNEAK_BINDING));
         EVENTS.register(new IceRoadMacro(ICE_ROAD_BINDING));
         EVENTS.register(new AttackMacro(ATTACK_BINDING, minecraft.options.keyAttack));

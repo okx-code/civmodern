@@ -5,6 +5,7 @@ import net.minecraft.client.KeyMapping;
 import org.jetbrains.annotations.NotNull;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.gen.Accessor;
+import org.spongepowered.asm.mixin.gen.Invoker;
 
 @Mixin(KeyMapping.class)
 public interface KeyMappingAccessor {
@@ -16,4 +17,7 @@ public interface KeyMappingAccessor {
     
     @Accessor("key")
     @NotNull InputConstants.Key getKey();
+
+    @Invoker("release")
+    void civmodern$invoker$release();
 }
