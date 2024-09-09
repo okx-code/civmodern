@@ -6,7 +6,6 @@ import java.util.Objects;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.OptionInstance;
-import net.minecraft.client.Options;
 import net.minecraft.client.player.LocalPlayer;
 import org.jetbrains.annotations.NotNull;
 import sh.okx.civmodern.mod.events.ClientTickEvent;
@@ -19,13 +18,13 @@ public class ToggleSneakMacro {
     private final OptionInstance<Boolean> toggleSneak;
 
     public ToggleSneakMacro(
+        final @NotNull Minecraft minecraft,
         final @NotNull KeyMapping macroBinding
     ) {
         this.macroBinding = Objects.requireNonNull(macroBinding);
-        final Options options = Minecraft.getInstance().options;
-        this.sneakBinding = options.keyShift;
+        this.sneakBinding = minecraft.options.keyShift;
         this.sneakBindingAccessor = (KeyMappingAccessor) this.sneakBinding;
-        this.toggleSneak = options.toggleCrouch();
+        this.toggleSneak = minecraft.options.toggleCrouch();
     }
 
     @Subscribe
