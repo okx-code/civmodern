@@ -24,6 +24,10 @@ dependencies {
 
     modImplementation("dev.isxander:yet-another-config-lib:${project.extra["yacl_version"]}")
     modImplementation("com.terraformersmc:modmenu:${project.extra["modmenu_version"]}")
+
+    // This is literally only here to make Minecraft SHUT UP about non-signed messages while testing.
+    // https://modrinth.com/mod/no-chat-reports/version/Fabric-1.21-v2.8.0
+    modLocalRuntime("maven.modrinth:no-chat-reports:riMhCAII")
 }
 
 repositories {
