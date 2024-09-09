@@ -53,7 +53,7 @@ public abstract class ItemStackMixin implements CompactedItem.PotentiallyCompact
         method = "getTooltipLines",
         at = @At("STORE")
     )
-    private @NotNull List<Component> civmodern$captureTooltipLines(
+    private @NotNull List<Component> civmodern$modify_variable$getTooltipLines$captureTooltipLines(
         final @NotNull List<Component> tooltipLines
     ) {
         return this.civmodern$tooltipLines = tooltipLines;
@@ -67,7 +67,7 @@ public abstract class ItemStackMixin implements CompactedItem.PotentiallyCompact
             shift = At.Shift.BEFORE
         )
     )
-    private void civmodern$showRepairLevel(
+    private void civmodern$inject$getTooltipLines$showRepairLevel(
         final @NotNull CallbackInfoReturnable<List<Component>> cir
     ) {
         if (CivModernConfig.HANDLER.instance().itemSettings.showRepairLevel) {
@@ -85,7 +85,7 @@ public abstract class ItemStackMixin implements CompactedItem.PotentiallyCompact
         method = "getTooltipLines",
         at = @At("RETURN")
     )
-    private void civmodern$releaseTooltipLines(
+    private void civmodern$inject$getTooltipLines$releaseTooltipLines(
         final @NotNull CallbackInfoReturnable<List<Component>> cir
     ) {
         this.civmodern$tooltipLines = null;

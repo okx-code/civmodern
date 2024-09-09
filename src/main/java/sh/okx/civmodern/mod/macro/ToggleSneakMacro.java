@@ -62,7 +62,7 @@ public class ToggleSneakMacro {
             this.toggleSneak.set(false);
             this.sneakBinding.setDown(InputConstants.isKeyDown(
                 Minecraft.getInstance().getWindow().getWindow(),
-                this.sneakBindingAccessor.getKey().getValue()
+                this.sneakBindingAccessor.civmodern$accessor$getKey().getValue()
             ));
         }
     }

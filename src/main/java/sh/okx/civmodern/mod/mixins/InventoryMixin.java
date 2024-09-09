@@ -11,7 +11,7 @@ import sh.okx.civmodern.mod.events.ScrollEvent;
 @Mixin(Inventory.class)
 public class InventoryMixin {
     @Inject(at = @At("HEAD"), method = "swapPaint(D)V")
-    private void swapPaint(double direction, CallbackInfo info) {
+    private void civmodern$inject$swapPaint$emitEvent(double direction, CallbackInfo info) {
         CivModernMod.EVENTS.post(new ScrollEvent(direction > 0));
     }
 }

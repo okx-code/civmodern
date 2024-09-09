@@ -36,7 +36,7 @@ public final class HoldForwardMacro {
             return;
         }
 
-        if (this.forwardBindingAccessor.getClickCount() > 0) {
+        if (this.forwardBindingAccessor.civmodern$accessor$getClickCount() > 0) {
             this.enabled = false;
         }
 

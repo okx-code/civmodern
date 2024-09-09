@@ -9,14 +9,16 @@ import org.spongepowered.asm.mixin.gen.Invoker;
 
 @Mixin(KeyMapping.class)
 public interface KeyMappingAccessor {
-    @Accessor
-    int getClickCount();
+    @Accessor("clickCount")
+    int civmodern$accessor$getClickCount();
 
     @Accessor("clickCount")
-    void setClickCount(int clickCount);
+    void civmodern$accessor$setClickCount(
+        int clickCount
+    );
     
     @Accessor("key")
-    @NotNull InputConstants.Key getKey();
+    @NotNull InputConstants.Key civmodern$accessor$getKey();
 
     @Invoker("release")
     void civmodern$invoker$release();

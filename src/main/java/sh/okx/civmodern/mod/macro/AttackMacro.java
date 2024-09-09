@@ -64,7 +64,7 @@ public class AttackMacro {
 
             KeyMappingAccessor accessor = (KeyMappingAccessor) defaultBinding;
 
-            accessor.setClickCount(accessor.getClickCount() + 1);
+            accessor.civmodern$accessor$setClickCount(accessor.civmodern$accessor$getClickCount() + 1);
 
             down = true;
             lastAttack = System.currentTimeMillis();

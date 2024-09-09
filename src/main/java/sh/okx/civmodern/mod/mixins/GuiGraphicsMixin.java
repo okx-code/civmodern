@@ -24,7 +24,7 @@ public abstract class GuiGraphicsMixin {
             ordinal = 0
         )
     )
-    protected int civmodern$alwaysShowItemAmountIfCompacted(
+    protected int civmodern$redirect$renderItemDecorations$alwaysShowItemAmountIfCompacted(
         final @NotNull ItemStack stack
     ) {
         if (this.civmodern$isCompactedItem = CompactedItem.isMarkedAsCompacted(stack)) {
@@ -37,7 +37,7 @@ public abstract class GuiGraphicsMixin {
         method = "renderItemDecorations(Lnet/minecraft/client/gui/Font;Lnet/minecraft/world/item/ItemStack;IILjava/lang/String;)V",
         constant = @Constant(intValue = 16777215)
     )
-    protected int civmodern$colourItemDecorationIfCompacted(
+    protected int civmodern$modify_constant$renderItemDecorations$colourItemDecorationIfCompacted(
         final int decorationColour
     ) {
         if (this.civmodern$isCompactedItem) {
