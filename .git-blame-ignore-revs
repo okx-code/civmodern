@@ -1,2 +1,5 @@
 # Make CivModern exclusive to Fabric
 66e18dc91624de69a8780e88e17e943d219ff60e
+
+# Relocated macros and hooks into features
+c6999c9b69a417ff8d946dfedfc584c2bbbeea30
