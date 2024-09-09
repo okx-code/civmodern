@@ -1,4 +1,4 @@
-package sh.okx.civmodern.mod.macro;
+package sh.okx.civmodern.mod.features.macros;
 
 import com.google.common.eventbus.Subscribe;
 import java.util.Objects;

@@ -1,4 +1,4 @@
-package sh.okx.civmodern.mod.macro;
+package sh.okx.civmodern.mod.features.macros;
 
 import com.google.common.eventbus.Subscribe;
 import com.mojang.blaze3d.platform.InputConstants;
@@ -11,7 +11,7 @@ import org.jetbrains.annotations.NotNull;
 import sh.okx.civmodern.mod.events.ClientTickEvent;
 import sh.okx.civmodern.mod.mixins.KeyMappingAccessor;
 
-public class ToggleSneakMacro {
+public final class ToggleSneakMacro {
     private final KeyMapping macroBinding;
     private final KeyMapping sneakBinding;
     private final KeyMappingAccessor sneakBindingAccessor;

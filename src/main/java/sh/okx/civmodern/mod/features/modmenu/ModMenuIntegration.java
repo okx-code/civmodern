@@ -1,4 +1,4 @@
-package sh.okx.civmodern.mod.hooks.modmenu;
+package sh.okx.civmodern.mod.features.modmenu;
 
 import com.terraformersmc.modmenu.api.ConfigScreenFactory;
 import com.terraformersmc.modmenu.api.ModMenuApi;

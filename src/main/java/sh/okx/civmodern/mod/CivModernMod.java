@@ -16,11 +16,11 @@ import sh.okx.civmodern.mod.config.CivModernConfig;
 import sh.okx.civmodern.mod.events.ClientTickEvent;
 import sh.okx.civmodern.mod.events.EventBus;
 import sh.okx.civmodern.mod.events.PostRenderGameOverlayEvent;
-import sh.okx.civmodern.mod.macro.AttackMacro;
-import sh.okx.civmodern.mod.macro.HoldForwardMacro;
-import sh.okx.civmodern.mod.macro.HoldKeyMacro;
-import sh.okx.civmodern.mod.macro.IceRoadMacro;
-import sh.okx.civmodern.mod.macro.ToggleSneakMacro;
+import sh.okx.civmodern.mod.features.macros.AttackMacro;
+import sh.okx.civmodern.mod.features.macros.HoldForwardMacro;
+import sh.okx.civmodern.mod.features.macros.HoldKeyMacro;
+import sh.okx.civmodern.mod.features.macros.IceRoadMacro;
+import sh.okx.civmodern.mod.features.macros.ToggleSneakMacro;
 
 public final class CivModernMod {
     public static final EventBus EVENTS = new EventBus("CivModernEvents");
