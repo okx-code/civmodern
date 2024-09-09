@@ -8,7 +8,6 @@ import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
 import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.Options;
 import net.minecraft.client.gui.screens.Screen;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -78,7 +77,7 @@ public final class CivModernMod {
         KeyBindingHelper.registerKeyBinding(ATTACK_BINDING);
         KeyBindingHelper.registerKeyBinding(ICE_ROAD_BINDING);
 
-        ClientLifecycleEvents.CLIENT_STARTED.register((e) -> enable());
+        ClientLifecycleEvents.CLIENT_STARTED.register(CivModernMod::enable);
         ClientTickEvents.START_CLIENT_TICK.register((client) -> {
             EVENTS.post(new ClientTickEvent());
         });
@@ -87,19 +86,20 @@ public final class CivModernMod {
         });
     }
 
-    private static void enable() {
+    private static void enable(
+        final @NotNull Minecraft minecraft
+    ) {
         CivModernConfig.HANDLER.load();
         CivModernConfig.apply(CivModernConfig.HANDLER.instance());
 
         EVENTS.register(new Listener());
 
-        final Options options = Minecraft.getInstance().options;
-        EVENTS.register(new HoldKeyMacro(HOLD_LEFT_BINDING, options.keyAttack));
-        EVENTS.register(new HoldKeyMacro(HOLD_RIGHT_BINDING, options.keyUse));
-        EVENTS.register(new HoldKeyMacro(HOLD_FORWARD_BINDING, options.keyUp));
+        EVENTS.register(new HoldKeyMacro(HOLD_LEFT_BINDING, minecraft.options.keyAttack));
+        EVENTS.register(new HoldKeyMacro(HOLD_RIGHT_BINDING, minecraft.options.keyUse));
+        EVENTS.register(new HoldKeyMacro(HOLD_FORWARD_BINDING, minecraft.options.keyUp));
         EVENTS.register(new ToggleSneakMacro(HOLD_SNEAK_BINDING));
         EVENTS.register(new IceRoadMacro(ICE_ROAD_BINDING));
-        EVENTS.register(new AttackMacro(ATTACK_BINDING, options.keyAttack));
+        EVENTS.register(new AttackMacro(ATTACK_BINDING, minecraft.options.keyAttack));
     }
 
     private static final class Listener {
