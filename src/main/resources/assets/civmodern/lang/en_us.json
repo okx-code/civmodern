@@ -13,11 +13,16 @@
     "civmodern.config.group.items.compactedColour.desc": "Compacted items will always show their item count. What colour would you prefer to differentiate them?",
     "civmodern.config.group.items.repairLevel": "Show base-repair level?",
     "civmodern.config.group.items.repairLevel.desc": "Should item tooltips include the item's base repair level?",
-    "civmodern.config.group.items.repairLevel.desc.warning": "WARNING: This is NOT the level that will show up in anvils. It's usually the level+2.",
+    "civmodern.config.group.items.repairLevel.desc.warning": "WARNING: This is NOT the level that will show up in anvils. That is usually the base-level + 2.",
+    "civmodern.config.group.items.damageLevel": "Show damage level?",
+    "civmodern.config.group.items.damageLevel.desc": "Minecraft limits this information to advanced-tooltips by default.",
     "civmodern.config.group.iceRoad": "Ice Road Settings",
     "civmodern.config.group.iceRoad.snapPitch": "Snap pitch",
     "civmodern.config.group.iceRoad.snapYaw": "Snap yaw",
     "civmodern.config.group.iceRoad.autoEat": "Auto eat held item",
     "civmodern.config.group.iceRoad.stopWhenHungry": "Stop on low food",
+    "civmodern.config.type.tooltip.always": "ALWAYS",
+    "civmodern.config.type.tooltip.advanced": "ADVANCED TOOLTIPS",
+    "civmodern.config.type.tooltip.never": "NEVER",
     "civmodern.repair.level": "§fRepair level: %s"
 }

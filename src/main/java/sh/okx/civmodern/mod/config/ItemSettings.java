@@ -4,7 +4,6 @@ import com.mojang.blaze3d.platform.InputConstants;
 import dev.isxander.yacl3.api.Option;
 import dev.isxander.yacl3.api.OptionDescription;
 import dev.isxander.yacl3.api.OptionGroup;
-import dev.isxander.yacl3.api.controller.BooleanControllerBuilder;
 import dev.isxander.yacl3.api.utils.Dimension;
 import dev.isxander.yacl3.api.utils.MutableDimension;
 import dev.isxander.yacl3.config.v2.api.SerialEntry;
@@ -27,13 +26,15 @@ import sh.okx.civmodern.mod.features.CompactedItem;
 
 public final class ItemSettings {
     private static final Color DEFAULT_COMPACTED_ITEM_COLOUR = new Color(CompactedItem.DEFAULT_COLOR);
-    private static final boolean DEFAULT_SHOW_REPAIR_LEVEL = false;
+    private static final TooltipLineOption DEFAULT_SHOW_REPAIR_LEVEL = TooltipLineOption.ALWAYS;
+    private static final TooltipLineOption DEFAULT_SHOW_DAMAGE_LEVEL = TooltipLineOption.ALWAYS;
 
     @SerialEntry
     public @NotNull Color compactedItemColour = DEFAULT_COMPACTED_ITEM_COLOUR;
-
     @SerialEntry
-    public boolean showRepairLevel = DEFAULT_SHOW_REPAIR_LEVEL;
+    public @NotNull TooltipLineOption showRepairLevel = DEFAULT_SHOW_REPAIR_LEVEL;
+    @SerialEntry
+    public @NotNull TooltipLineOption showDamageLevel = DEFAULT_SHOW_DAMAGE_LEVEL;
 
     // ============================================================
     // Screen generation
@@ -46,6 +47,7 @@ public final class ItemSettings {
             .name(Component.translatable("civmodern.config.group.items"))
             .option(generateCompactedItemColour(itemSettings))
             .option(generateShowRepairLevel(itemSettings))
+            .option(generateShowDamageLevel(itemSettings))
             .build();
     }
 
@@ -68,18 +70,33 @@ public final class ItemSettings {
     private static @NotNull Option<?> generateShowRepairLevel(
         final @NotNull ItemSettings itemSettings
     ) {
-        return Option.<Boolean>createBuilder()
+        return Option.<TooltipLineOption>createBuilder()
             .name(Component.translatable("civmodern.config.group.items.repairLevel"))
             .description(OptionDescription.of(
                 Component.translatable("civmodern.config.group.items.repairLevel.desc"),
                 Component.empty(),
                 Component.translatable("civmodern.config.group.items.repairLevel.desc.warning")
             ))
-            .controller(BooleanControllerBuilder::create)
+            .controller(TooltipLineOption::controller)
             .binding(
                 DEFAULT_SHOW_REPAIR_LEVEL,
                 () -> itemSettings.showRepairLevel,
                 (show) -> itemSettings.showRepairLevel = show
+            )
+            .build();
+    }
+
+    private static @NotNull Option<?> generateShowDamageLevel(
+        final @NotNull ItemSettings itemSettings
+    ) {
+        return Option.<TooltipLineOption>createBuilder()
+            .name(Component.translatable("civmodern.config.group.items.damageLevel"))
+            .description(OptionDescription.of(Component.translatable("civmodern.config.group.items.damageLevel.desc")))
+            .controller(TooltipLineOption::controller)
+            .binding(
+                DEFAULT_SHOW_DAMAGE_LEVEL,
+                () -> itemSettings.showDamageLevel,
+                (show) -> itemSettings.showDamageLevel = show
             )
             .build();
     }

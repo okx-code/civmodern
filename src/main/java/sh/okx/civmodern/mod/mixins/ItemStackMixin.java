@@ -4,7 +4,10 @@ import java.util.List;
 import net.minecraft.core.component.DataComponentMap;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.TooltipFlag;
 import org.jetbrains.annotations.NotNull;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -12,14 +15,26 @@ import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.ModifyVariable;
+import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import sh.okx.civmodern.mod.config.CivModernConfig;
+import sh.okx.civmodern.mod.config.ItemSettings;
+import sh.okx.civmodern.mod.config.TooltipLineOption;
 import sh.okx.civmodern.mod.features.CompactedItem;
 
 @Mixin(ItemStack.class)
 public abstract class ItemStackMixin implements CompactedItem.PotentiallyCompactedItem {
     @Shadow
     public abstract DataComponentMap getComponents();
+
+    @Shadow
+    public abstract boolean isDamageableItem();
+
+    @Shadow
+    public abstract int getDamageValue();
+
+    @Shadow
+    public abstract int getMaxDamage();
 
     // ============================================================
     // Compacted item detection
@@ -63,22 +78,80 @@ public abstract class ItemStackMixin implements CompactedItem.PotentiallyCompact
         method = "getTooltipLines",
         at = @At(
             value = "INVOKE",
-            target = "Lnet/minecraft/world/item/ItemStack;isDamaged()Z",
+            target = "Lnet/minecraft/world/item/TooltipFlag;isAdvanced()Z",
+            ordinal = 1,
             shift = At.Shift.BEFORE
         )
     )
     private void civmodern$inject$getTooltipLines$showRepairLevel(
+        final @NotNull Item.TooltipContext tooltipContext,
+        final Player player,
+        final @NotNull TooltipFlag tooltipFlag,
         final @NotNull CallbackInfoReturnable<List<Component>> cir
     ) {
-        if (CivModernConfig.HANDLER.instance().itemSettings.showRepairLevel) {
-            final int repairCost = getComponents().getOrDefault(DataComponents.REPAIR_COST, 0);
-            if (repairCost > 0) {
-                this.civmodern$tooltipLines.add(Component.translatable(
-                    "civmodern.repair.level",
-                    Integer.toString(repairCost)
-                ));
-            }
+        final ItemSettings itemSettings = CivModernConfig.HANDLER.instance().itemSettings;
+        addRepairLevelLine(tooltipFlag, itemSettings.showRepairLevel);
+        addDamageLevelLine(tooltipFlag, itemSettings.showDamageLevel);
+    }
+
+    @Unique
+    private void addRepairLevelLine(
+        final @NotNull TooltipFlag tooltipFlag,
+        final @NotNull TooltipLineOption show
+    ) {
+        if (show == TooltipLineOption.NEVER) {
+            return;
         }
+        if (show == TooltipLineOption.ADVANCED && !tooltipFlag.isAdvanced()) {
+            return;
+        }
+        final int repairCost = getComponents().getOrDefault(DataComponents.REPAIR_COST, 0);
+        if (repairCost < 1) {
+            return;
+        }
+        this.civmodern$tooltipLines.add(Component.translatable(
+            "civmodern.repair.level",
+            Integer.toString(repairCost)
+        ));
+    }
+
+    @Unique
+    private void addDamageLevelLine(
+        final @NotNull TooltipFlag tooltipFlag,
+        final @NotNull TooltipLineOption show
+    ) {
+        if (show == TooltipLineOption.NEVER) {
+            return;
+        }
+        if (show == TooltipLineOption.ADVANCED && !tooltipFlag.isAdvanced()) {
+            return;
+        }
+        if (!isDamageableItem()) {
+            return;
+        }
+        final int damage = getDamageValue();
+        if (damage <= 0) {
+            return;
+        }
+        final int maxDamage = getMaxDamage();
+        this.civmodern$tooltipLines.add(Component.translatable(
+            "item.durability",
+            maxDamage - damage,
+            maxDamage
+        ));
+    }
+
+    @Redirect(
+        method = "getTooltipLines",
+        at = @At(
+            value = "INVOKE",
+            target = "Lnet/minecraft/world/item/ItemStack;isDamaged()Z"
+        )
+    )
+    private boolean civmodern$redirect$getTooltipLines$preventVanillaDamageLine(
+        final @NotNull ItemStack item
+    ) {
+        return false;
     }
 
     @Inject(
