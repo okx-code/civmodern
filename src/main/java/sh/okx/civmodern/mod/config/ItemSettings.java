@@ -72,11 +72,7 @@ public final class ItemSettings {
     ) {
         return Option.<TooltipLineOption>createBuilder()
             .name(Component.translatable("civmodern.config.group.items.repairLevel"))
-            .description(OptionDescription.of(
-                Component.translatable("civmodern.config.group.items.repairLevel.desc"),
-                Component.empty(),
-                Component.translatable("civmodern.config.group.items.repairLevel.desc.warning")
-            ))
+            .description(OptionDescription.of(Component.translatable("civmodern.config.group.items.repairLevel.desc")))
             .controller(TooltipLineOption::controller)
             .binding(
                 DEFAULT_SHOW_REPAIR_LEVEL,

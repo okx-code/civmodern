@@ -24,11 +24,11 @@ which is located at `.minecraft/config/civmodern.json`.
 - Better toggle-sneak (bound to `]` by default). Will automatically deactivate itself if you manually `SHIFT` sneak, or
   if you enter water, or start swimming, sprinting, elytra gliding, or creative flying.
 
-- Added option that shows an item's base-repair level either always, only in advanced tooltips, or never. Set to always
-  by default.
+- Added option that shows an item's base-repair level in its tooltip either always, only in advanced tooltips, or never.
+  Set to always by default.
 
-- Added option that shows an item's damage level either always, only in advanced tooltips, or never. Set to always by
-  default.
+- Added option that shows an item's damage level in its tooltip either always, only in advanced tooltips, or never. Set
+  to always by default.
 
 ## Changed
 

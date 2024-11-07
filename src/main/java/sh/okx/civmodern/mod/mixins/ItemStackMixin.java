@@ -141,6 +141,10 @@ public abstract class ItemStackMixin implements CompactedItem.PotentiallyCompact
         ));
     }
 
+    /**
+     * Prevents the default durability line from being added, giving control of that to
+     * {@link #addDamageLevelLine(net.minecraft.world.item.TooltipFlag, sh.okx.civmodern.mod.config.TooltipLineOption)}
+     */
     @Redirect(
         method = "getTooltipLines",
         at = @At(
