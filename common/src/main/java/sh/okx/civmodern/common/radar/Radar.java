@@ -330,7 +330,7 @@ public class Radar {
             RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1);
 
             guiGraphics.pose().pushPose();
-            guiGraphics.pose().translate(dx * v, dz * v, 0);
+            guiGraphics.pose().translate(dx * v, dz * v, 211);
             guiGraphics.pose().scale(0.9f, 0.9f, 0);
 
             PlayerInfo entry = minecraft.player.connection.getPlayerInfo(player.getUUID());
@@ -351,7 +351,7 @@ public class Radar {
             guiGraphics.pose().scale(0.6f, 0.6f, 0);
             Component component = Component.literal(
                 player.getScoreboardName() + " (" + (hideY() ? ((int) Math.round(Math.sqrt(dx * dx + dz * dz))) : (int) player.getY()) + ")");
-            minecraft.font.drawInBatch(component, -minecraft.font.width(component) / 2f, 7, 0xffffff, false, guiGraphics.pose().last().pose(), guiGraphics.bufferSource(), Font.DisplayMode.NORMAL, 0, 0xff);
+            guiGraphics.drawCenteredString(minecraft.font, component, 0, 7, 0xffffff);
 
             guiGraphics.pose().popPose();
         }
