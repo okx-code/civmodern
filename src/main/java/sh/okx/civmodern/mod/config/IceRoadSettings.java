@@ -34,6 +34,7 @@ public final class IceRoadSettings {
     ) {
         return OptionGroup.createBuilder()
             .name(Component.translatable("civmodern.config.group.iceRoad"))
+            .collapsed(true)
             .option(generateSnapPitch(iceRoadSettings))
             .option(generateSnapYaw(iceRoadSettings))
             .option(generateAutoEat(iceRoadSettings))

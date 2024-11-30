@@ -45,6 +45,7 @@ public final class ItemSettings {
     ) {
         return OptionGroup.createBuilder()
             .name(Component.translatable("civmodern.config.group.items"))
+            .collapsed(true)
             .option(generateCompactedItemColour(itemSettings))
             .option(generateShowRepairLevel(itemSettings))
             .option(generateShowDamageLevel(itemSettings))
