@@ -2,7 +2,7 @@ plugins {
     id("fabric-loom") version "1.8-SNAPSHOT"
 }
 
-version = "${rootProject.extra["mod_version"]}-${project.extra["minecraft_version"]}"
+version = "${rootProject.extra["mod_version"]}"
 group = "${rootProject.extra["maven_group"]}.mod.fabric"
 
 base {
