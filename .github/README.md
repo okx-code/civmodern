@@ -1,6 +1,6 @@
 # CivModern
 
-This is a fork of CivModern specifically for [CivMC](https://civmc.net) on 1.21.1.
+This is a fork of CivModern specifically for [CivMC](https://civmc.net) on 1.21.3.
 
 ## Features
 
