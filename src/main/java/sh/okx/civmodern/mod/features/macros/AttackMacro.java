@@ -5,7 +5,7 @@ import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import org.jetbrains.annotations.NotNull;
 import sh.okx.civmodern.mod.events.ClientTickEvent;
-import sh.okx.civmodern.mod.events.ScrollEvent;
+import sh.okx.civmodern.mod.events.HotbarSlotChangedEvent;
 import sh.okx.civmodern.mod.mixins.KeyMappingAccessor;
 
 public class AttackMacro {
@@ -73,7 +73,7 @@ public class AttackMacro {
 
     @Subscribe
     private void onScroll(
-        final @NotNull ScrollEvent event
+        final @NotNull HotbarSlotChangedEvent event
     ) {
         set(false);
     }

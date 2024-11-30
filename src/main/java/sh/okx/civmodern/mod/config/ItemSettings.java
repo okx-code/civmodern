@@ -63,7 +63,7 @@ public final class ItemSettings {
                 () -> itemSettings.compactedItemColour,
                 (colour) -> itemSettings.compactedItemColour = colour
             )
-            .listener((opt, colour) -> CompactedItem.COLOUR = colour.getRGB())
+            .addListener((opt, event) -> CompactedItem.COLOUR = opt.pendingValue().getRGB())
             .build();
     }
 
