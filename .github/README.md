@@ -47,4 +47,4 @@ which is located at `.minecraft/config/civmodern.json`.
 
 ## Recommendations
 
-- [ModMenu](https://modrinth.com/mod/modmenu): `11.0.2` (or newer)
+- [ModMenu](https://modrinth.com/mod/modmenu): `v12.0.0` (or newer)
