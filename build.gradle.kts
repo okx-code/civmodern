@@ -15,7 +15,7 @@ dependencies {
         @Suppress("UnstableApiUsage")
         mappings(layered {
             officialMojangMappings()
-            parchment("org.parchmentmc.data:${project.extra["parchment_name"]}:${project.extra["parchment_version"]}@zip")
+            parchment("org.parchmentmc.data:parchment-${project.extra["parchment_minecraft_version"]}:${project.extra["parchment_mappings_version"]}@zip")
         })
     }
 
