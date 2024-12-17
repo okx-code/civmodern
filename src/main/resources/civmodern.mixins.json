@@ -9,8 +9,7 @@
         "InventoryMixin",
         "ItemStackMixin",
         "KeyMappingAccessor",
-        "KeyMappingMixin",
-        "YaclAllowMiddleClickMixin"
+        "KeyMappingMixin"
     ],
     "server": [],
     "injectors": {

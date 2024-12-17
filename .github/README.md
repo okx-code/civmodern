@@ -43,7 +43,7 @@ which is located at `.minecraft/config/civmodern.json`.
 
 - Fabric Loader: `0.16.9` (or newer)
 - [Fabric API](https://modrinth.com/mod/fabric-api): `0.110.0+1.21.3` (or newer)
-- [YetAnotherConfigLibrary](https://modrinth.com/mod/yacl): `3.6.1+1.21.2-fabric` (or newer)
+- [YetAnotherConfigLibrary](https://modrinth.com/mod/yacl): `3.6.2+1.21.2-fabric` (or newer)
 
 ## Recommendations
 

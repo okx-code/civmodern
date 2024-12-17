@@ -81,7 +81,8 @@ tasks {
                 "minecraft_version" to project.extra["minecraft_version"],
                 "fabric_loader_version" to project.extra["fabric_loader_version"],
 
-                "modmenu_version" to project.extra["modmenu_version"]
+                "modmenu_version" to project.extra["modmenu_version"],
+                "yacl_version" to project.extra["yacl_version"],
             )
             filter {
                 it.replace(
