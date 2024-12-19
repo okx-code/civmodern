@@ -1,5 +1,7 @@
+import groovy.json.JsonBuilder
+
 plugins {
-    id "com.github.johnrengelman.shadow" version "7.1.2"
+    id("com.github.johnrengelman.shadow") version "7.1.2"
 }
 
 architectury {
@@ -16,38 +18,47 @@ configurations {
 }
 
 dependencies {
-    modImplementation "net.fabricmc:fabric-loader:${rootProject.fabric_loader_version}"
-    modApi "net.fabricmc.fabric-api:fabric-api:${rootProject.fabric_api_version}"
+    modImplementation("net.fabricmc:fabric-loader:${rootProject.fabric_loader_version}")
+    modApi("net.fabricmc.fabric-api:fabric-api:${rootProject.fabric_api_version}")
 
-    common(project(path: ":common", configuration: "namedElements")) {
-        transitive = false
-    }
-    shadowCommon(project(path: ":common", configuration: "transformProductionFabric")) {
-        transitive = false
-    }
+    common(project(path: ":common", configuration: "namedElements")) { transitive = false }
+    shadowCommon(project(path: ":common", configuration: "transformProductionFabric")) { transitive = false }
+
+    // https://modrinth.com/mod/modmenu/version/7.2.2
+    modCompileOnly("maven.modrinth:modmenu:lEkperf6")
 }
 
 processResources {
-    inputs.property "version", project.version
-
     filesMatching("fabric.mod.json") {
-        expand "version": project.version
+        expand([
+            "mod_name": rootProject.mod_name,
+            "mod_version": rootProject.mod_version,
+            "mod_description": rootProject.mod_description,
+            "mod_home_url": rootProject.mod_home_url,
+            "mod_source_url": rootProject.mod_source_url,
+            "copyright_licence": rootProject.copyright_licence,
+
+            "minecraft_version": rootProject.minecraft_version,
+            "fabric_loader_version": rootProject.fabric_loader_version,
+        ])
+        filter {
+            (it as String).replace(
+                "\"%FABRIC_AUTHORS_ARRAY%\"",
+                new JsonBuilder((rootProject.mod_authors as String).tokenize(",")).toString()
+            )
+        }
     }
 }
 
 shadowJar {
     configurations = [project.configurations.shadowCommon]
-    classifier "dev-shadow"
+    archiveClassifier = "dev-shadow"
 }
 
 remapJar {
     input.set shadowJar.archiveFile
     dependsOn shadowJar
-    classifier "fabric"
-}
-
-jar {
-    classifier "dev"
+    archiveClassifier = "fabric"
 }
 
 sourcesJar {
@@ -78,24 +89,24 @@ publishing {
 
 import net.fabricmc.loom.task.RemapJarTask
 
-task remapCivMc(type: RemapJarTask) {
+tasks.register("remapCivMc", RemapJarTask) {
     inputFile.set shadowJar.archiveFile
     dependsOn shadowJar
-    classifier "civmc-fabric"
+    archiveClassifier = "civmc-fabric"
     from sourceSets.main.output
-    from '../civmc'
+    from "../civmc"
 }
 
-task cleanJar(type: Delete) {
-    delete fileTree('../dist') {
-        include "*-forge*.jar"
+tasks.register("cleanJar", Delete) {
+    delete fileTree("../dist") {
+        include "*-fabric.jar"
     }
 }
 
-task copyJar(type: Copy) {
+tasks.register("copyJar", Copy) {
     dependsOn cleanJar
     from remapJar, remapCivMc
-    into '../dist'
+    into "../dist"
 }
 
 build.dependsOn copyJar

@@ -10,7 +10,7 @@ import net.minecraft.server.packs.resources.ResourceManager;
 
 import java.io.IOException;
 
-// Makes sure waypoint textures are anti aliases, they are not in the default minecraft texture
+// Makes sure waypoint textures are anti aliased, they are not in the default minecraft texture
 public class WaypointTexture extends AbstractTexture {
 
   private final ResourceLocation location;
@@ -21,8 +21,8 @@ public class WaypointTexture extends AbstractTexture {
 
   @Override
   public void load(ResourceManager resourceManager) throws IOException {
-    Resource resource = resourceManager.getResource(this.location);
-    NativeImage nativeImage = NativeImage.read(resource.getInputStream());
+    Resource resource = resourceManager.getResource(this.location).get();
+    NativeImage nativeImage = NativeImage.read(resource.open());
     TextureUtil.prepareImage(this.getId(), 0, nativeImage.getWidth(), nativeImage.getHeight());
     nativeImage.upload(0, 0, 0, 0, 0, nativeImage.getWidth(), nativeImage.getHeight(), true, false, false, true);
   }

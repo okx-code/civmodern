@@ -1,7 +1,5 @@
 package sh.okx.civmodern.common.map;
 
-import org.checkerframework.checker.nullness.qual.NonNull;
-
 import java.util.*;
 
 public class ColoursConfig {
@@ -339,7 +337,7 @@ public class ColoursConfig {
     put("minecraft:granite_slab", 0x956756);
     put("minecraft:granite_stairs", 0x956756);
     put("minecraft:granite_wall", 0x956756);
-    put("minecraft:grass", 0x000000);
+    put("minecraft:short_grass", 0x000000);
     put("minecraft:grass_block", 0x949494);
     put("minecraft:gravel", 0x84807F);
     put("minecraft:gray_banner", 0x000000);

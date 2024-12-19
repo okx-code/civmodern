@@ -1,5 +1,6 @@
 package sh.okx.civmodern.common;
 
+import com.google.common.eventbus.Subscribe;
 import com.mojang.blaze3d.platform.InputConstants.Type;
 import java.io.File;
 import java.io.FileInputStream;
@@ -13,10 +14,12 @@ import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.Options;
 import net.minecraft.client.gui.Gui;
+import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.renderer.entity.ItemRenderer;
 import net.minecraft.resources.ResourceLocation;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.lwjgl.glfw.GLFW;
 import sh.okx.civmodern.common.boat.BoatNavigation;
 import sh.okx.civmodern.common.events.*;
@@ -55,12 +58,9 @@ public abstract class AbstractCivModernMod {
     private WorldListener worlds;
     private BoatNavigation boatNavigation;
 
-    private EventBus eventBus;
+    public final EventBus eventBus = new EventBus("CivModernEvents");
 
     public AbstractCivModernMod() {
-
-//        new sh.okx.civmodern.Enchants().gen();
-//        System.exit(0);
         this.configBinding = new KeyMapping(
             "key.civmodern.config",
             Type.KEYSYM,
@@ -113,8 +113,6 @@ public abstract class AbstractCivModernMod {
     }
 
     public final void init() {
-        this.eventBus = provideEventBus();
-
         registerKeyBinding(this.configBinding);
         registerKeyBinding(this.holdLeftBinding);
         registerKeyBinding(this.holdRightBinding);
@@ -127,21 +125,13 @@ public abstract class AbstractCivModernMod {
     public final void enable() {
         loadConfig();
         loadRadar();
-        replaceItemRenderer();
 
         this.worlds = new WorldListener(config, colourProvider);
 
-        this.eventBus.listen(ClientTickEvent.class, e -> this.tick());
-        this.eventBus.listen(ScrollEvent.class, e -> this.onScroll());
+        this.eventBus.register(this);
 
         // todo check if forge and fabric versions of these are the same
-        this.eventBus.listen(JoinEvent.class, e -> this.worlds.onLoad());
-        this.eventBus.listen(LeaveEvent.class, e -> this.worlds.onUnload());
-        this.eventBus.listen(RespawnEvent.class, e -> this.worlds.onRespawn());
-        this.eventBus.listen(ChunkLoadEvent.class, e -> this.worlds.onChunkLoad(e.chunk()));
-        this.eventBus.listen(BlockStateChangeEvent.class, e -> this.worlds.onChunkLoad(e.level().getChunkAt(e.pos())));
-        this.eventBus.listen(PostRenderGameOverlayEvent.class, e -> this.worlds.onRender(e));
-        this.eventBus.listen(WorldRenderLastEvent.class, e -> this.worlds.onRender(e));
+        this.eventBus.register(this.worlds);
 
         Options options = Minecraft.getInstance().options;
         this.leftMacro = new HoldKeyMacro(this, this.holdLeftBinding, options.keyAttack);
@@ -150,22 +140,16 @@ public abstract class AbstractCivModernMod {
         this.attackMacro = new AttackMacro(this, this.attackBinding, options.keyAttack);
 
         this.boatNavigation = new BoatNavigation(this);
-
-        this.radar.init();
     }
 
-    public abstract EventBus provideEventBus();
     public abstract void registerKeyBinding(KeyMapping mapping);
 
-    public void onScroll() {
-        if (this.leftMacro != null) this.leftMacro.onScroll();
-        if (this.rightMacro != null) this.rightMacro.onScroll();
-        if (this.attackMacro != null) this.attackMacro.onScroll();
-    }
-
-    private void tick() {
-        while (configBinding.consumeClick()) {
-            Minecraft.getInstance().setScreen(new MainConfigScreen(this, config));
+    @Subscribe
+    private void tick(
+        final @NotNull ClientTickEvent event
+    ) {
+        while (this.configBinding.consumeClick()) {
+            Minecraft.getInstance().setScreen(newConfigGui(null));
         }
         while (mapBinding.consumeClick()) {
             if (worlds.getCache() != null) {
@@ -175,40 +159,6 @@ public abstract class AbstractCivModernMod {
         while (minimapZoomBinding.consumeClick()) {
             worlds.cycleMinimapZoom();
         }
-    }
-
-    private void replaceItemRenderer() {
-        Minecraft minecraft = Minecraft.getInstance();
-        for (Field field : Minecraft.class.getDeclaredFields()) {
-            if (field.getType() == ItemRenderer.class) {
-                field.setAccessible(true);
-                try {
-                    field.set(minecraft, new CustomItemRenderer(minecraft.getItemRenderer(), colourProvider));
-                    replaceGuiItemRenderer();
-                    return;
-                } catch (IllegalAccessException e) {
-                    e.printStackTrace();
-                }
-            }
-        }
-        LOGGER.warn("Unable to replace item renderer");
-    }
-
-    private void replaceGuiItemRenderer() {
-        Minecraft minecraft = Minecraft.getInstance();
-        Gui gui = minecraft.gui;
-        for (Field field : Gui.class.getDeclaredFields()) {
-            if (field.getType() == ItemRenderer.class) {
-                field.setAccessible(true);
-                try {
-                    field.set(gui, minecraft.getItemRenderer());
-                    return;
-                } catch (IllegalAccessException e) {
-                    e.printStackTrace();
-                }
-            }
-        }
-        LOGGER.warn("Unable to replace hotbar item renderer");
     }
 
     private void loadConfig() {
@@ -244,8 +194,10 @@ public abstract class AbstractCivModernMod {
         return colourProvider;
     }
 
-    public EventBus getEventBus() {
-        return eventBus;
+    public @NotNull Screen newConfigGui(
+        final Screen previousScreen
+    ) {
+        return new MainConfigScreen(this.config, this.colourProvider, previousScreen);
     }
 
     public static AbstractCivModernMod getInstance() {

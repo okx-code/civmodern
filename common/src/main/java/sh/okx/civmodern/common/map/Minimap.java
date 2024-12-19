@@ -2,12 +2,12 @@ package sh.okx.civmodern.common.map;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.*;
-import com.mojang.math.Matrix4f;
-import com.mojang.math.Vector3f;
+import com.mojang.math.Axis;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.util.Mth;
+import org.joml.Matrix4f;
 import sh.okx.civmodern.common.CivMapConfig;
 import sh.okx.civmodern.common.ColourProvider;
 import sh.okx.civmodern.common.events.PostRenderGameOverlayEvent;
@@ -34,13 +34,13 @@ public class Minimap {
       return;
     }
     Minecraft mc = Minecraft.getInstance();
-    if (mc.options.hideGui || mc.options.renderDebug) {
+    if (mc.options.hideGui || mc.getDebugOverlay().showDebugScreen()) {
       return;
     }
 
     float size = config.getMinimapSize();
 
-    PoseStack matrices = event.poseStack();
+    PoseStack matrices = event.guiGraphics().pose();
 
     matrices.pushPose();
 
@@ -74,8 +74,8 @@ public class Minimap {
     matrices.translate(translateX, translateY, 0);
 
     LocalPlayer player = Minecraft.getInstance().player;
-    float px = (float) Mth.lerp(event.delta(), player.xo, player.getX());
-    float pz = (float) Mth.lerp(event.delta(), player.zo, player.getZ());
+    float px = (float) Mth.lerp(event.deltaTick(), player.xo, player.getX());
+    float pz = (float) Mth.lerp(event.deltaTick(), player.zo, player.getZ());
     float x = px - (size * zoom) / 2;
     float y = pz - (size * zoom) / 2;
 
@@ -109,22 +109,20 @@ public class Minimap {
     RenderSystem.defaultBlendFunc();
     glEnable(GL_POLYGON_SMOOTH);
     RenderSystem.setShader(GameRenderer::getPositionColorShader);
-    BufferBuilder bufferBuilder = Tesselator.getInstance().getBuilder();
-    bufferBuilder.begin(VertexFormat.Mode.TRIANGLE_STRIP, DefaultVertexFormat.POSITION_COLOR);
+    BufferBuilder bufferBuilder = Tesselator.getInstance().begin(VertexFormat.Mode.TRIANGLE_STRIP, DefaultVertexFormat.POSITION_COLOR);
     matrices.translate(size / 2, size / 2, 0);
-    matrices.mulPose(Vector3f.ZP.rotationDegrees(player.getViewYRot(event.delta()) % 360f));
+    matrices.mulPose(Axis.ZP.rotationDegrees(player.getViewYRot(event.deltaTick()) % 360f));
     matrices.scale(4, 4, 0);
     int chevronColour = provider.getChevronColour() | 0xFF000000;
     Matrix4f pose = matrices.last().pose();
-    bufferBuilder.vertex(pose, -1, -1.5f, 0).color(chevronColour).endVertex();
-    bufferBuilder.vertex(pose, -1, -1f, 0).color(chevronColour).endVertex();
-    bufferBuilder.vertex(pose, 0, -0.5f, 0).color(chevronColour).endVertex();
-    bufferBuilder.vertex(pose, 0, 0f, 0).color(chevronColour).endVertex();
-    bufferBuilder.vertex(pose, 0, -0.5f, 0).color(chevronColour).endVertex();
-    bufferBuilder.vertex(pose, 1, -1f, 0).color(chevronColour).endVertex();
-    bufferBuilder.vertex(pose, 1, -1.5f, 0).color(chevronColour).endVertex();
-    bufferBuilder.end();
-    BufferUploader.end(bufferBuilder);
+    bufferBuilder.addVertex(pose, -1, -1.5f, 0).setColor(chevronColour);
+    bufferBuilder.addVertex(pose, -1, -1f, 0).setColor(chevronColour);
+    bufferBuilder.addVertex(pose, 0, -0.5f, 0).setColor(chevronColour);
+    bufferBuilder.addVertex(pose, 0, 0f, 0).setColor(chevronColour);
+    bufferBuilder.addVertex(pose, 0, -0.5f, 0).setColor(chevronColour);
+    bufferBuilder.addVertex(pose, 1, -1f, 0).setColor(chevronColour);
+    bufferBuilder.addVertex(pose, 1, -1.5f, 0).setColor(chevronColour);
+    BufferUploader.drawWithShader(bufferBuilder.buildOrThrow());
     glDisable(GL_POLYGON_SMOOTH);
     RenderSystem.disableBlend();
     matrices.popPose();

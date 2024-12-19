@@ -13,6 +13,6 @@ import sh.okx.civmodern.common.events.RespawnEvent;
 public class RespawnMixin {
   @Inject(at = @At("TAIL"), method = "handleRespawn(Lnet/minecraft/network/protocol/game/ClientboundRespawnPacket;)V")
   private void handleRespawn(ClientboundRespawnPacket packet, CallbackInfo info) {
-    AbstractCivModernMod.getInstance().getEventBus().push(new RespawnEvent());
+    AbstractCivModernMod.getInstance().eventBus.post(new RespawnEvent());
   }
 }

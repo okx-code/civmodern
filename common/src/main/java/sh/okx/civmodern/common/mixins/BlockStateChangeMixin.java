@@ -14,6 +14,6 @@ import sh.okx.civmodern.common.events.BlockStateChangeEvent;
 public class BlockStateChangeMixin {
   @Inject(at = @At("HEAD"), method = "onBlockStateChange(Lnet/minecraft/core/BlockPos;Lnet/minecraft/world/level/block/state/BlockState;Lnet/minecraft/world/level/block/state/BlockState;)V")
   private void handleRespawn(BlockPos pos, BlockState before, BlockState after, CallbackInfo info) {
-    AbstractCivModernMod.getInstance().getEventBus().push(new BlockStateChangeEvent((Level)(Object)this, pos));
+    AbstractCivModernMod.getInstance().eventBus.post(new BlockStateChangeEvent((Level)(Object)this, pos));
   }
 }

@@ -1,157 +1,193 @@
 package sh.okx.civmodern.common.gui.screen;
 
-import com.mojang.blaze3d.vertex.PoseStack;
-import java.text.DecimalFormat;
-import java.util.regex.Pattern;
-import net.minecraft.client.Minecraft;
+import java.util.List;
+import java.util.Objects;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
-import net.minecraft.client.gui.components.EditBox;
-import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.player.LocalPlayer;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.ListTag;
-import net.minecraft.nbt.StringTag;
+import net.minecraft.core.component.DataComponentMap;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.TextComponent;
-import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
-import sh.okx.civmodern.common.AbstractCivModernMod;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.item.component.ItemLore;
+import org.jetbrains.annotations.NotNull;
+import org.lwjgl.glfw.GLFW;
 import sh.okx.civmodern.common.CivMapConfig;
 import sh.okx.civmodern.common.ColourProvider;
+import sh.okx.civmodern.common.features.ExtendedItemStack;
+import sh.okx.civmodern.common.gui.widget.ColourTextEditBox;
 import sh.okx.civmodern.common.gui.widget.HsbColourPicker;
 import sh.okx.civmodern.common.gui.widget.ImageButton;
+import sh.okx.civmodern.common.gui.widget.TextRenderable;
 
-public class CompactedConfigScreen extends Screen {
-
-  private static final ItemStack ITEM;
-
-  private int itemX;
-  private int itemY;
-
-  static {
-    CompoundTag item = new CompoundTag();
-    item.putString("id", "stone");
-    item.putInt("Count", 64);
-    CompoundTag tag = new CompoundTag();
-    ListTag lore = new ListTag();
-    lore.add(StringTag.valueOf("\"Compacted Item\""));
-    CompoundTag display = new CompoundTag();
-    display.put("Lore", lore);
-    tag.put("display", display);
-    item.put("tag", tag);
-    ITEM = ItemStack.of(item);
-  }
-
-  private final AbstractCivModernMod mod;
-  private final CivMapConfig config;
-  private final Screen parent;
-
-  private HsbColourPicker picker;
-
-  public CompactedConfigScreen(AbstractCivModernMod mod, CivMapConfig config, Screen parent) {
-    super(new TranslatableComponent("civmodern.screen.compacted.title"));
-    this.mod = mod;
-    this.config = config;
-    this.parent = parent;
-  }
-
-  @Override
-  protected void init() {
-    itemX = this.width / 2 - 16 / 2;
-    itemY = this.height / 6 - 24;
-
-    int leftWidth = width / 2 - (60 + 8 + 20 + 8 + 20) / 2;
-
-    EditBox widget = new EditBox(font, leftWidth, height / 6, 60, 20, TextComponent.EMPTY);
-    widget.setValue("#" + String.format("%06X", config.getColour()));
-    widget.setMaxLength(7);
-    Pattern pattern = Pattern.compile("^(#[0-9A-F]{0,6})?$", Pattern.CASE_INSENSITIVE);
-    widget.setFilter(string -> pattern.matcher(string).matches());
-    widget.setResponder(val -> {
-      if (val.length() == 7) {
-        int rgb = Integer.parseInt(val.substring(1), 16);
-        config.setColour(rgb);
-      }
-    });
-    addRenderableWidget(widget);
-
-    ColourProvider colourProvider = mod.getColourProvider();
-    HsbColourPicker hsb = new HsbColourPicker(leftWidth + 60 + 8, height / 6, 20, 20, config.getColour(),
-        colour -> {
-          widget.setValue("#" + String.format("%06X", colour));
-          config.setColour(colour);
-        }, colourProvider::setTemporaryCompactedColour, () -> {});
-
-    addRenderableWidget(new ImageButton(leftWidth + 60 + 8 + 20 + 8, height / 6, 20, 20, new ResourceLocation("civmodern", "gui/rollback.png"), imbg -> {
-      int colour = 0xffff58;
-      widget.setValue("#FFFF58");
-      config.setColour(colour);
-      hsb.close();
-    }));
-
-    addRenderableWidget(picker = hsb);
-
-    addRenderableWidget(new Button(this.width / 2 - 49, this.height / 6 + 169, 98, 20, CommonComponents.GUI_DONE, button -> {
-      config.save();
-      minecraft.setScreen(parent);
-    }));
-  }
-
-  @Override
-  public void render(PoseStack matrices, int mouseX, int mouseY, float delta) {
-    super.renderBackground(matrices);
-
-    drawCentredText(matrices, this.title, 0, 40, 0xffffff);
-
-    drawItem();
-
-    if (isCursorOverItem(mouseX, mouseY)) {
-      this.renderTooltip(matrices, ITEM, mouseX, mouseY);
+final class CompactedConfigScreen extends AbstractConfigScreen {
+    private static final ItemStack ITEM; static {
+        ITEM = new ItemStack(Items.STONE, 64);
+        ITEM.applyComponents(
+            DataComponentMap.builder()
+                .set(DataComponents.LORE, new ItemLore(
+                    List.of(Component.literal(ExtendedItemStack.COMPACTED_ITEM_LORE))
+                ))
+                .build()
+        );
     }
 
-    super.render(matrices, mouseX, mouseY, delta);
-  }
+    private final ColourProvider colourProvider;
 
-  @Override
-  public boolean mouseClicked(double mouseX, double mouseY, int button) {
-    LocalPlayer player = Minecraft.getInstance().player;
-    if (isCursorOverItem((int) mouseX, (int) mouseY) && button == 0 && player.isCreative()) {
-      player.addItem(ITEM.copy());
-      return true;
-    } else {
-      return super.mouseClicked(mouseX, mouseY, button);
+    private HsbColourPicker colourPicker;
+    private int itemX;
+    private int itemY;
+
+    CompactedConfigScreen(
+        final @NotNull CivMapConfig config,
+        final @NotNull ColourProvider colourProvider,
+        final @NotNull MainConfigScreen parent
+    ) {
+        super(
+            config,
+            Objects.requireNonNull(parent),
+            Component.translatable("civmodern.screen.compacted.title")
+        );
+        this.colourProvider = Objects.requireNonNull(colourProvider);
     }
-  }
 
-  @Override
-  public void mouseMoved(double d, double e) {
-    super.mouseMoved(d, e);
-    if (picker != null) {
-      picker.mouseMoved(d, e);
+    @Override
+    protected void init() {
+        super.init();
+
+        addRenderableOnly(new TextRenderable.CentreAligned(
+            this.font,
+            this.centreX,
+            getHeaderY(),
+            this.title
+        ));
+
+        int offsetY = getBodyY();
+
+        this.itemX = centreX - 8; // Items have a render size of 16x16
+        this.itemY = offsetY;
+        offsetY += 16 + 10;
+
+        final var compactedColourEditBox = addRenderableWidget(new ColourTextEditBox(
+            this.font,
+            this.centreX - 30,
+            offsetY,
+            60, // width
+            20, // height
+            this.config::getColour,
+            this.config::setColour
+        ));
+        addRenderableWidget(this.colourPicker = new HsbColourPicker(
+            this.centreX - (compactedColourEditBox.getWidth() / 2) - 5 - 20,
+            offsetY,
+            20,
+            20,
+            this.config.getColour(),
+            (colour) -> {
+                compactedColourEditBox.setValue("#" + "%06X".formatted(colour));
+                this.config.setColour(colour);
+            },
+            this.colourProvider::setTemporaryCompactedColour,
+            () -> {}
+        ));
+        addRenderableWidget(new ImageButton(
+            this.centreX + (compactedColourEditBox.getWidth() / 2) + 5,
+            offsetY,
+            20,
+            20,
+            ResourceLocation.tryBuild("civmodern", "gui/rollback.png"),
+            (button) -> {
+                final int colour = 0xffff58;
+                compactedColourEditBox.setValue("#FFFF58");
+                this.config.setColour(colour);
+                this.colourPicker.close();
+            }
+        ));
+        offsetY += Button.DEFAULT_HEIGHT + 10;
+
+        addRenderableWidget(
+            Button
+                .builder(
+                    CommonComponents.GUI_DONE,
+                    (button) -> {
+                        this.config.save();
+                        this.minecraft.setScreen(this.parent);
+                    }
+                )
+                .width(98)
+                .pos(
+                    this.centreX - 49,
+                    getFooterY(offsetY)
+                )
+                .build()
+        );
     }
-  }
 
-  @Override
-  public void onClose() {
-    super.onClose();
-    mod.getColourProvider().setTemporaryCompactedColour(null);
-    config.save();
-  }
+    @Override
+    public void render(
+        final @NotNull GuiGraphics guiGraphics,
+        final int mouseX,
+        final int mouseY,
+        final float delta
+    ) {
+        super.render(guiGraphics, mouseX, mouseY, delta);
 
-  private boolean isCursorOverItem(int mouseX, int mouseY) {
-    return mouseX >= itemX - 1  && mouseX < itemX + 17 && mouseY > itemY - 1 && mouseY < itemY + 17;
-  }
+        guiGraphics.renderItem(ITEM, this.itemX, this.itemY);
+        guiGraphics.renderItemDecorations(this.font, ITEM, this.itemX, this.itemY);
 
-  private void drawItem() {
-    itemRenderer.renderGuiItem(ITEM, itemX, itemY);
-    itemRenderer.renderGuiItemDecorations(font, ITEM, itemX, itemY);
-  }
+        if (isCursorOverItem(mouseX, mouseY)) {
+            guiGraphics.renderTooltip(this.font, ITEM, mouseX, mouseY);
+        }
+    }
 
-  private void drawCentredText(PoseStack matrix, Component text, int xOffsetCentre, int yOffsetTop, int colour) {
-    int width = Minecraft.getInstance().getWindow().getGuiScaledWidth();
-    int centre = width / 2 - font.width(text) / 2;
-    this.font.drawShadow(matrix, text, centre + xOffsetCentre, yOffsetTop, colour);
-  }
+    @Override
+    public boolean mouseClicked(
+        final double mouseX,
+        final double mouseY,
+        final int button
+    ) {
+        if (!super.mouseClicked(mouseX, mouseY, button)) {
+            if (this.minecraft != null) {
+                final LocalPlayer player = this.minecraft.player;
+                if (player != null && isCursorOverItem((int) mouseX, (int) mouseY) && button == GLFW.GLFW_MOUSE_BUTTON_1 && player.isCreative()) {
+                    player.addItem(ITEM.copy());
+                    return true;
+                }
+            }
+            return false;
+        } else {
+            return true;
+        }
+    }
+
+    private boolean isCursorOverItem(
+        final int mouseX,
+        final int mouseY
+    ) {
+        return mouseX >= this.itemX - 1
+            && mouseX < this.itemX + 17
+            && mouseY > this.itemY - 1
+            && mouseY < this.itemY + 17;
+    }
+
+    @Override
+    public void mouseMoved(
+        final double mouseX,
+        final double mouseY
+    ) {
+        super.mouseMoved(mouseX, mouseY);
+        if (this.colourPicker != null) {
+            this.colourPicker.mouseMoved(mouseX, mouseY);
+        }
+    }
+
+    @Override
+    public void onClose() {
+        super.onClose();
+        this.colourProvider.setTemporaryCompactedColour(null);
+        this.config.save();
+    }
 }

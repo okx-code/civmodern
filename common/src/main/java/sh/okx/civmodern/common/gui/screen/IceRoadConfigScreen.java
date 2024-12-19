@@ -1,58 +1,110 @@
 package sh.okx.civmodern.common.gui.screen;
 
-import com.mojang.blaze3d.vertex.PoseStack;
-import net.minecraft.client.Minecraft;
+import java.util.Objects;
 import net.minecraft.client.gui.components.Button;
-import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.network.chat.CommonComponents;
-import net.minecraft.network.chat.TranslatableComponent;
-import sh.okx.civmodern.common.AbstractCivModernMod;
+import net.minecraft.network.chat.Component;
+import org.jetbrains.annotations.NotNull;
 import sh.okx.civmodern.common.CivMapConfig;
-import sh.okx.civmodern.common.gui.widget.CyclicButton;
+import sh.okx.civmodern.common.gui.widget.TextRenderable;
+import sh.okx.civmodern.common.gui.widget.ToggleButton;
 
-public class IceRoadConfigScreen extends Screen {
-  private final AbstractCivModernMod mod;
-  private final CivMapConfig config;
-  private final Screen parent;
+final class IceRoadConfigScreen extends AbstractConfigScreen {
+    IceRoadConfigScreen(
+        final @NotNull CivMapConfig config,
+        final @NotNull MainConfigScreen parent
+    ) {
+        super(
+            config,
+            Objects.requireNonNull(parent),
+            Component.translatable("civmodern.screen.ice.title")
+        );
+    }
 
-  protected IceRoadConfigScreen(AbstractCivModernMod mod, CivMapConfig config, Screen parent) {
-    super(new TranslatableComponent("civmodern.screen.ice.title"));
-    this.mod = mod;
-    this.config = config;
-    this.parent = parent;
-  }
+    @Override
+    protected void init() {
+        super.init();
 
-  @Override
-  protected void init() {
-    addRenderableWidget(new CyclicButton(this.width / 2 - 75, this.height / 6 + 24, 150, 20, config.isIceRoadCardinalEnabled() ? 0 : 1, cycl -> {
-      config.setIceRoadCardinalEnabled(cycl.getIndex() == 0);
-    }, new TranslatableComponent("civmodern.screen.ice.cardinal.enable"), new TranslatableComponent("civmodern.screen.ice.cardinal.disable")));
+        addRenderableOnly(new TextRenderable.CentreAligned(
+            this.font,
+            this.centreX,
+            getHeaderY(),
+            this.title
+        ));
 
-    addRenderableWidget(new CyclicButton(this.width / 2 - 75, this.height / 6 + 48, 150, 20, config.isIceRoadAutoEat() ? 0 : 1, cycl -> {
-      config.setIceRoadAutoEat(cycl.getIndex() == 0);
-    }, new TranslatableComponent("civmodern.screen.ice.eat.enable"), new TranslatableComponent("civmodern.screen.ice.eat.disable")));
+        final int offsetX = this.centreX - Button.DEFAULT_WIDTH / 2;
+        int offsetY = getBodyY();
 
-    addRenderableWidget(new CyclicButton(this.width / 2 - 75, this.height / 6 + 72, 150, 20, config.isIceRoadStop() ? 0 : 1, cycl -> {
-      config.setIceRoadStop(cycl.getIndex() == 0);
-    }, new TranslatableComponent("civmodern.screen.ice.stop.enable"), new TranslatableComponent("civmodern.screen.ice.stop.disable")));
+        addRenderableWidget(new ToggleButton(
+            offsetX,
+            offsetY,
+            ToggleButton.DEFAULT_BUTTON_WIDTH,
+            Component.translatable("civmodern.screen.ice.cardinal.pitch"),
+            this.config::iceRoadPitchCardinalEnabled,
+            this.config::setIceRoadPitchCardinalEnabled,
+            Tooltip.create(Component.translatable("civmodern.screen.ice.cardinal.pitch.tooltip")),
+            ToggleButton.DEFAULT_NARRATION
+        ));
+        offsetY += Button.DEFAULT_HEIGHT + 4;
 
-    addRenderableWidget(new Button(this.width / 2 - 49, this.height / 6 + 169, 98, 20, CommonComponents.GUI_DONE, button -> {
-      config.save();
-      minecraft.setScreen(parent);
-    }));
-  }
+        addRenderableWidget(new ToggleButton(
+            offsetX,
+            offsetY,
+            ToggleButton.DEFAULT_BUTTON_WIDTH,
+            Component.translatable("civmodern.screen.ice.cardinal.yaw"),
+            this.config::iceRoadYawCardinalEnabled,
+            this.config::setIceRoadYawCardinalEnabled,
+            Tooltip.create(Component.translatable("civmodern.screen.ice.cardinal.yaw.tooltip")),
+            ToggleButton.DEFAULT_NARRATION
+        ));
+        offsetY += Button.DEFAULT_HEIGHT + 4;
 
-  @Override
-  public void render(PoseStack poseStack, int i, int j, float f) {
-    super.renderBackground(poseStack);
-    super.render(poseStack, i, j, f);
+        addRenderableWidget(new ToggleButton(
+            offsetX,
+            offsetY,
+            ToggleButton.DEFAULT_BUTTON_WIDTH,
+            Component.translatable("civmodern.screen.ice.eat"),
+            this.config::isIceRoadAutoEat,
+            this.config::setIceRoadAutoEat,
+            null,
+            ToggleButton.DEFAULT_NARRATION
+        ));
+        offsetY += Button.DEFAULT_HEIGHT + 4;
 
-    font.drawShadow(poseStack, this.title, this.width / 2f - font.width(this.title) / 2f, 40, 0xffffff);
-  }
+        addRenderableWidget(new ToggleButton(
+            offsetX,
+            offsetY,
+            ToggleButton.DEFAULT_BUTTON_WIDTH,
+            Component.translatable("civmodern.screen.ice.stop"),
+            this.config::isIceRoadStop,
+            this.config::setIceRoadStop,
+            Tooltip.create(Component.translatable("civmodern.screen.ice.stop.tooltip")),
+            ToggleButton.DEFAULT_NARRATION
+        ));
+        offsetY += Button.DEFAULT_HEIGHT + 4;
 
-  @Override
-  public void onClose() {
-    super.onClose();
-    config.save();
-  }
+        addRenderableWidget(
+            Button
+                .builder(
+                    CommonComponents.GUI_DONE,
+                    (button) -> {
+                        this.config.save();
+                        this.minecraft.setScreen(this.parent);
+                    }
+                )
+                .width(98)
+                .pos(
+                    this.centreX - 49,
+                    getFooterY(offsetY)
+                )
+                .build()
+        );
+    }
+
+    @Override
+    public void onClose() {
+        this.config.save();
+        super.onClose();
+    }
 }

@@ -1,16 +1,17 @@
 plugins {
-    id "com.github.johnrengelman.shadow" version "7.1.2"
-}
-
-loom {
-    forge {
-        mixinConfig "civmodern.mixins.json"
-    }
+    id("com.github.johnrengelman.shadow") version "7.1.2"
 }
 
 architectury {
     platformSetupLoomIde()
     forge()
+}
+
+loom {
+    forge {
+        mixinConfig "civmodern.common.mixins.json"
+        mixinConfig "civmodern.forge.mixins.json"
+    }
 }
 
 configurations {
@@ -19,25 +20,41 @@ configurations {
     compileClasspath.extendsFrom common
     runtimeClasspath.extendsFrom common
     developmentForge.extendsFrom common
+
+    // Bizarre hack to make Forge work on Forge 50+
+    // https://discord.com/channels/792699517631594506/792701725106634783/1272848116864909314
+    configureEach {
+        resolutionStrategy.force("net.sf.jopt-simple:jopt-simple:5.0.4")
+    }
 }
 
-
 dependencies {
-    forge "net.minecraftforge:forge:${rootProject.forge_version}"
+    forge("net.minecraftforge:forge:${rootProject.forge_loader_version}")
 
-    common(project(path: ":common", configuration: "namedElements")) {
-        transitive = false
-    }
-    shadowCommon(project(path: ":common", configuration: "transformProductionForge")) {
-        transitive = false
-    }
+    common(project(path: ":common", configuration: "namedElements")) { transitive = false }
+    shadowCommon(project(path: ":common", configuration: "transformProductionForge")) { transitive = false }
 }
 
 processResources {
-    inputs.property "version", project.version
-
     filesMatching("META-INF/mods.toml") {
-        expand "version": project.version
+        expand([
+            "mod_issues_url": rootProject.mod_issues_url,
+            "copyright_licence": rootProject.copyright_licence,
+
+            "mod_name": rootProject.mod_name,
+            "mod_version": rootProject.mod_version,
+            "mod_description": rootProject.mod_description,
+            "mod_home_url": rootProject.mod_home_url,
+            "mod_authors": rootProject.mod_authors,
+
+            "forge_loader_major_version": rootProject.forge_loader_major_version,
+            "minecraft_version": rootProject.minecraft_version,
+        ])
+    }
+    filesMatching("pack.mcmeta") {
+        expand([
+            "mod_name": rootProject.mod_name,
+        ])
     }
 }
 
@@ -45,17 +62,13 @@ shadowJar {
     exclude "fabric.mod.json"
 
     configurations = [project.configurations.shadowCommon]
-    classifier "dev-shadow"
+    archiveClassifier = "dev-shadow"
 }
 
 remapJar {
     input.set shadowJar.archiveFile
     dependsOn shadowJar
-    classifier "forge"
-}
-
-jar {
-    classifier "dev"
+    archiveClassifier = "forge"
 }
 
 sourcesJar {
@@ -86,24 +99,24 @@ publishing {
 
 import net.fabricmc.loom.task.RemapJarTask
 
-task remapCivMc(type: RemapJarTask) {
+tasks.register("remapCivMc", RemapJarTask) {
     inputFile.set shadowJar.archiveFile
     dependsOn shadowJar
-    classifier "civmc-forge"
+    archiveClassifier = "civmc-forge"
     from sourceSets.main.output
-    from '../civmc'
+    from "../civmc"
 }
 
-task cleanJar(type: Delete) {
-    delete fileTree('../dist') {
-        include "*-forge*.jar"
+tasks.register("cleanJar", Delete) {
+    delete fileTree("../dist") {
+        include "*-forge.jar"
     }
 }
 
-task copyJar(type: Copy) {
+tasks.register("copyJar", Copy) {
     dependsOn cleanJar
     from remapJar, remapCivMc
-    into '../dist'
+    into "../dist"
 }
 
 build.dependsOn copyJar

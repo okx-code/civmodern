@@ -1,4 +1,4 @@
 package sh.okx.civmodern.common.events;
 
-public class RespawnEvent implements Event {
+public class RespawnEvent {
 }

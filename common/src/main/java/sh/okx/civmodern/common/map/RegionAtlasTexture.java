@@ -3,8 +3,8 @@ package sh.okx.civmodern.common.map;
 import com.mojang.blaze3d.platform.TextureUtil;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.*;
-import com.mojang.math.Matrix4f;
 import net.minecraft.client.renderer.GameRenderer;
+import org.joml.Matrix4f;
 
 import static org.lwjgl.opengl.GL33.*;
 import static org.lwjgl.opengl.GL41.GL_RGB565;
@@ -52,13 +52,13 @@ public class RegionAtlasTexture {
 
     public void draw(PoseStack poseStack, float x, float y, float scale) {
         RenderSystem.bindTexture(this.indexTexture);
-        RenderSystem.texParameter(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST);
+        RenderSystem.texParameter(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
         draw(poseStack, x, y, scale, 0, 0, SIZE, SIZE, SIZE, SIZE);
     }
 
     public void drawLinear(PoseStack poseStack, float x, float y, float scale, float xOff, float yOff, float xSize, float ySize, float width, float height) {
         RenderSystem.bindTexture(this.indexTexture);
-        RenderSystem.texParameter(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_NEAREST);
+        RenderSystem.texParameter(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
         draw(poseStack, x, y, scale, xOff, yOff, xSize, ySize, width, height);
     }
 
@@ -81,13 +81,11 @@ public class RegionAtlasTexture {
     }
     private static void innerBlit(Matrix4f matrix4f, float i, float j, float k, float l, int m, float f, float g, float h, float n) {
         RenderSystem.setShader(GameRenderer::getPositionTexShader);
-        BufferBuilder bufferBuilder = Tesselator.getInstance().getBuilder();
-        bufferBuilder.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX);
-        bufferBuilder.vertex(matrix4f, i, l, m).uv(f, n).endVertex();
-        bufferBuilder.vertex(matrix4f, j, l, m).uv(g, n).endVertex();
-        bufferBuilder.vertex(matrix4f, j, k, m).uv(g, h).endVertex();
-        bufferBuilder.vertex(matrix4f, i, k, m).uv(f, h).endVertex();
-        bufferBuilder.end();
-        BufferUploader.end(bufferBuilder);
+        BufferBuilder bufferBuilder = Tesselator.getInstance().begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX);
+        bufferBuilder.addVertex(matrix4f, i, l, m).setUv(f, n);
+        bufferBuilder.addVertex(matrix4f, j, l, m).setUv(g, n);
+        bufferBuilder.addVertex(matrix4f, j, k, m).setUv(g, h);
+        bufferBuilder.addVertex(matrix4f, i, k, m).setUv(f, h);
+        BufferUploader.drawWithShader(bufferBuilder.buildOrThrow());
     }
 }

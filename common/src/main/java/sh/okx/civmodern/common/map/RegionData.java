@@ -7,6 +7,8 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.core.Registry;
+import net.minecraft.core.RegistryAccess;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.util.Mth;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.block.Block;
@@ -31,7 +33,7 @@ public class RegionData {
     // big endian
     private final int[] data = new int[512 * 512];
 
-    private int getHeight(ChunkAccess chunk, int x, int z) {
+    private int getHeight(RegistryAccess registryAccess, ChunkAccess chunk, int x, int z) {
         BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos(chunk.getPos().getBlockX(x), chunk.getHeight(Heightmap.Types.WORLD_SURFACE, x, z) + 1, chunk.getPos().getBlockZ(z));
         int depth;
         do {
@@ -46,14 +48,15 @@ public class RegionData {
                 block = state.getBlock();
                 depth = 0;
             }
-            if (ColoursConfig.BLOCK_COLOURS.getOrDefault(Registry.BLOCK.getKey(block).toString(), block.defaultMaterialColor().col) > 0) {
+            if (ColoursConfig.BLOCK_COLOURS.getOrDefault(registryAccess.registryOrThrow(Registries.BLOCK).getKey(block).toString(), block.defaultMapColor().col) > 0) {
                 break;
             }
         } while (pos.getY() > chunk.getMinBuildHeight());
         return pos.getY() - depth;
     }
 
-    public boolean updateChunk(ChunkAccess chunk, Registry<Biome> registry, ChunkAccess north, ChunkAccess west) {
+    public boolean updateChunk(RegistryAccess registryAccess, ChunkAccess chunk, ChunkAccess north, ChunkAccess west) {
+        Registry<Biome> registry = registryAccess.registry(Registries.BIOME).get();
         boolean updated = false;
 
         int rx = chunk.getPos().getRegionLocalX() * 16;
@@ -64,7 +67,7 @@ public class RegionData {
             Arrays.fill(northY, Integer.MIN_VALUE);
         } else {
             for (int x = 0; x < 16; x++) {
-                northY[x] = getHeight(north, x, 15);
+                northY[x] = getHeight(registryAccess, north, x, 15);
             }
         }
         int[] westY = new int[16];
@@ -72,7 +75,7 @@ public class RegionData {
             Arrays.fill(westY, Integer.MIN_VALUE);
         } else {
             for (int z = 0; z < 16; z++) {
-                westY[z] = getHeight(west, 15, z);
+                westY[z] = getHeight(registryAccess, west, 15, z);
             }
         }
         for (int x = rx; x < rx + 16; x++) {
@@ -98,12 +101,12 @@ public class RegionData {
                         depth = 0;
                     }
 
-                    if (ColoursConfig.BLOCK_COLOURS.getOrDefault(Registry.BLOCK.getKey(block).toString(), block.defaultMaterialColor().col) > 0) {
+                    if (ColoursConfig.BLOCK_COLOURS.getOrDefault(registryAccess.registryOrThrow(Registries.BLOCK).getKey(block).toString(), block.defaultMapColor().col) > 0) {
                         break;
                     }
                 } while (pos.getY() > chunk.getMinBuildHeight());
 
-                int blockId = Registry.BLOCK.getId(block);
+                int blockId = registryAccess.registryOrThrow(Registries.BLOCK).getId(block);
                 if (blockId > 0xFFFF) {
                     AbstractCivModernMod.LOGGER.warn("block " + blockId + " at pos " + pos);
                     blockId = 0;
@@ -168,12 +171,12 @@ public class RegionData {
     }
 
     private void render(RegionAtlasTexture texture, int rx, int rz, int minX, int maxX, int minZ, int maxZ) {
-        long f = System.nanoTime();
         short[] colours = new short[(maxX - minX) * (maxZ - minZ)];
 
         Int2IntMap blockCache = new Int2IntOpenHashMap();
         // todo fix
-        Registry<Biome> registry = Minecraft.getInstance().player.getLevel().registryAccess().registry(Registry.BIOME_REGISTRY).get();
+        RegistryAccess registryAccess = Minecraft.getInstance().player.level().registryAccess();
+        Registry<Biome> registry = registryAccess.registry(Registries.BIOME).get();
         for (int x = minX; x < maxX; x++) {
             for (int z = minZ; z < maxZ; z++) {
                 int packedData = data[z + x * 512];
@@ -185,13 +188,13 @@ public class RegionData {
                 int blockBiomeId = blockId << 8 | biomeId;
                 int cachedColor = blockCache.getOrDefault(blockBiomeId, -1);
                 if (cachedColor == -1) {
-                    Optional<Holder<Block>> holder = Registry.BLOCK.getHolder(blockId);
+                    Optional<Holder.Reference<Block>> holder = registryAccess.registryOrThrow(Registries.BLOCK).getHolder(blockId);
                     if (holder.isEmpty()) {
                         color = 0;
                     } else {
-                        Holder.Reference<Block> blockHolder = (Holder.Reference<Block>) holder.get();
+                        Holder.Reference<Block> blockHolder = holder.get();
                         String key = blockHolder.key().location().toString();
-                        color = ColoursConfig.BLOCK_COLOURS.getOrDefault(key, blockHolder.value().defaultMaterialColor().col);
+                        color = ColoursConfig.BLOCK_COLOURS.getOrDefault(key, blockHolder.value().defaultMapColor().col);
 
                         if (ColoursConfig.BLOCKS_GRASS.contains(key)) {
                             Biome biome = registry.byId(biomeId);

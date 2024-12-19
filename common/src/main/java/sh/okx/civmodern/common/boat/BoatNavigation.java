@@ -1,5 +1,6 @@
 package sh.okx.civmodern.common.boat;
 
+import com.google.common.eventbus.Subscribe;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.util.Mth;
@@ -17,7 +18,7 @@ public class BoatNavigation {
   private Queue<Vec2> destinations = new ArrayDeque<>();
 
   public BoatNavigation(AbstractCivModernMod mod) {
-    mod.getEventBus().listen(ClientTickEvent.class, e -> tick());
+      mod.eventBus.register(this);
   }
 
   public void addDestination(Vec2 destination) {
@@ -39,7 +40,8 @@ public class BoatNavigation {
 
   private double rotation = 0;
 
-  private void tick() {
+  @Subscribe
+  public void tick(ClientTickEvent event) {
     if (destinations.isEmpty()) {
       return;
     }
