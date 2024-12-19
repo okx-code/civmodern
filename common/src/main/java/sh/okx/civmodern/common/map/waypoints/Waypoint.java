@@ -8,13 +8,13 @@ import org.joml.Matrix4f;
 
 public record Waypoint(String name, int x, int y, int z, String icon) {
 
-	public void render(BufferBuilder buffer, Matrix4f pose, int f) {
+	public void render(BufferBuilder buffer, Matrix4f pose, int f, int k) {
 		RenderSystem.setShaderTexture(0, ResourceLocation.fromNamespaceAndPath("civmodern", "map/" + this.icon + ".png"));
 		RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
 		RenderSystem.enableBlend();
 		RenderSystem.defaultBlendFunc();
 		RenderSystem.setShader(GameRenderer::getPositionTexColorShader);
-		int colour = 0xFFFF0000;
+		int colour = 0x00FF0000 | k;
 		buffer.addVertex(pose, -f, f, 0).setUv(0, 1).setColor(colour);
 		buffer.addVertex(pose, f, f, 0).setUv(1, 1).setColor(colour);
 		buffer.addVertex(pose, f, -f, 0).setUv(1, 0).setColor(colour);

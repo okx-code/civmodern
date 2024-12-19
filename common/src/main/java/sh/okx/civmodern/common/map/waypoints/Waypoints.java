@@ -157,7 +157,7 @@ public class Waypoints {
             double y = waypoint.y() + 0.5 - pos.y;
             double z = waypoint.z() + 0.5 - pos.z;
             float distance = (float) Mth.length(x, y, z);
-            if (distance < 3) {
+            if (distance <= 1) {
                 continue;
             }
             matrices.pushPose();
@@ -176,7 +176,8 @@ public class Waypoints {
             matrices.mulPose(Axis.XP.rotationDegrees(camera.getXRot()));
             matrices.scale(-adjustedDistance, -adjustedDistance, -adjustedDistance);
 
-            waypoint.render(buffer, matrices.last().pose(), 10);
+            int k = (int)(getTransparency(distance, 0.11f) * 255.0F) << 24;
+            waypoint.render(buffer, matrices.last().pose(), 8, k);
             matrices.popPose();
             BufferUploader.drawWithShader(buffer.buildOrThrow());
         }
@@ -194,7 +195,7 @@ public class Waypoints {
             double y = waypoint.y() + 0.5 - pos.y;
             double z = waypoint.z() + 0.5 - pos.z;
             float distance = (float) Mth.length(x, y, z);
-            if (distance < 3) {
+            if (distance <= 1) {
                 continue;
             }
             matrices.pushPose();
@@ -220,11 +221,21 @@ public class Waypoints {
             matrices.translate(0, -20, 0);
             Matrix4f last = matrices.last().pose();
             RenderSystem.enableBlend();
-            font.drawInBatch(str, -font.width(str) / 2f, (float) 0, 0xFFFFFFFF, false, last, source, Font.DisplayMode.NORMAL, 1056964608, 15728640, false);
-            font.drawInBatch(str, -font.width(str) / 2f, (float) 0, 0xCCCCCC, false, last, source, Font.DisplayMode.NORMAL, 0, 15728880, true);
+            int k = (int)(getTransparency(distance, 0.44f) * 63.0F) << 24;
+            int k2 = (int)(getTransparency(distance, 0.11f) * 255.0F) << 24;
+            font.drawInBatch(str, -font.width(str) / 2f, (float) 0, 0x20FFFFFF, false, last, source, Font.DisplayMode.SEE_THROUGH, k, 15728640);
+            font.drawInBatch(str, -font.width(str) / 2f, (float) 0, k2 | 0xffffff, false, last, source, Font.DisplayMode.NORMAL, 0, 15728880);
             matrices.popPose();
         }
         RenderSystem.depthFunc(GL_LEQUAL);
+    }
+
+    private float getTransparency(float distance, float clamp) {
+        if (distance < 3) {
+            return Mth.clamp((distance - 1) / 2f, clamp, 1);
+        } else {
+            return 1;
+        }
     }
 
     private boolean isPointedAt(Waypoint waypoint, double distance, Entity cameraEntity, float partialTicks) {

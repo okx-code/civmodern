@@ -7,7 +7,6 @@ import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
-import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.components.Renderable;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.narration.NarratableEntry;
@@ -52,27 +51,16 @@ public class WaypointModal implements Renderable, GuiEventListener, NarratableEn
         int width = Minecraft.getInstance().getWindow().getGuiScaledWidth();
 
         int x0 = width / 2 - 104;
-        int x1 = width / 2 + 104;
-        int y0 = 56;
-        int y1 = 56 + 104;
+        int y0 = 48;
 
-        Tesselator tessellator = Tesselator.getInstance();
-        BufferBuilder bufferBuilder = tessellator.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX_COLOR);
-        RenderSystem.setShader(GameRenderer::getPositionTexColorShader);
-        RenderSystem.setShaderTexture(0, ResourceLocation.withDefaultNamespace("hud/effect_background"));
-        RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
-        bufferBuilder.addVertex(x0, y1, 0.0f).setUv((float) x0 / 32.0F, (float) (y1) / 32.0F).setColor(32, 32, 32, 255);
-        bufferBuilder.addVertex(x1, y1, 0.0f).setUv((float) x1 / 32.0F, (float) (y1) / 32.0F).setColor(32, 32, 32, 255);
-        bufferBuilder.addVertex(x1, y0, 0.0f).setUv((float) x1 / 32.0F, (float) (y0) / 32.0F).setColor(32, 32, 32, 255);
-        bufferBuilder.addVertex(x0, y0, 0.0f).setUv((float) x0 / 32.0F, (float) (y0) / 32.0F).setColor(32, 32, 32, 255);
-        BufferUploader.drawWithShader(bufferBuilder.buildOrThrow());
+        guiGraphics.blit(ResourceLocation.fromNamespaceAndPath("civmodern", "gui/modal.png"), x0, y0, 0, 0, 0, 208, 104, 208, 104);
 
         Component nameText = Component.literal("Name");
         int left = width / 2 - 96;
-        guiGraphics.drawString(this.font, nameText, left, 64 + 5, 0xffffff, true);
-        guiGraphics.drawString(this.font, Component.literal("X"), left, 64 + 28, 0xffffff, true);
-        guiGraphics.drawString(this.font, Component.literal("Y"), left + 56, 64 + 28, 0xffffff, true);
-        guiGraphics.drawString(this.font, Component.literal("Z"), left + 56 + 56, 64 + 28, 0xffffff, true);
+        guiGraphics.drawString(this.font, nameText, left, 56 + 5, 0xffffff, true);
+        guiGraphics.drawString(this.font, Component.literal("X"), left, 56 + 28, 0xffffff, true);
+        guiGraphics.drawString(this.font, Component.literal("Y"), left + 56, 56 + 28, 0xffffff, true);
+        guiGraphics.drawString(this.font, Component.literal("Z"), left + 56 + 56, 56 + 28, 0xffffff, true);
     }
 
     public void setVisible(boolean visible) {

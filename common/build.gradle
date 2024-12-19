@@ -2,6 +2,8 @@ dependencies {
     // We depend on fabric loader here to use the fabric @Environment annotations and get the mixin dependencies
     // Do NOT use other classes from fabric loader
     modImplementation("net.fabricmc:fabric-loader:${rootProject.fabric_loader_version}")
+    modImplementation "io.wispforest:owo-lib:${project.owo_version}"
+    include "io.wispforest:owo-sentinel:${project.owo_version}"
     // Remove the next line if you don't want to depend on the API
     //modApi("me.shedaniel:architectury:${rootProject.architectury_version}")
 }

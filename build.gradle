@@ -41,6 +41,7 @@ allprojects {
                 includeGroup "maven.modrinth"
             }
         }
+        maven { url 'https://maven.wispforest.io/releases/' }
     }
 
     tasks.withType(JavaCompile).configureEach {

@@ -9,6 +9,7 @@ import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
+import net.minecraft.client.gui.components.Renderable;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.GameRenderer;
@@ -27,6 +28,7 @@ import sh.okx.civmodern.common.map.RegionAtlasTexture;
 import sh.okx.civmodern.common.map.RegionKey;
 import sh.okx.civmodern.common.map.waypoints.Waypoint;
 import sh.okx.civmodern.common.map.waypoints.Waypoints;
+import sh.okx.civmodern.common.mixins.ScreenAccessor;
 
 import java.util.*;
 import java.util.function.Predicate;
@@ -80,22 +82,22 @@ public class MapScreen extends Screen {
         LocalPlayer player = Minecraft.getInstance().player;
 
         int left = width / 2 - 96;
-        EditBox editBox = new EditBox(font, left + 32, 64, 160, 20, Component.empty());
+        EditBox editBox = new EditBox(font, left + 32, 56, 160, 20, Component.empty());
         Pattern inputFilter = Pattern.compile("^-?[0-9]*$");
         Predicate<String> numFilter = s -> inputFilter.matcher(s).matches();
-        EditBox xBox = new EditBox(font, left, 104, 48, 20, Component.empty());
+        EditBox xBox = new EditBox(font, left, 96, 48, 20, Component.empty());
         xBox.setValue(Integer.toString(player.getBlockX()));
         xBox.setFilter(numFilter);
-        EditBox yBox = new EditBox(font, left + 56, 104, 48, 20, Component.empty());
+        EditBox yBox = new EditBox(font, left + 56, 96, 48, 20, Component.empty());
         yBox.setValue(Integer.toString(player.getBlockY()));
         yBox.setFilter(numFilter);
-        EditBox zBox = new EditBox(font, left + 56 + 56, 104, 48, 20, Component.empty());
+        EditBox zBox = new EditBox(font, left + 56 + 56, 96, 48, 20, Component.empty());
         zBox.setValue(Integer.toString(player.getBlockZ()));
         zBox.setFilter(numFilter);
         Button doneButton = Button.builder(CommonComponents.GUI_DONE, button -> {
             waypointModal.done();
-        }).pos(left + 72, 132).size(120, 20).build();
-        ImageButton coordsButton = new ImageButton(left + 56 + 56 + 60, 104, 20, 20, ResourceLocation.fromNamespaceAndPath("civmodern", "gui/target.png"), imbg -> {
+        }).pos(left + 72, 124).size(120, 20).build();
+        ImageButton coordsButton = new ImageButton(left + 56 + 56 + 60, 96, 20, 20, ResourceLocation.fromNamespaceAndPath("civmodern", "gui/target.png"), imbg -> {
             waypointModal.done();
         });
         waypointModal = new WaypointModal(waypoints, font, editBox, xBox, yBox, zBox, coordsButton, doneButton);
@@ -170,7 +172,7 @@ public class MapScreen extends Screen {
                 double z = waypoint.z() + 0.5;
                 matrices.translate((x - this.x) / scale, (z - this.y) / scale, 0);
 
-                waypoint.render(buffer, matrices.last().pose(), 7);
+                waypoint.render(buffer, matrices.last().pose(), 7, 0xFF << 24);
                 matrices.popPose();
             }
             BufferUploader.drawWithShader(buffer.buildOrThrow());
@@ -192,7 +194,7 @@ public class MapScreen extends Screen {
                 matrices.translate(0, -15, -10);
                 Matrix4f last = matrices.last().pose();
                 RenderSystem.enableBlend();
-                font.drawInBatch(str, -font.width(str) / 2f, (float) 0, 0xFFFFFFFF, false, last, source, Font.DisplayMode.NORMAL, 1056964608, 15728640, false);
+                font.drawInBatch(str, -font.width(str) / 2f, (float) 0, 0xFFFFFFFF, false, last, source, Font.DisplayMode.SEE_THROUGH, 1056964608, 15728640, false);
                 font.drawInBatch(str, -font.width(str) / 2f, (float) 0, 0xCCCCCC, false, last, source, Font.DisplayMode.NORMAL, 0, 15728880, true);
                 matrices.popPose();
             }
@@ -206,7 +208,7 @@ public class MapScreen extends Screen {
             matrices.translate(mouseX, mouseY, 0);
 
             Waypoint targetWaypoint = new Waypoint("", 0, 0, 0, "target");
-            targetWaypoint.render(buffer, matrices.last().pose(), 7);
+            targetWaypoint.render(buffer, matrices.last().pose(), 7, 0xFF << 24);
 
             matrices.popPose();
             BufferUploader.drawWithShader(buffer.buildOrThrow());
@@ -302,8 +304,9 @@ public class MapScreen extends Screen {
 
         matrices.popPose();
 
-        // TODO disable menu backgrund blur!!!!
-//        super.render(guiGraphics, mouseX, mouseY, delta);
+        for (Renderable renderable : ((ScreenAccessor) this).civmodern$getRenderables()) {
+            renderable.render(guiGraphics, mouseX, mouseY, delta);
+        }
     }
 
     @Override
@@ -348,32 +351,26 @@ public class MapScreen extends Screen {
     }
 
     @Override
-    public boolean mouseReleased(double d, double e, int i) {
-//    onWaypointModal = false;
-        return super.mouseReleased(d, e, i);
-    }
-
-    @Override
     public void mouseMoved(double mouseX, double mouseY) {
         Window window = Minecraft.getInstance().getWindow();
         float scale = (float) window.getGuiScale() * zoom;
 
-        // check if clicked on waypoints
         List<Waypoint> waypointList = waypoints.getWaypoints();
         Waypoint closest = null;
-        int mouseWorldX = (int) Math.round((mouseX * scale + x) - 0.5);
-        int mouseWorldY = (int) Math.round((mouseY * scale + y) - 0.5);
+        double mouseWorldX = (mouseX * scale + x);
+        double mouseWorldY = (mouseY * scale + y);
         highlightedWaypoint = null;
         for (Waypoint waypoint : waypointList) {
             if (closest == null) {
                 closest = waypoint;
-            } else if (Mth.abs(waypoint.x() - mouseWorldX) + Mth.abs(waypoint.z() - mouseWorldY) < Mth.abs(closest.x() - mouseWorldX) + Mth.abs(closest.z() - mouseWorldY)) {
+            } else if (Math.abs(waypoint.x() - mouseWorldX) + Math.abs(waypoint.z() - mouseWorldY) < Math.abs(closest.x() - mouseWorldX) + Math.abs(closest.z() - mouseWorldY)) {
                 closest = waypoint;
             }
         }
         if (closest != null) {
-            double distance = Mth.length((closest.x() - mouseWorldX), (closest.z() - mouseWorldY));
-            if (distance < 48) {
+            double offsetX = (closest.x() + 0.5 - mouseWorldX) / scale;
+            double offsetY = (closest.z() + 0.5 - mouseWorldY) / scale;
+            if (Math.abs(offsetX) < 8 && Math.abs(offsetY) < 8) {
                 highlightedWaypoint = closest;
             }
         }
