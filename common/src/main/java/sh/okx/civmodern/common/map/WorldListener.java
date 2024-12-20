@@ -3,7 +3,6 @@ package sh.okx.civmodern.common.map;
 import com.google.common.eventbus.Subscribe;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
-import net.minecraft.world.level.chunk.LevelChunk;
 import sh.okx.civmodern.common.CivMapConfig;
 import sh.okx.civmodern.common.ColourProvider;
 import sh.okx.civmodern.common.events.BlockStateChangeEvent;
@@ -13,7 +12,6 @@ import sh.okx.civmodern.common.events.LeaveEvent;
 import sh.okx.civmodern.common.events.PostRenderGameOverlayEvent;
 import sh.okx.civmodern.common.events.RespawnEvent;
 import sh.okx.civmodern.common.events.WorldRenderLastEvent;
-import sh.okx.civmodern.common.map.waypoints.Waypoint;
 import sh.okx.civmodern.common.map.waypoints.Waypoints;
 import sh.okx.civmodern.common.mixins.StorageSourceAccessor;
 
@@ -26,7 +24,7 @@ public class WorldListener {
     private final ColourProvider provider;
 
     private MapCache cache;
-    private MapFile file;
+    private MapFolder file;
     private Minimap minimap;
     private Waypoints waypoints;
     private Thread converter;
@@ -38,8 +36,6 @@ public class WorldListener {
 
     @Subscribe
     public void onLoad(JoinEvent event) {
-        System.out.println("respawn");
-
         String type;
         String name;
         if (Minecraft.getInstance().isLocalServer()) {
@@ -57,9 +53,9 @@ public class WorldListener {
 
         File mapFile = config.resolve(type).resolve(name.replace(":", "_")).resolve(dimension).toFile();
         mapFile.mkdirs();
-        this.file = new MapFile(mapFile);
+        this.file = new MapFolder(mapFile);
         VoxelMapConverter voxelMapConverter = new VoxelMapConverter(this.file, name, dimension, level.registryAccess());
-        if (!voxelMapConverter.voxelMapFileExists()) {
+        if (!voxelMapConverter.voxelMapFileExists() && false) { // todo fix
             converter = new Thread(() -> {
                 try {
                     voxelMapConverter.convert();
@@ -80,8 +76,6 @@ public class WorldListener {
 
     @Subscribe
     public void onUnload(LeaveEvent event) {
-        System.out.println("unload");
-
         if (converter != null && converter.isAlive()) {
             converter.interrupt();
             try {

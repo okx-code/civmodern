@@ -1,6 +1,5 @@
 package sh.okx.civmodern.common.gui.screen;
 
-import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
@@ -47,7 +46,7 @@ public class MapConfigScreen extends AbstractConfigScreen {
             button.setMessage(getMinimapToggleMessage());
         }).pos(centre, offset).size(150, 20).build());
         offset += 24;
-        addRenderableWidget(Button.builder(Component.translatable("civmodern.screen.radar.alignment"), button -> {
+        addRenderableWidget(Button.builder(Component.translatable("civmodern.screen.radar.alignment", config.getMinimapAlignment().toString()), button -> {
             config.setMinimapAlignment(config.getMinimapAlignment().next());
             button.setMessage(Component.translatable("civmodern.screen.radar.alignment", config.getMinimapAlignment().toString()));
         }).pos(left, offset).size(150, 20).build());
@@ -138,7 +137,7 @@ public class MapConfigScreen extends AbstractConfigScreen {
             20, 20, colourGet.get(), colour -> {
             widget.setValue("#" + String.format("%06X", colour));
             colourSet.accept(colour);
-        }, preview, chevronPicker::close);
+        }, preview, this::closePickers);
         addRenderableWidget(new ImageButton(left + 60 + 8 + 20 + 8, y, 20, 20, ROLLBACK_ICON, imbg -> {
             widget.setValue("#" + String.format("%06X", defaultColour));
             colourSet.accept(defaultColour);
@@ -146,6 +145,12 @@ public class MapConfigScreen extends AbstractConfigScreen {
         }));
         addRenderableWidget(hsb);
         return hsb;
+    }
+
+    private void closePickers() {
+        if (chevronPicker != null) {
+            chevronPicker.close();
+        }
     }
 
     @Override

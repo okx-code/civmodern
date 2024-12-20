@@ -9,6 +9,7 @@ import net.minecraft.core.Holder;
 import net.minecraft.core.Registry;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.block.Block;
@@ -32,6 +33,11 @@ public class RegionData {
     // 8 bits - biome
     // big endian
     private final int[] data = new int[512 * 512];
+    private final BlockLookup blockLookup;
+
+    public RegionData(BlockLookup blockLookup) {
+        this.blockLookup = blockLookup;
+    }
 
     private int getHeight(RegistryAccess registryAccess, ChunkAccess chunk, int x, int z) {
         BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos(chunk.getPos().getBlockX(x), chunk.getHeight(Heightmap.Types.WORLD_SURFACE, x, z) + 1, chunk.getPos().getBlockZ(z));
@@ -106,8 +112,8 @@ public class RegionData {
                     }
                 } while (pos.getY() > chunk.getMinBuildHeight());
 
-                int blockId = registryAccess.registryOrThrow(Registries.BLOCK).getId(block);
-                if (blockId > 0xFFFF) {
+                int blockId = blockLookup.getOrCreateBlockId(registryAccess.registryOrThrow(Registries.BLOCK).getKey(block).toString()) + 1;
+                if (blockId > 0xFFFE) {
                     AbstractCivModernMod.LOGGER.warn("block " + blockId + " at pos " + pos);
                     blockId = 0;
                 }
@@ -188,22 +194,26 @@ public class RegionData {
                 int blockBiomeId = blockId << 8 | biomeId;
                 int cachedColor = blockCache.getOrDefault(blockBiomeId, -1);
                 if (cachedColor == -1) {
-                    Optional<Holder.Reference<Block>> holder = registryAccess.registryOrThrow(Registries.BLOCK).getHolder(blockId);
-                    if (holder.isEmpty()) {
+                    if (blockId == 0) {
                         color = 0;
                     } else {
-                        Holder.Reference<Block> blockHolder = holder.get();
-                        String key = blockHolder.key().location().toString();
-                        color = ColoursConfig.BLOCK_COLOURS.getOrDefault(key, blockHolder.value().defaultMapColor().col);
+                        Optional<Holder.Reference<Block>> holder = registryAccess.registryOrThrow(Registries.BLOCK).getHolder(ResourceLocation.parse(blockLookup.getBlockName(blockId - 1)));
+                        if (holder.isEmpty()) {
+                            color = 0;
+                        } else {
+                            Holder.Reference<Block> blockHolder = holder.get();
+                            String key = blockHolder.key().location().toString();
+                            color = ColoursConfig.BLOCK_COLOURS.getOrDefault(key, blockHolder.value().defaultMapColor().col);
 
-                        if (ColoursConfig.BLOCKS_GRASS.contains(key)) {
-                            Biome biome = registry.byId(biomeId);
-                            color = mix(biome.getGrassColor(0, 0), color);
-                        } else if (ColoursConfig.BLOCKS_FOLIAGE.contains(key)) {
-                            Biome biome = registry.byId(biomeId);
-                            color = mix(biome.getFoliageColor(), color);
+                            if (ColoursConfig.BLOCKS_GRASS.contains(key)) {
+                                Biome biome = registry.byId(biomeId);
+                                color = mix(biome.getGrassColor(0, 0), color);
+                            } else if (ColoursConfig.BLOCKS_FOLIAGE.contains(key)) {
+                                Biome biome = registry.byId(biomeId);
+                                color = mix(biome.getFoliageColor(), color);
+                            }
+                            blockCache.put(blockBiomeId, color);
                         }
-                        blockCache.put(blockBiomeId, color);
                     }
                 } else {
                     color = blockCache.get(blockBiomeId);
@@ -322,10 +332,6 @@ public class RegionData {
 
 
     public static int mix(int color0, int color1) {
-//        int r = red(color0) + red(color1);
-//        int g = green(color0) + green(color1);
-//        int b = blue(color0) + blue(color1);
-//        return rgb(r >> 1, g >> 1, b >> 2);
         float r = red(color0) / 255f * red(color1) / 255f;
         float g = green(color0) / 255f * green(color1) / 255f;
         float b = blue(color0) / 255f * blue(color1) / 255f;

@@ -2,16 +2,19 @@ package sh.okx.civmodern.common.map;
 
 import com.mojang.blaze3d.platform.TextureUtil;
 import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.vertex.*;
+import com.mojang.blaze3d.vertex.BufferBuilder;
+import com.mojang.blaze3d.vertex.BufferUploader;
+import com.mojang.blaze3d.vertex.DefaultVertexFormat;
+import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.Tesselator;
+import com.mojang.blaze3d.vertex.VertexFormat;
 import net.minecraft.client.renderer.GameRenderer;
 import org.joml.Matrix4f;
 
-import static org.lwjgl.opengl.GL33.*;
-import static org.lwjgl.opengl.GL41.GL_RGB565;
+import static org.lwjgl.opengl.GL44.*;
 
 public class RegionAtlasTexture {
     public static final int SIZE = 4096;
-    private static final short[] BLACK = new short[SIZE * SIZE];
 
     private int indexTexture;
 
@@ -34,7 +37,8 @@ public class RegionAtlasTexture {
         RenderSystem.pixelStore(GL_UNPACK_SKIP_ROWS, 0);
         RenderSystem.pixelStore(GL_UNPACK_SKIP_PIXELS, 0);
         RenderSystem.pixelStore(GL_UNPACK_ALIGNMENT, 2);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB565, SIZE, SIZE, 0, GL_RGB, GL_UNSIGNED_SHORT_5_6_5, BLACK);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB565, SIZE, SIZE, 0, GL_RGB, GL_UNSIGNED_SHORT_5_6_5, (short[]) null);
+        glClearTexImage(this.indexTexture, 0, GL_RGB, GL_UNSIGNED_SHORT_5_6_5, new short[]{0}); // black
         glGenerateMipmap(GL_TEXTURE_2D);
     }
 
@@ -52,13 +56,13 @@ public class RegionAtlasTexture {
 
     public void draw(PoseStack poseStack, float x, float y, float scale) {
         RenderSystem.bindTexture(this.indexTexture);
-        RenderSystem.texParameter(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        RenderSystem.texParameter(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST);
         draw(poseStack, x, y, scale, 0, 0, SIZE, SIZE, SIZE, SIZE);
     }
 
     public void drawLinear(PoseStack poseStack, float x, float y, float scale, float xOff, float yOff, float xSize, float ySize, float width, float height) {
         RenderSystem.bindTexture(this.indexTexture);
-        RenderSystem.texParameter(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        RenderSystem.texParameter(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
         draw(poseStack, x, y, scale, xOff, yOff, xSize, ySize, width, height);
     }
 
@@ -76,9 +80,11 @@ public class RegionAtlasTexture {
 
         innerBlit(poseStack, renderX, renderX + renderWidth, renderY, renderY + renderHeight, z, renderWidth, renderHeight, textureXoffset, texureYoffset, textureWidth, textureHeight);
     }
-    private  static void innerBlit(PoseStack poseStack, float i, float j, float k, float l, int m, float n, float o, float f, float g, float p, float q) {
+
+    private static void innerBlit(PoseStack poseStack, float i, float j, float k, float l, int m, float n, float o, float f, float g, float p, float q) {
         innerBlit(poseStack.last().pose(), i, j, k, l, m, (f + 0.0f) / p, (f + n) / p, (g + 0.0f) / q, (g + o) / q);
     }
+
     private static void innerBlit(Matrix4f matrix4f, float i, float j, float k, float l, int m, float f, float g, float h, float n) {
         RenderSystem.setShader(GameRenderer::getPositionTexShader);
         BufferBuilder bufferBuilder = Tesselator.getInstance().begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX);

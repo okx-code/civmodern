@@ -1,19 +1,15 @@
 package sh.okx.civmodern.common.map;
 
-import it.unimi.dsi.fastutil.ints.Int2IntMap;
-import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
+import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
+import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import net.minecraft.client.Minecraft;
-import net.minecraft.core.Registry;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
-import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import sh.okx.civmodern.common.AbstractCivModernMod;
-import sh.okx.civmodern.common.events.ScrollEvent;
 
-import java.awt.*;
 import java.io.*;
 import java.util.*;
 import java.util.List;
@@ -24,12 +20,12 @@ import java.util.zip.ZipFile;
 
 public class VoxelMapConverter {
 
-    private final MapFile mapFile;
+    private final MapFolder mapFile;
     private final String name;
     private final String dimension;
     private final RegistryAccess registryAccess;
 
-    public VoxelMapConverter(MapFile mapFile, String name, String dimension, RegistryAccess registryAccess) {
+    public VoxelMapConverter(MapFolder mapFile, String name, String dimension, RegistryAccess registryAccess) {
         this.mapFile = mapFile;
         this.name = name;
         this.dimension = dimension;
@@ -66,6 +62,8 @@ public class VoxelMapConverter {
             return;
         }
 
+        BlockLookup blockLookup = new BlockLookup(new ArrayList<>());
+
         // 2859 regions
         // multithreaded processing - 1 minutes 16 seconds
         // sorting - 26 seconds
@@ -96,7 +94,7 @@ public class VoxelMapConverter {
                     ze = zFile.getEntry("key");
                     is = zFile.getInputStream(ze);
                     Scanner sc = new Scanner(is);
-                    Int2IntMap map = new Int2IntOpenHashMap();
+                    Int2ObjectMap<String> map = new Int2ObjectOpenHashMap<>();
                     while (sc.hasNextLine())
                         parseLine(sc.nextLine(), map);
                     sc.close();
@@ -123,10 +121,10 @@ public class VoxelMapConverter {
                     zFile.close();
                     if (total == 256 * 256 * 18) {
                         String[] name = subRegion.split(",");
-                        loadData(Integer.parseInt(name[0]), Integer.parseInt(name[1]), data, map, regionMap);
+                        loadData(Integer.parseInt(name[0]), Integer.parseInt(name[1]), data, map, regionMap, blockLookup);
                         modified = true;
                     }
-                } catch (IOException | NumberFormatException | ArrayIndexOutOfBoundsException ex) {
+                } catch (Exception ex) {
                     ex.printStackTrace();
                 }
             }
@@ -165,6 +163,8 @@ public class VoxelMapConverter {
             service.awaitTermination(100, TimeUnit.DAYS);
         } catch (InterruptedException ignored) {
         }
+
+        mapFile.saveBlockIds(blockLookup.getBlockNames());
 
         if (modified) {
             StringBuilder toWrite = new StringBuilder();
@@ -226,13 +226,13 @@ public class VoxelMapConverter {
         return new RegionKey(Integer.parseInt(parts[0]), Integer.parseInt(parts[1]));
     }
 
-    private void loadData(int subRegionX, int subRegionZ, byte[] data, Int2IntMap map, Map<RegionKey, RegionData> regionMap) {
+    private void loadData(int subRegionX, int subRegionZ, byte[] data, Int2ObjectMap<String> blockIdToName, Map<RegionKey, RegionData> regionMap, BlockLookup blockLookup) {
         int[] region = new int[256 * 256];
 
         int[] westY = new int[256];
         Arrays.fill(westY, Integer.MIN_VALUE);
         int northY = Integer.MIN_VALUE;
-        int water = registryAccess.registryOrThrow(Registries.BLOCK).getId(Blocks.WATER);
+        ResourceLocation water = registryAccess.registryOrThrow(Registries.BLOCK).getKey(Blocks.WATER);
         for (int x = 0; x < 256; x++) {
             for (int z = 0; z < 256; z++) {
                 int y = getHeight(data, x, z);
@@ -244,7 +244,7 @@ public class VoxelMapConverter {
 
                 int floorBlockstate = getOceanFloorBlockstate(data, x, z);
                 int height = getOceanFloorheight(data, x, z);
-                if (!map.containsKey(floorBlockstate)) {
+                if (!blockIdToName.containsKey(floorBlockstate)) {
                     floorBlockstate = getTransparentBlockstate(data, x, z);
                     height = getTransparentHeight(data, x, z);
                 } else {
@@ -258,7 +258,8 @@ public class VoxelMapConverter {
                     floorBlockstate = tmp;
                 }
 
-                int blockId = map.get(realBlockId);
+                String blockName = blockIdToName.get(realBlockId);
+                int blockId = blockLookup.getOrCreateBlockId(blockName) + 1;
 
                 if (blockId > 0xFFFF) {
                     AbstractCivModernMod.LOGGER.warn("convert block " + blockId + " at pos (" + x + ", " + z + ") in (" + subRegionX + ", " + subRegionZ + ")");
@@ -266,7 +267,7 @@ public class VoxelMapConverter {
                 }
 
                 dataValue |= blockId << 16;
-                if (map.get(floorBlockstate) == water) {
+                if (blockIdToName.get(floorBlockstate).equals(water.toString())) {
                     int depth = height - y;
                     dataValue |= Mth.clamp(depth, 0, 0xF) << 12;
                 }
@@ -313,9 +314,9 @@ public class VoxelMapConverter {
 
         RegionKey key = new RegionKey(regionX, regionZ);
         RegionData regionData = regionMap.computeIfAbsent(key, k -> {
-            RegionData fileData = mapFile.getRegion(k);
+            RegionData fileData = mapFile.getRegion(blockLookup, k);
             if (fileData == null) {
-                return new RegionData();
+                return new RegionData(blockLookup);
             }
             return fileData;
         });
@@ -361,32 +362,19 @@ public class VoxelMapConverter {
         return (getData(data, x, z, 16) & 0xFF) << 8 | getData(data, x, z, 17) & 0xFF;
     }
 
-    private void parseLine(String line, Int2IntMap map) {
+    private void parseLine(String line, Int2ObjectMap<String> map) {
         String[] lineParts = line.split(" ");
         int id = Integer.parseInt(lineParts[0]);
-        int blockState = parseStateString(lineParts[1]);
-        if (blockState != 0) {
-            map.put(id, blockState);
-        }
+        String blockName = parseStateString(lineParts[1]);
+        map.put(id, blockName);
     }
 
-    private int parseStateString(String stateString) {
+    private String parseStateString(String stateString) {
         int bracketIndex = stateString.indexOf("[");
         String resourceString = stateString.substring(0, (bracketIndex == -1) ? stateString.length() : bracketIndex);
         int curlyBracketOpenIndex = resourceString.indexOf("{");
         int curlyBracketCloseIndex = resourceString.indexOf("}");
         resourceString = resourceString.substring((curlyBracketOpenIndex == -1) ? 0 : (curlyBracketOpenIndex + 1), (curlyBracketCloseIndex == -1) ? resourceString.length() : curlyBracketCloseIndex);
-        String[] resourceStringParts = resourceString.split(":");
-        ResourceLocation resourceLocation = null;
-        if (resourceStringParts.length == 1) {
-            resourceLocation = ResourceLocation.withDefaultNamespace(resourceStringParts[0]);
-        } else if (resourceStringParts.length == 2) {
-            resourceLocation = ResourceLocation.fromNamespaceAndPath(resourceStringParts[0], resourceStringParts[1]);
-        }
-        Block block = registryAccess.registryOrThrow(Registries.BLOCK).get(resourceLocation);
-        if (block != Blocks.AIR || resourceString.equals("minecraft:air")) {
-            return registryAccess.registryOrThrow(Registries.BLOCK).getId(block);
-        }
-        return 0;
+        return resourceString;
     }
 }

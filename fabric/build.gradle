@@ -26,6 +26,9 @@ dependencies {
 
     // https://modrinth.com/mod/modmenu/version/7.2.2
     modCompileOnly("maven.modrinth:modmenu:lEkperf6")
+
+    modImplementation "io.wispforest:owo-lib:${project.owo_version}"
+    include "io.wispforest:owo-sentinel:${project.owo_version}"
 }
 
 processResources {

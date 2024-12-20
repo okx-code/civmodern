@@ -9,6 +9,7 @@ import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.client.renderer.FogRenderer;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
@@ -41,7 +42,7 @@ public class Waypoints {
     private final File waypointsFile;
 
     public Waypoints(File mapFile) {
-        this.waypointsFile = new File(mapFile, "waypoints.txt");
+        this.waypointsFile = new File(mapFile, "waypoints.txt"); // TODO may not exist
         load();
     }
 
@@ -91,6 +92,13 @@ public class Waypoints {
     public void addWaypoint(Waypoint waypoint) {
         this.waypoints.computeIfAbsent(waypoint.x(), k -> new Int2ObjectOpenHashMap<>())
             .put(waypoint.z(), waypoint);
+    }
+
+    public void removeWaypoint(Waypoint waypoint) {
+        Int2ObjectMap<Waypoint> wx = this.waypoints.get(waypoint.x());
+        if (wx != null) {
+            wx.remove(waypoint.z());
+        }
     }
 
     public Waypoint getTarget() {
@@ -151,6 +159,7 @@ public class Waypoints {
         Vec3 pos = camera.getPosition();
         Tesselator tessellator = Tesselator.getInstance();
         RenderSystem.depthFunc(GL_ALWAYS);
+        FogRenderer.setupNoFog(); // May break other mods if they rely on no fog at this event
         for (Waypoint waypoint : nearbyWaypoints) {
             BufferBuilder buffer = tessellator.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX_COLOR);
             double x = waypoint.x() + 0.5 - pos.x;
@@ -176,7 +185,7 @@ public class Waypoints {
             matrices.mulPose(Axis.XP.rotationDegrees(camera.getXRot()));
             matrices.scale(-adjustedDistance, -adjustedDistance, -adjustedDistance);
 
-            int k = (int)(getTransparency(distance, 0.11f) * 255.0F) << 24;
+            int k = (int) (getTransparency(distance, 0.11f) * 255.0F) << 24;
             waypoint.render(buffer, matrices.last().pose(), 8, k);
             matrices.popPose();
             BufferUploader.drawWithShader(buffer.buildOrThrow());
@@ -221,8 +230,8 @@ public class Waypoints {
             matrices.translate(0, -20, 0);
             Matrix4f last = matrices.last().pose();
             RenderSystem.enableBlend();
-            int k = (int)(getTransparency(distance, 0.44f) * 63.0F) << 24;
-            int k2 = (int)(getTransparency(distance, 0.11f) * 255.0F) << 24;
+            int k = (int) (getTransparency(distance, 0.44f) * 63.0F) << 24;
+            int k2 = (int) (getTransparency(distance, 0.11f) * 255.0F) << 24;
             font.drawInBatch(str, -font.width(str) / 2f, (float) 0, 0x20FFFFFF, false, last, source, Font.DisplayMode.SEE_THROUGH, k, 15728640);
             font.drawInBatch(str, -font.width(str) / 2f, (float) 0, k2 | 0xffffff, false, last, source, Font.DisplayMode.NORMAL, 0, 15728880);
             matrices.popPose();
