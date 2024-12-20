@@ -62,7 +62,7 @@ public class VoxelMapConverter {
             return;
         }
 
-        BlockLookup blockLookup = new BlockLookup(new ArrayList<>());
+        BlockLookup blockLookup = new BlockLookup(Collections.emptyList());
 
         // 2859 regions
         // multithreaded processing - 1 minutes 16 seconds

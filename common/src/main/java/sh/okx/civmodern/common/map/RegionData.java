@@ -46,7 +46,7 @@ public class RegionData {
             pos.setY(pos.getY() - 1);
             Block block;
             BlockState state = chunk.getBlockState(pos);
-            if (state.getFluidState().is(Fluids.WATER)) {
+            if (state.getFluidState().is(Fluids.WATER) || state.getFluidState().is(Fluids.FLOWING_WATER)) {
                 BlockPos bottomPos = new BlockPos.MutableBlockPos(pos.getX(), chunk.getHeight(Heightmap.Types.OCEAN_FLOOR_WG, pos.getX(), pos.getZ()), pos.getZ());
                 depth = pos.getY() - bottomPos.getY();
                 block = chunk.getBlockState(bottomPos).getBlock();
@@ -98,7 +98,7 @@ public class RegionData {
                 do {
                     pos.setY(pos.getY() - 1);
                     BlockState state = chunk.getBlockState(pos);
-                    if (state.getFluidState().is(Fluids.WATER)) {
+                    if (state.getFluidState().is(Fluids.WATER) || state.getFluidState().is(Fluids.FLOWING_WATER)) {
                         BlockPos bottomPos = new BlockPos.MutableBlockPos(pos.getX(), chunk.getHeight(Heightmap.Types.OCEAN_FLOOR_WG, pos.getX(), pos.getZ()), pos.getZ());
                         depth = pos.getY() - bottomPos.getY();
                         block = chunk.getBlockState(bottomPos).getBlock();

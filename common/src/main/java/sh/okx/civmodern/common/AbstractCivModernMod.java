@@ -7,16 +7,12 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.lang.reflect.Field;
 import java.nio.file.Path;
 import java.util.Properties;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.Options;
-import net.minecraft.client.gui.Gui;
 import net.minecraft.client.gui.screens.Screen;
-import net.minecraft.client.renderer.entity.ItemRenderer;
-import net.minecraft.resources.ResourceLocation;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -29,7 +25,6 @@ import sh.okx.civmodern.common.macro.HoldKeyMacro;
 import sh.okx.civmodern.common.macro.IceRoadMacro;
 import sh.okx.civmodern.common.map.*;
 import sh.okx.civmodern.common.map.screen.MapScreen;
-import sh.okx.civmodern.common.map.waypoints.WaypointTexture;
 import sh.okx.civmodern.common.radar.Radar;
 
 public abstract class AbstractCivModernMod {
@@ -133,6 +128,8 @@ public abstract class AbstractCivModernMod {
         // todo check if forge and fabric versions of these are the same
         this.eventBus.register(this.worlds);
 
+        this.eventBus.register(this.radar);
+
         Options options = Minecraft.getInstance().options;
         this.leftMacro = new HoldKeyMacro(this, this.holdLeftBinding, options.keyAttack);
         this.rightMacro = new HoldKeyMacro(this, this.holdRightBinding, options.keyUse);
@@ -187,7 +184,7 @@ public abstract class AbstractCivModernMod {
 
     private void loadRadar() {
         this.colourProvider = new ColourProvider(config);
-        this.radar = new Radar(config, eventBus, colourProvider);
+        this.radar = new Radar(config, colourProvider);
     }
 
     public ColourProvider getColourProvider() {

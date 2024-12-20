@@ -112,7 +112,13 @@ public class MapCache {
                 return Objects.requireNonNullElseGet(region1, () -> new RegionData(this.blockLookup));
             });
             // TODO fully get rid of banding, this is only a partial solution
-            boolean updated = data.updateChunk(chunk.getLevel().registryAccess(), chunk, north, west);
+            boolean updated;
+            try {
+                updated = data.updateChunk(chunk.getLevel().registryAccess(), chunk, north, west);
+            } catch (Exception ex) {
+                ex.printStackTrace();
+                updated = false;
+            }
             if (created[0]) {
                 cacheEvict(cache);
                 data.render(tex, region.x() & ATLAS_LENGTH - 1, region.z() & ATLAS_LENGTH - 1);

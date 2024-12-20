@@ -243,13 +243,14 @@ public class MapScreen extends Screen {
             Font font = Minecraft.getInstance().font;
 
             String str = editWaypointModal.getName();
-
-            matrices.translate(0, -15, -10);
-            Matrix4f last = matrices.last().pose();
-            RenderSystem.enableBlend();
-            MultiBufferSource source = guiGraphics.bufferSource();
-            font.drawInBatch(str, -font.width(str) / 2f, (float) 0, 0xFFFFFFFF, false, last, source, Font.DisplayMode.SEE_THROUGH, 1056964608, 15728640, false);
-            font.drawInBatch(str, -font.width(str) / 2f, (float) 0, 0xCCCCCC, false, last, source, Font.DisplayMode.NORMAL, 0, 15728880, true);
+            if (!str.isBlank()) {
+                matrices.translate(0, -15, -10);
+                Matrix4f last = matrices.last().pose();
+                RenderSystem.enableBlend();
+                MultiBufferSource source = guiGraphics.bufferSource();
+                font.drawInBatch(str, -font.width(str) / 2f, (float) 0, 0xFFFFFFFF, false, last, source, Font.DisplayMode.SEE_THROUGH, 1056964608, 15728640, false);
+                font.drawInBatch(str, -font.width(str) / 2f, (float) 0, 0xCCCCCC, false, last, source, Font.DisplayMode.NORMAL, 0, 15728880, true);
+            }
             matrices.popPose();
         }
 

@@ -42,11 +42,15 @@ public class Waypoints {
     private final File waypointsFile;
 
     public Waypoints(File mapFile) {
-        this.waypointsFile = new File(mapFile, "waypoints.txt"); // TODO may not exist
+        this.waypointsFile = new File(mapFile, "waypoints.txt");
+        // TODO waypoint on death
         load();
     }
 
     private void load() {
+        if (!this.waypointsFile.exists()) {
+            return;
+        }
         try {
             for (String line : Files.readAllLines(this.waypointsFile.toPath())) {
                 String[] parts = line.split("\0");

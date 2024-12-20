@@ -2,6 +2,7 @@ package sh.okx.civmodern.common.map;
 
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.locks.ReadWriteLock;
@@ -13,7 +14,7 @@ public class BlockLookup {
     private final Map<String, Integer> blockToId;
 
     public BlockLookup(List<String> blockNames) {
-        this.idToBlock = blockNames;
+        this.idToBlock = new ArrayList<>(blockNames);
 
         this.blockToId = new Object2IntOpenHashMap<>();
         for (int i = 0; i < blockNames.size(); i++) {
