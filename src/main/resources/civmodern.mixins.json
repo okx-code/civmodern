@@ -3,7 +3,6 @@
     "minVersion": "0.8",
     "package": "sh.okx.civmodern.mod.mixins",
     "compatibilityLevel": "JAVA_21",
-    "mixins": [],
     "client": [
         "GuiGraphicsMixin",
         "HoldForwardMixin",
@@ -11,7 +10,6 @@
         "ItemStackMixin",
         "KeyMappingAccessor"
     ],
-    "server": [],
     "injectors": {
         "defaultRequire": 1
     }
