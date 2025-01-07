@@ -30,6 +30,8 @@ which is located at `.minecraft/config/civmodern.json`.
 - Added option that shows an item's damage level in its tooltip either always, only in advanced tooltips, or never. Set
   to always by default.
 
+- Added option that shows whether an item is an exp ingredient. Enabled by default.
+
 ## Changed
 
 - Switched the config to YACL. This is a breaking change: your previous configs will no longer work.

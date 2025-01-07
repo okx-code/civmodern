@@ -4,6 +4,7 @@ import com.mojang.blaze3d.platform.InputConstants;
 import dev.isxander.yacl3.api.Option;
 import dev.isxander.yacl3.api.OptionDescription;
 import dev.isxander.yacl3.api.OptionGroup;
+import dev.isxander.yacl3.api.controller.BooleanControllerBuilder;
 import dev.isxander.yacl3.api.utils.Dimension;
 import dev.isxander.yacl3.api.utils.MutableDimension;
 import dev.isxander.yacl3.config.v2.api.SerialEntry;
@@ -28,6 +29,7 @@ public final class ItemSettings {
     private static final Color DEFAULT_COMPACTED_ITEM_COLOUR = new Color(CompactedItem.DEFAULT_COLOR);
     private static final TooltipLineOption DEFAULT_SHOW_REPAIR_LEVEL = TooltipLineOption.ALWAYS;
     private static final TooltipLineOption DEFAULT_SHOW_DAMAGE_LEVEL = TooltipLineOption.ALWAYS;
+    private static final boolean DEFAULT_SHOW_IS_EXP_INGREDIENT = true;
 
     @SerialEntry
     public @NotNull Color compactedItemColour = DEFAULT_COMPACTED_ITEM_COLOUR;
@@ -35,6 +37,8 @@ public final class ItemSettings {
     public @NotNull TooltipLineOption showRepairLevel = DEFAULT_SHOW_REPAIR_LEVEL;
     @SerialEntry
     public @NotNull TooltipLineOption showDamageLevel = DEFAULT_SHOW_DAMAGE_LEVEL;
+    @SerialEntry
+    public boolean showIsExpIngredient = DEFAULT_SHOW_IS_EXP_INGREDIENT;
 
     // ============================================================
     // Screen generation
@@ -49,6 +53,7 @@ public final class ItemSettings {
             .option(generateCompactedItemColour(itemSettings))
             .option(generateShowRepairLevel(itemSettings))
             .option(generateShowDamageLevel(itemSettings))
+            .option(generateShowIsExpIngredient(itemSettings))
             .build();
     }
 
@@ -94,6 +99,21 @@ public final class ItemSettings {
                 DEFAULT_SHOW_DAMAGE_LEVEL,
                 () -> itemSettings.showDamageLevel,
                 (show) -> itemSettings.showDamageLevel = show
+            )
+            .build();
+    }
+
+    private static @NotNull Option<?> generateShowIsExpIngredient(
+        final @NotNull ItemSettings itemSettings
+    ) {
+        return Option.<Boolean>createBuilder()
+            .name(Component.translatable("civmodern.config.group.items.isExpIngredient"))
+            .description(OptionDescription.of(Component.translatable("civmodern.config.group.items.isExpIngredient.desc")))
+            .controller(BooleanControllerBuilder::create)
+            .binding(
+                DEFAULT_SHOW_IS_EXP_INGREDIENT,
+                () -> itemSettings.showIsExpIngredient,
+                (show) -> itemSettings.showIsExpIngredient = show
             )
             .build();
     }

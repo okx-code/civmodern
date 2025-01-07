@@ -1,6 +1,7 @@
 package sh.okx.civmodern.mod.mixins;
 
 import java.util.List;
+import net.minecraft.ChatFormatting;
 import net.minecraft.core.component.DataComponentMap;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
@@ -21,6 +22,7 @@ import sh.okx.civmodern.mod.config.CivModernConfig;
 import sh.okx.civmodern.mod.config.ItemSettings;
 import sh.okx.civmodern.mod.config.TooltipLineOption;
 import sh.okx.civmodern.mod.features.CompactedItem;
+import sh.okx.civmodern.mod.features.ExpIngredients;
 
 @Mixin(ItemStack.class)
 public abstract class ItemStackMixin implements CompactedItem.PotentiallyCompactedItem {
@@ -92,6 +94,7 @@ public abstract class ItemStackMixin implements CompactedItem.PotentiallyCompact
         final ItemSettings itemSettings = CivModernConfig.HANDLER.instance().itemSettings;
         addRepairLevelLine(tooltipFlag, itemSettings.showRepairLevel);
         addDamageLevelLine(tooltipFlag, itemSettings.showDamageLevel);
+        addExpIngredientLine(tooltipFlag, itemSettings.showIsExpIngredient);
     }
 
     @Unique
@@ -139,6 +142,24 @@ public abstract class ItemStackMixin implements CompactedItem.PotentiallyCompact
             maxDamage - damage,
             maxDamage
         ));
+    }
+
+    @Unique
+    private void addExpIngredientLine(
+        final @NotNull TooltipFlag tooltipFlag,
+        final boolean show
+    ) {
+        if (!show) {
+            return;
+        }
+        if (!ExpIngredients.isExpIngredient((ItemStack) (Object) this)) {
+            return;
+        }
+        this.civmodern$tooltipLines.add(
+            Component.empty()
+                .withStyle(ChatFormatting.YELLOW)
+                .append(Component.translatable("civmodern.xp.ingredient"))
+        );
     }
 
     /**
