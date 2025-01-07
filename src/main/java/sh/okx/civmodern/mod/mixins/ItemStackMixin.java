@@ -43,15 +43,24 @@ public abstract class ItemStackMixin implements CompactedItem.PotentiallyCompact
     // ============================================================
 
     @Unique
-    private Boolean civmodern$isCompacted = null;
+    private CompactedItem.CompactedItemType civmodern$compactedType = null;
 
     @Unique
     @Override
-    public boolean civmodern$isMarkedAsCompacted() {
-        if (this.civmodern$isCompacted == null) {
-            this.civmodern$isCompacted = CompactedItem.hasCompactedItemLore((ItemStack) (Object) this);
+    public @NotNull CompactedItem.CompactedItemType civmodern$getCompactedItemType() {
+        if (this.civmodern$compactedType == null) {
+            final var self = (ItemStack) (Object) this;
+            if (CompactedItem.isCrate(self)) {
+                this.civmodern$compactedType = CompactedItem.CompactedItemType.CRATE;
+            }
+            else if (CompactedItem.hasCompactedItemLore(self)) {
+                this.civmodern$compactedType = CompactedItem.CompactedItemType.COMPACTED;
+            }
+            else {
+                this.civmodern$compactedType = CompactedItem.CompactedItemType.NORMAL;
+            }
         }
-        return this.civmodern$isCompacted;
+        return this.civmodern$compactedType;
     }
 
     // ============================================================

@@ -9,6 +9,8 @@
     "category.civmodern": "${mod_name}",
     "civmodern.config.category": "CivModern Settings",
     "civmodern.config.group.items": "Item Settings",
+    "civmodern.config.group.items.crateColour": "Crate-Items Colour",
+    "civmodern.config.group.items.crateColour.desc": "Crates will always show their item count. What colour would you prefer to differentiate them?",
     "civmodern.config.group.items.compactedColour": "Compacted-Items Colour",
     "civmodern.config.group.items.compactedColour.desc": "Compacted items will always show their item count. What colour would you prefer to differentiate them?",
     "civmodern.config.group.items.repairLevel": "Show base-repair level?",

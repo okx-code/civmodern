@@ -5,7 +5,6 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Constant;
 import org.spongepowered.asm.mixin.injection.ModifyConstant;
@@ -14,9 +13,6 @@ import sh.okx.civmodern.mod.features.CompactedItem;
 
 @Mixin(GuiGraphics.class)
 public abstract class GuiGraphicsMixin {
-    @Unique
-    private boolean isCompactedItem = false;
-
     @ModifyVariable(
         method = "renderItemCount",
         at = @At("HEAD"),
@@ -29,10 +25,10 @@ public abstract class GuiGraphicsMixin {
         if (value != null) {
             return value;
         }
-        if (this.isCompactedItem = CompactedItem.isMarkedAsCompacted(item)) {
-            return String.valueOf(item.getCount());
-        }
-        return null;
+        return switch (CompactedItem.getCompactedItemType(item)) {
+            case CRATE, COMPACTED -> String.valueOf(item.getCount());
+            default -> null;
+        };
     }
 
     @ModifyConstant(
@@ -40,11 +36,13 @@ public abstract class GuiGraphicsMixin {
         constant = @Constant(intValue = -1)
     )
     protected int civmodern$renderItemDecorations$colourItemDecorationIfCompacted(
-        final int decorationColour
+        final int decorationColour,
+        final @Local(argsOnly = true) ItemStack item
     ) {
-        if (this.isCompactedItem) {
-            return CompactedItem.COLOUR;
-        }
-        return decorationColour;
+        return switch (CompactedItem.getCompactedItemType(item)) {
+            case CRATE -> CompactedItem.CRATE_COLOUR;
+            case COMPACTED -> CompactedItem.COMPACTED_COLOUR;
+            default -> decorationColour;
+        };
     }
 }
