@@ -31,8 +31,8 @@ public class MapFolder {
     public void save(RegionKey key, RegionData data) {
         File file = this.folder.toPath().resolve(key.x() + "," + key.z()).toFile();
         ByteBuffer buf = ByteBuffer.allocate(512 * 512 * 4);
+        buf.asIntBuffer().put(data.getData());
         try (GZIPOutputStream out = new GZIPOutputStream(new FileOutputStream(file))) {
-            buf.asIntBuffer().put(data.getData());
             out.write(buf.array());
         } catch (IOException ex) {
             ex.printStackTrace();
