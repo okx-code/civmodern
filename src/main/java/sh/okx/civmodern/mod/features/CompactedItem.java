@@ -14,7 +14,7 @@ public final class CompactedItem {
     public static final String CRATE_LORE = "Crate";
     public static final String COMPACTED_LORE = "Compacted Item";
 
-    public static final int DEFAULT_CRATE_COLOR = 0xFF_2F_2F;
+    public static final int DEFAULT_CRATE_COLOR = 0xFF_41_41;
     public static volatile int CRATE_COLOUR = DEFAULT_CRATE_COLOR;
 
     public static final int DEFAULT_COMPACTED_COLOR = 0xFF_FF_58;
