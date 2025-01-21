@@ -1,6 +1,6 @@
 # CivModern
 
-This is a fork of CivModern specifically for [CivMC](https://civmc.net) on 1.21.3.
+This is a fork of CivModern specifically for [CivMC](https://civmc.net) on 1.21.4.
 
 ## Features
 
@@ -47,9 +47,9 @@ which is located at `.minecraft/config/civmodern.json`.
 ## Requirements
 
 - Fabric Loader: `0.16.9` (or newer)
-- [Fabric API](https://modrinth.com/mod/fabric-api): `0.110.0+1.21.3` (or newer)
-- [YetAnotherConfigLibrary](https://modrinth.com/mod/yacl): `3.6.2+1.21.2-fabric` (or newer)
+- [Fabric API](https://modrinth.com/mod/fabric-api): `0.113.0+1.21.4` (or newer)
+- [YetAnotherConfigLibrary](https://modrinth.com/mod/yacl): `3.6.2+1.21.4-fabric` (or newer)
 
 ## Recommendations
 
-- [ModMenu](https://modrinth.com/mod/modmenu): `v12.0.0` (or newer)
+- [ModMenu](https://modrinth.com/mod/modmenu): `v13.0.0` (or newer)
