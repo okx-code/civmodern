@@ -9,6 +9,12 @@ base {
     archivesName.set(project.extra["archives_base_name"] as String)
 }
 
+loom {
+    runConfigs.configureEach {
+        this.programArgs += "--username LocalModTester".split(" ")
+    }
+}
+
 dependencies {
     minecraft("com.mojang:minecraft:${project.extra["minecraft_version"]}")
     loom {
