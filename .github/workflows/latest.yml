@@ -32,5 +32,4 @@ jobs:
           prerelease: true
           title: "Latest Build"
           files: |
-            LICENSE.txt
             dist/*.jar

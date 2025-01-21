@@ -25,7 +25,6 @@ jobs:
 
       - name: "Publishing CivModern"
         run: |
-          gh release upload ${{ github.event.release.tag_name }} "LICENSE.txt" --clobber
           for file in $(find "dist/" -maxdepth 1 -type f -name "*.jar"); do
             echo "Uploading $file"
             gh release upload ${{ github.event.release.tag_name }} "$file" --clobber
