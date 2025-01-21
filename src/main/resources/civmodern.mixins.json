@@ -8,7 +8,8 @@
         "HoldForwardMixin",
         "InventoryMixin",
         "ItemStackMixin",
-        "KeyMappingAccessor"
+        "KeyMappingAccessor",
+        "SafeMiningMixin"
     ],
     "injectors": {
         "defaultRequire": 1

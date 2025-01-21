@@ -27,6 +27,7 @@ public final class ItemSettings {
     private static final TooltipLineOption DEFAULT_SHOW_REPAIR_LEVEL = TooltipLineOption.ALWAYS;
     private static final TooltipLineOption DEFAULT_SHOW_DAMAGE_LEVEL = TooltipLineOption.ALWAYS;
     private static final boolean DEFAULT_SHOW_IS_EXP_INGREDIENT = true;
+    private static final boolean DEFAULT_SAFE_MINING = true;
 
     @SerialEntry
     public @NotNull Color crateItemColour = DEFAULT_CRATE_ITEM_COLOUR;
@@ -38,6 +39,8 @@ public final class ItemSettings {
     public @NotNull TooltipLineOption showDamageLevel = DEFAULT_SHOW_DAMAGE_LEVEL;
     @SerialEntry
     public boolean showIsExpIngredient = DEFAULT_SHOW_IS_EXP_INGREDIENT;
+    @SerialEntry
+    public boolean safeMining = DEFAULT_SAFE_MINING;
 
     // ============================================================
     // Screen generation
@@ -54,6 +57,7 @@ public final class ItemSettings {
             .option(generateShowRepairLevel(itemSettings))
             .option(generateShowDamageLevel(itemSettings))
             .option(generateShowIsExpIngredient(itemSettings))
+            .option(generateSafeMining(itemSettings))
             .build();
     }
 
@@ -130,6 +134,21 @@ public final class ItemSettings {
                 DEFAULT_SHOW_IS_EXP_INGREDIENT,
                 () -> itemSettings.showIsExpIngredient,
                 (show) -> itemSettings.showIsExpIngredient = show
+            )
+            .build();
+    }
+
+    private static @NotNull Option<?> generateSafeMining(
+        final @NotNull ItemSettings itemSettings
+    ) {
+        return Option.<Boolean>createBuilder()
+            .name(Component.translatable("civmodern.config.group.items.safeMining"))
+            .description(OptionDescription.of(Component.translatable("civmodern.config.group.items.safeMining.desc")))
+            .controller(BooleanControllerBuilder::create)
+            .binding(
+                DEFAULT_SAFE_MINING,
+                () -> itemSettings.safeMining,
+                (enabled) -> itemSettings.safeMining = enabled
             )
             .build();
     }
