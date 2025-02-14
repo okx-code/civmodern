@@ -1,5 +1,6 @@
 package sh.okx.civmodern.mod.mixins;
 
+import com.llamalad7.mixinextras.sugar.Local;
 import java.util.List;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.component.DataComponentMap;
@@ -15,7 +16,6 @@ import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.ModifyVariable;
 import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import sh.okx.civmodern.mod.config.CivModernConfig;
@@ -65,25 +65,7 @@ public abstract class ItemStackMixin implements CompactedItem.PotentiallyCompact
 
     // ============================================================
     // Showing an item's repair level
-    //
-    // @ModifyVariable seems to have some difficulty finding the List<Component> local variable, likewise with local
-    // capture and @Local. Anything that works shows red lines in the IDE, and anything that the IDE thinks should work
-    // throws while testing. This may just be an issue with the Minecraft Development plugin. Nonetheless, I've done it
-    // in a roundabout way to ensure stability.
     // ============================================================
-
-    @Unique
-    private List<Component> civmodern$tooltipLines = null;
-
-    @ModifyVariable(
-        method = "getTooltipLines",
-        at = @At("STORE")
-    )
-    private @NotNull List<Component> civmodern$modify_variable$getTooltipLines$captureTooltipLines(
-        final @NotNull List<Component> tooltipLines
-    ) {
-        return this.civmodern$tooltipLines = tooltipLines;
-    }
 
     @Inject(
         method = "getTooltipLines",
@@ -98,16 +80,18 @@ public abstract class ItemStackMixin implements CompactedItem.PotentiallyCompact
         final @NotNull Item.TooltipContext tooltipContext,
         final Player player,
         final @NotNull TooltipFlag tooltipFlag,
-        final @NotNull CallbackInfoReturnable<List<Component>> cir
+        final @NotNull CallbackInfoReturnable<List<Component>> cir,
+        final @Local @NotNull List<Component> tooltipLines
     ) {
         final ItemSettings itemSettings = CivModernConfig.HANDLER.instance().itemSettings;
-        addRepairLevelLine(tooltipFlag, itemSettings.showRepairLevel);
-        addDamageLevelLine(tooltipFlag, itemSettings.showDamageLevel);
-        addExpIngredientLine(tooltipFlag, itemSettings.showIsExpIngredient);
+        addRepairLevelLine(tooltipLines, tooltipFlag, itemSettings.showRepairLevel);
+        addDamageLevelLine(tooltipLines, tooltipFlag, itemSettings.showDamageLevel);
+        addExpIngredientLine(tooltipLines, tooltipFlag, itemSettings.showIsExpIngredient);
     }
 
     @Unique
     private void addRepairLevelLine(
+        final @NotNull List<Component> tooltipLines,
         final @NotNull TooltipFlag tooltipFlag,
         final @NotNull TooltipLineOption show
     ) {
@@ -121,7 +105,7 @@ public abstract class ItemStackMixin implements CompactedItem.PotentiallyCompact
         if (repairCost < 1) {
             return;
         }
-        this.civmodern$tooltipLines.add(Component.translatable(
+        tooltipLines.add(Component.translatable(
             "civmodern.repair.level",
             Integer.toString(repairCost)
         ));
@@ -129,6 +113,7 @@ public abstract class ItemStackMixin implements CompactedItem.PotentiallyCompact
 
     @Unique
     private void addDamageLevelLine(
+        final @NotNull List<Component> tooltipLines,
         final @NotNull TooltipFlag tooltipFlag,
         final @NotNull TooltipLineOption show
     ) {
@@ -146,7 +131,7 @@ public abstract class ItemStackMixin implements CompactedItem.PotentiallyCompact
             return;
         }
         final int maxDamage = getMaxDamage();
-        this.civmodern$tooltipLines.add(Component.translatable(
+        tooltipLines.add(Component.translatable(
             "item.durability",
             maxDamage - damage,
             maxDamage
@@ -155,6 +140,7 @@ public abstract class ItemStackMixin implements CompactedItem.PotentiallyCompact
 
     @Unique
     private void addExpIngredientLine(
+        final @NotNull List<Component> tooltipLines,
         final @NotNull TooltipFlag tooltipFlag,
         final boolean show
     ) {
@@ -164,7 +150,7 @@ public abstract class ItemStackMixin implements CompactedItem.PotentiallyCompact
         if (!ExpIngredients.isExpIngredient((ItemStack) (Object) this)) {
             return;
         }
-        this.civmodern$tooltipLines.add(
+        tooltipLines.add(
             Component.empty()
                 .withStyle(ChatFormatting.YELLOW)
                 .append(Component.translatable("civmodern.xp.ingredient"))
@@ -173,7 +159,7 @@ public abstract class ItemStackMixin implements CompactedItem.PotentiallyCompact
 
     /**
      * Prevents the default durability line from being added, giving control of that to
-     * {@link #addDamageLevelLine(net.minecraft.world.item.TooltipFlag, sh.okx.civmodern.mod.config.TooltipLineOption)}
+     * {@link #addDamageLevelLine(java.util.List, net.minecraft.world.item.TooltipFlag, sh.okx.civmodern.mod.config.TooltipLineOption)}
      */
     @Redirect(
         method = "getTooltipLines",
@@ -186,15 +172,5 @@ public abstract class ItemStackMixin implements CompactedItem.PotentiallyCompact
         final @NotNull ItemStack item
     ) {
         return false;
-    }
-
-    @Inject(
-        method = "getTooltipLines",
-        at = @At("RETURN")
-    )
-    private void civmodern$inject$getTooltipLines$releaseTooltipLines(
-        final @NotNull CallbackInfoReturnable<List<Component>> cir
-    ) {
-        this.civmodern$tooltipLines = null;
     }
 }
