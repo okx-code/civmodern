@@ -5,11 +5,13 @@ import java.util.List;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.component.DataComponentMap;
 import net.minecraft.core.component.DataComponents;
+import net.minecraft.core.component.PatchedDataComponentMap;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
+import net.minecraft.world.level.ItemLike;
 import org.jetbrains.annotations.NotNull;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -17,6 +19,7 @@ import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.Redirect;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import sh.okx.civmodern.mod.config.CivModernConfig;
 import sh.okx.civmodern.mod.config.ItemSettings;
@@ -38,28 +41,39 @@ public abstract class ItemStackMixin implements CompactedItem.PotentiallyCompact
     @Shadow
     public abstract int getMaxDamage();
 
+    @Inject(
+        method = "<init>(Lnet/minecraft/world/level/ItemLike;ILnet/minecraft/core/component/PatchedDataComponentMap;)V",
+        at = @At("TAIL")
+    )
+    protected void civmodern$determineItemTypes(
+        final @NotNull ItemLike item,
+        final int count,
+        final @NotNull PatchedDataComponentMap components,
+        final @NotNull CallbackInfo ci
+    ) {
+        determineIfCompactedItemType();
+    }
+
     // ============================================================
     // Compacted item detection
     // ============================================================
 
     @Unique
-    private CompactedItem.CompactedItemType civmodern$compactedType = null;
+    private CompactedItem.CompactedItemType civmodern$compactedType = CompactedItem.CompactedItemType.NORMAL;
 
     @Unique
+    private void determineIfCompactedItemType() {
+        final var self = (ItemStack) (Object) this;
+        if (CompactedItem.isCrate(self)) {
+            this.civmodern$compactedType = CompactedItem.CompactedItemType.CRATE;
+        }
+        else if (CompactedItem.isCompacted(self)) {
+            this.civmodern$compactedType = CompactedItem.CompactedItemType.COMPACTED;
+        }
+    }
+
     @Override
     public @NotNull CompactedItem.CompactedItemType civmodern$getCompactedItemType() {
-        if (this.civmodern$compactedType == null) {
-            final var self = (ItemStack) (Object) this;
-            if (CompactedItem.isCrate(self)) {
-                this.civmodern$compactedType = CompactedItem.CompactedItemType.CRATE;
-            }
-            else if (CompactedItem.hasCompactedItemLore(self)) {
-                this.civmodern$compactedType = CompactedItem.CompactedItemType.COMPACTED;
-            }
-            else {
-                this.civmodern$compactedType = CompactedItem.CompactedItemType.NORMAL;
-            }
-        }
         return this.civmodern$compactedType;
     }
 

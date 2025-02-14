@@ -27,7 +27,7 @@ public final class CompactedItem {
             && CivModernHelpers.hasPlainLoreLine(item, CRATE_LORE);
     }
 
-    public static boolean hasCompactedItemLore(
+    public static boolean isCompacted(
         final @NotNull ItemStack item
     ) {
         return CivModernHelpers.hasPlainLoreLine(item, COMPACTED_LORE);
