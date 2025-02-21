@@ -101,8 +101,8 @@ final class RadarConfigScreen extends AbstractConfigScreen {
             offsetY,
             ToggleButton.DEFAULT_BUTTON_WIDTH,
             Component.translatable("civmodern.screen.radar.messages"),
-            this.config::isPingSoundEnabled,
-            this.config::setPingSoundEnabled,
+            this.config::isPingEnabled,
+            this.config::setPingEnabled,
             Tooltip.create(Component.translatable("civmodern.screen.radar.messages.tooltip")),
             ToggleButton.DEFAULT_NARRATION
         ));
