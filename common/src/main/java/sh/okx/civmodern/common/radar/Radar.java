@@ -261,9 +261,9 @@ public class Radar {
 
         for (Entity entity : minecraft.level.entitiesForRendering()) {
             if (entity instanceof Boat boat) {
-                renderEntity(guiGraphics, minecraft.player, boat, delta, boat.getPickResult());
+                renderEntity(guiGraphics, minecraft.player, boat, delta, boat.getPickResult(), 1.0f);
             } else if (entity instanceof Minecart minecart) {
-                renderEntity(guiGraphics, minecraft.player, minecart, delta, new ItemStack(Items.MINECART, 1));
+                renderEntity(guiGraphics, minecraft.player, minecart, delta, new ItemStack(Items.MINECART, 1), 1.1f);
             }
         }
     }
@@ -273,12 +273,12 @@ public class Radar {
 
         for (Entity entity : minecraft.level.entitiesForRendering()) {
             if (entity instanceof ItemEntity item) {
-                renderEntity(guiGraphics, minecraft.player, item, delta, item.getItem());
+                renderEntity(guiGraphics, minecraft.player, item, delta, item.getItem(), 0f);
             }
         }
     }
 
-    private void renderEntity(GuiGraphics guiGraphics, Player player, Entity entity, float delta, ItemStack item) {
+    private void renderEntity(GuiGraphics guiGraphics, Player player, Entity entity, float delta, ItemStack item, float blit) {
         double scale = config.getRadarSize() / config.getRange();
 
         double px = player.xOld + (player.getX() - player.xOld) * delta;
@@ -300,6 +300,7 @@ public class Radar {
             guiGraphics.pose().mulPose(Axis.ZP.rotationDegrees(player.getViewYRot(delta)));
         }
         BakedModel bakedModel = Minecraft.getInstance().getItemRenderer().getModel(item, player.level(), player, 0);
+        guiGraphics.pose().translate(0, 0, blit);
         guiGraphics.pose().scale(config.getIconSize(), config.getIconSize(), 1);
         guiGraphics.pose().mulPose(new Matrix4f().scaling(1.0f, -1.0f, 1.0f));
         guiGraphics.pose().scale(16.0f, 16.0f, 16.0f);
