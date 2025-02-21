@@ -64,10 +64,10 @@ final class RadarConfigScreen extends AbstractConfigScreen {
 
         int offsetY = getBodyY(this.height / 8);
 
-        // Colour pickers must be renderered first as they are displayed on top of other buttons, and so
+        // Colour pickers must be renderered first as they are displayed on top of other buttons
         this.bgPicker = addColourPicker(
             leftSideX,
-            offsetY + 166,
+            offsetY + 190,
             CivMapConfig.DEFAULT_RADAR_BG_COLOUR,
             Component.literal("Background colour"),
             this.config::getRadarBgColour,
@@ -76,7 +76,7 @@ final class RadarConfigScreen extends AbstractConfigScreen {
         );
         this.fgPicker = addColourPicker(
             rightSideX,
-            offsetY + 166,
+            offsetY + 190,
             CivMapConfig.DEFAULT_RADAR_FG_COLOUR,
             Component.literal("Line colour"),
             this.config::getRadarColour,
@@ -216,19 +216,20 @@ final class RadarConfigScreen extends AbstractConfigScreen {
             offsetY,
             Button.DEFAULT_WIDTH,
             Button.DEFAULT_HEIGHT,
-            20, 150, 1,
+            0, 2, 0.1,
             new DoubleValue() {
+                private final DecimalFormat format = new DecimalFormat("#.#");
                 @Override
                 public double get() {
-                    return RadarConfigScreen.this.config.getRange();
+                    return RadarConfigScreen.this.config.getTextSize();
                 }
                 @Override
                 public void set(final double value) {
-                    RadarConfigScreen.this.config.setRange(value);
+                    RadarConfigScreen.this.config.setTextSize((float) value);
                 }
                 @Override
                 public @NotNull Component getText(final double value) {
-                    return Component.translatable("civmodern.screen.radar.range", String.valueOf((int) value));
+                    return Component.translatable("civmodern.screen.radar.textsize", this.format.format(value));
                 }
             }
         ));
@@ -320,7 +321,29 @@ final class RadarConfigScreen extends AbstractConfigScreen {
                 }
             }
         ));
-        offsetY += Button.DEFAULT_HEIGHT + 2;
+        offsetY += Button.DEFAULT_HEIGHT + 4;
+        addRenderableWidget(new DoubleOptionUpdateableSliderWidget(
+            leftSideX,
+            offsetY,
+            Button.DEFAULT_WIDTH,
+            Button.DEFAULT_HEIGHT,
+            20, 150, 1,
+            new DoubleValue() {
+                @Override
+                public double get() {
+                    return RadarConfigScreen.this.config.getRange();
+                }
+                @Override
+                public void set(final double value) {
+                    RadarConfigScreen.this.config.setRange(value);
+                }
+                @Override
+                public @NotNull Component getText(final double value) {
+                    return Component.translatable("civmodern.screen.radar.range", String.valueOf((int) value));
+                }
+            }
+        ));
+        offsetY += Button.DEFAULT_HEIGHT + 4;
 
         offsetY += 30 + 2;
 

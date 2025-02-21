@@ -22,6 +22,7 @@
     "civmodern.screen.radar.items": "Items",
     "civmodern.screen.radar.items.tooltip": "Show nearby items on your radar?",
     "civmodern.screen.radar.iconsize": "Icon Size: %s",
+    "civmodern.screen.radar.textsize": "Text Size: %s",
     "civmodern.screen.radar.range": "Range: %s blocks",
     "civmodern.screen.radar.x": "Radar X: %s",
     "civmodern.screen.radar.y": "Radar Y: %s",

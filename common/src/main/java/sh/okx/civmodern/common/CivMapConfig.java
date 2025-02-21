@@ -18,6 +18,7 @@ public class CivMapConfig {
     private int radarCircles;
     private int radarSize;
     private float iconSize;
+    private float textSize;
     private Alignment alignment;
     private double range;
     private float transparency;
@@ -43,6 +44,7 @@ public class CivMapConfig {
         this.radarSize = Integer.parseInt(properties.getProperty("radar_size", "80"));
         this.alignment = Alignment.valueOf(properties.getProperty("alignment", "top_left").toUpperCase());
         this.iconSize = Float.parseFloat(properties.getProperty("icon_size", "1"));
+        this.textSize = Float.parseFloat(properties.getProperty("text_size", String.valueOf(this.iconSize)));
         this.range = Double.parseDouble(properties.getProperty("range", "64"));
         this.transparency = Float.parseFloat(properties.getProperty("transparency", "0.5"));
         this.radarColour = Integer.parseInt(properties.getProperty("radar_colour", Integer.toString(DEFAULT_RADAR_FG_COLOUR)));
@@ -69,6 +71,7 @@ public class CivMapConfig {
             properties.setProperty("radar_size", Integer.toString(radarSize));
             properties.setProperty("alignment", alignment.name().toLowerCase());
             properties.setProperty("icon_size", Float.toString(iconSize));
+            properties.setProperty("text_size", Float.toString(textSize));
             properties.setProperty("range", Double.toString(range));
             properties.setProperty("transparency", Float.toString(transparency));
             properties.setProperty("bg_transparency", Float.toString(bgTransparency));
@@ -261,5 +264,13 @@ public class CivMapConfig {
 
     public void setNorthUp(boolean northUp) {
         this.northUp = northUp;
+    }
+
+    public float getTextSize() {
+        return textSize;
+    }
+
+    public void setTextSize(float textSize) {
+        this.textSize = textSize;
     }
 }

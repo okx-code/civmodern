@@ -7,6 +7,7 @@ import net.minecraft.client.gui.Gui;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
+import net.minecraft.client.renderer.RenderType;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 
@@ -29,8 +30,7 @@ public class ImageButton extends AbstractWidget {
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
         RenderSystem.enableDepthTest();
-        int blitOffset = 10;
-        guiGraphics.blit(image, this.getX(), this.getY(), blitOffset, 0, k * 20, this.width, this.height, 20, 40);
+        guiGraphics.blit(RenderType::guiTextured, image, this.getX(), this.getY(), 0, k * 20, this.width, this.height, 20, 40);
 //    this.renderBg(poseStack, minecraft, i, j);
     }
 

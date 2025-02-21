@@ -12,13 +12,14 @@ import com.mojang.blaze3d.vertex.VertexFormat.Mode;
 import com.mojang.math.Axis;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.components.PlayerFaceRenderer;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.multiplayer.PlayerInfo;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.player.RemotePlayer;
-import net.minecraft.client.renderer.GameRenderer;
+import net.minecraft.client.renderer.CoreShaders;
+import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
@@ -84,6 +85,15 @@ public class Radar {
         this.eventBus = eventBus;
         this.colourProvider = colourProvider;
         eventBus.register(this);
+    }
+
+    public static void playPlayerSound(String soundName, UUID playerKey) {
+        SoundEvent soundEvent = BuiltInRegistries.SOUND_EVENT.getValue(ResourceLocation.withDefaultNamespace("block.note_block." + soundName));
+        if (soundEvent == null) return;
+
+        float pitch = .5f + 1.5f * new Random(playerKey.hashCode()).nextFloat();
+        float volume = 1;
+        Minecraft.getInstance().getSoundManager().play(SimpleSoundInstance.forUI(soundEvent, pitch, volume));
     }
 
     @Subscribe
@@ -251,9 +261,9 @@ public class Radar {
 
         for (Entity entity : minecraft.level.entitiesForRendering()) {
             if (entity instanceof Boat boat) {
-                renderEntity(guiGraphics, minecraft.player, boat, delta, boat.getPickResult(), 1.0f);
+                renderEntity(guiGraphics, minecraft.player, boat, delta, boat.getPickResult());
             } else if (entity instanceof Minecart minecart) {
-                renderEntity(guiGraphics, minecraft.player, minecart, delta, new ItemStack(Items.MINECART, 1), 1.1f);
+                renderEntity(guiGraphics, minecraft.player, minecart, delta, new ItemStack(Items.MINECART, 1));
             }
         }
     }
@@ -263,12 +273,12 @@ public class Radar {
 
         for (Entity entity : minecraft.level.entitiesForRendering()) {
             if (entity instanceof ItemEntity item) {
-                renderEntity(guiGraphics, minecraft.player, item, delta, item.getItem(), 0f);
+                renderEntity(guiGraphics, minecraft.player, item, delta, item.getItem());
             }
         }
     }
 
-    private void renderEntity(GuiGraphics guiGraphics, Player player, Entity entity, float delta, ItemStack item, float blit) {
+    private void renderEntity(GuiGraphics guiGraphics, Player player, Entity entity, float delta, ItemStack item) {
         double scale = config.getRadarSize() / config.getRange();
 
         double px = player.xOld + (player.getX() - player.xOld) * delta;
@@ -298,7 +308,8 @@ public class Radar {
         if (notUseBlockLight) {
             Lighting.setupForFlatItems();
         }
-        Minecraft.getInstance().getItemRenderer().render(item, ItemDisplayContext.GUI, false, guiGraphics.pose(), guiGraphics.bufferSource(), 0xF000F0, OverlayTexture.NO_OVERLAY, bakedModel);
+        guiGraphics.drawSpecial(source ->
+            Minecraft.getInstance().getItemRenderer().render(item, ItemDisplayContext.GUI, false, guiGraphics.pose(), source, 0xF000F0, OverlayTexture.NO_OVERLAY, bakedModel));
         guiGraphics.flush();
         if (notUseBlockLight) {
             Lighting.setupFor3DItems();
@@ -330,28 +341,32 @@ public class Radar {
             RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1);
 
             guiGraphics.pose().pushPose();
-            guiGraphics.pose().translate(dx * v, dz * v, 211);
+            guiGraphics.pose().translate(dx * v, dz * v, 2011);
             guiGraphics.pose().scale(0.9f, 0.9f, 0);
 
             PlayerInfo entry = minecraft.player.connection.getPlayerInfo(player.getUUID());
-            guiGraphics.pose().scale(config.getIconSize(), config.getIconSize(), 0);
             if (config.isNorthUp()) {
                 guiGraphics.pose().mulPose(Axis.ZP.rotationDegrees(180));
             } else {
                 guiGraphics.pose().mulPose(Axis.ZP.rotationDegrees(minecraft.player.getViewYRot(delta)));
             }
+            guiGraphics.pose().pushPose();
+            guiGraphics.pose().scale(config.getIconSize(), config.getIconSize(), 0);
             ResourceLocation location;
             if (entry != null) {
                 location = entry.getSkin().texture();
             } else {
                 location = ResourceLocation.withDefaultNamespace("textures/entity/steve.png");
             }
-            guiGraphics.blit(location, -4, -4, 8, 8, 8.0F, 8, 8, 8, 64, 64);
+            PlayerFaceRenderer.draw(guiGraphics, location, -4, -4, 8, true, false, -1);
+//            guiGraphics.blit(RenderType::guiTextured, location, -4, -4, 8, 8, 8, 8, 8, 64, 64);
             RenderSystem.disableBlend();
-            guiGraphics.pose().scale(0.6f, 0.6f, 0);
+            guiGraphics.pose().popPose();
+            guiGraphics.pose().translate(0, 4.5f * config.getIconSize(), 0);
+            guiGraphics.pose().scale(0.6f * config.getTextSize(), 0.6f * config.getTextSize(), 0);
             Component component = Component.literal(
                 player.getScoreboardName() + " (" + (hideY() ? ((int) Math.round(Math.sqrt(dx * dx + dz * dz))) : (int) player.getY()) + ")");
-            guiGraphics.drawCenteredString(minecraft.font, component, 0, 7, 0xffffff);
+            guiGraphics.drawCenteredString(minecraft.font, component, 0, 0, 0xffffff);
 
             guiGraphics.pose().popPose();
         }
@@ -361,7 +376,7 @@ public class Radar {
         RenderSystem.lineWidth(1);
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
-        RenderSystem.setShader(GameRenderer::getPositionColorShader);
+        RenderSystem.setShader(CoreShaders.POSITION_COLOR);
 
         Tesselator tessellator = Tesselator.getInstance();
         BufferBuilder buffer = tessellator.begin(Mode.TRIANGLE_FAN, DefaultVertexFormat.POSITION_COLOR);
@@ -381,7 +396,7 @@ public class Radar {
         RenderSystem.enableBlend();
         glEnable(GL_POLYGON_SMOOTH);
         RenderSystem.defaultBlendFunc();
-        RenderSystem.setShader(GameRenderer::getPositionColorShader);
+        RenderSystem.setShader(CoreShaders.POSITION_COLOR);
 
         Tesselator tessellator = Tesselator.getInstance();
         BufferBuilder buffer = tessellator.begin(Mode.TRIANGLE_STRIP, DefaultVertexFormat.POSITION_COLOR);
@@ -408,7 +423,7 @@ public class Radar {
         RenderSystem.enableBlend();
         glEnable(GL_POLYGON_SMOOTH);
         RenderSystem.defaultBlendFunc();
-        RenderSystem.setShader(GameRenderer::getPositionColorShader);
+        RenderSystem.setShader(CoreShaders.POSITION_COLOR);
 
         float radius = radius() + 0.5f;
 
@@ -438,7 +453,7 @@ public class Radar {
         RenderSystem.enableBlend();
         glEnable(GL_POLYGON_SMOOTH);
         RenderSystem.defaultBlendFunc();
-        RenderSystem.setShader(GameRenderer::getPositionColorShader);
+        RenderSystem.setShader(CoreShaders.POSITION_COLOR);
 
         float radius = radius() + 0.5f;
 
@@ -467,14 +482,5 @@ public class Radar {
 
         glDisable(GL_POLYGON_SMOOTH);
         RenderSystem.disableBlend();
-    }
-
-    public static void playPlayerSound(String soundName, UUID playerKey) {
-        SoundEvent soundEvent = BuiltInRegistries.SOUND_EVENT.get(ResourceLocation.withDefaultNamespace("block.note_block." + soundName));
-        if (soundEvent == null) return;
-
-        float pitch = .5f + 1.5f * new Random(playerKey.hashCode()).nextFloat();
-        float volume = 1;
-        Minecraft.getInstance().getSoundManager().play(SimpleSoundInstance.forUI(soundEvent, pitch, volume));
     }
 }
