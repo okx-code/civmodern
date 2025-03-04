@@ -20,6 +20,8 @@ which is located at `.minecraft/config/civianmod.json`.
 
 ## Added
 
+- Crates will have a configurably-coloured stack count.
+
 - Hold W/forward macro (bound to `[` by default).
 
 - Better toggle-sneak (bound to `]` by default). Will automatically deactivate itself if you manually `SHIFT` sneak, or
