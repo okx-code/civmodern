@@ -35,6 +35,7 @@ public final class CivModernConfig {
     public static void apply(
         final @NotNull CivModernConfig config
     ) {
+        CompactedItem.CRATE_COLOUR = config.itemSettings.crateItemColour.getRGB();
         CompactedItem.COMPACTED_COLOUR = config.itemSettings.compactedItemColour.getRGB();
     }
 
