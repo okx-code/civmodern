@@ -97,7 +97,7 @@ tasks {
                 )
             }
         }
-        filesMatching("assets/civmodern/lang/en_us.json") {
+        filesMatching("assets/civianmod/lang/en_us.json") {
             expand("mod_name" to project.extra["mod_name"])
         }
     }

@@ -1,4 +1,4 @@
-name: "CivModern Latest Gradle CI"
+name: "CivianMod Latest Gradle CI"
 
 on:
   push:
@@ -22,7 +22,7 @@ jobs:
           distribution: "corretto"
           cache: "gradle"
 
-      - name: "Compiling CivModern"
+      - name: "Compiling CivianMod"
         run: "./gradlew build"
 
       - uses: "marvinpinto/action-automatic-releases@latest"

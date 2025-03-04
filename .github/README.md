@@ -1,6 +1,7 @@
-# CivModern
+# CivianMod
 
-This is a fork of CivModern specifically for [CivMC](https://civmc.net) on 1.21.4.
+This is a hard-fork of [CivModern](https://github.com/okx-code/civmodern) made specifically for [CivMC](https://civmc.net)
+on 1.21.4.
 
 ## Features
 
@@ -14,8 +15,8 @@ This is a fork of CivModern specifically for [CivMC](https://civmc.net) on 1.21.
 
 - Hold-key macro for the right mouse button (bound to `=` by default).
 
-You may open CivModern's configuration screen in-game with the `R` binding. Or you can modify the config file directly,
-which is located at `.minecraft/config/civmodern.json`.
+You may open CivianMod's configuration screen in-game with the `R` binding. Or you can modify the config file directly,
+which is located at `.minecraft/config/civianmod.json`.
 
 ## Added
 

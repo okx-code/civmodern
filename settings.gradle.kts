@@ -11,4 +11,4 @@ pluginManagement {
 	}
 }
 
-rootProject.name = "CivModern"
+rootProject.name = "CivianMod"

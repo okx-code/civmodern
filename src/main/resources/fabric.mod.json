@@ -1,6 +1,6 @@
 {
 	"schemaVersion": 1,
-	"id": "civmodern",
+	"id": "civianmod",
 	"name": "${mod_name}",
 	"version": "${mod_version}",
 	"description": "${mod_description}",
@@ -11,14 +11,14 @@
 		"sources": "${mod_source_url}",
 		"issues": "${mod_issues_url}"
 	},
-	"icon": "assets/civmodern/icon.png",
+	"icon": "assets/civianmod/icon.png",
 	"environment": "client",
 	"entrypoints": {
 		"client": [
-			"sh.okx.civmodern.mod.CivModernMod::bootstrap"
+			"uk.protonull.civianmod.CivianMod::bootstrap"
 		],
 		"modmenu": [
-            "sh.okx.civmodern.mod.features.modmenu.ModMenuIntegration"
+			"uk.protonull.civianmod.features.modmenu.ModMenuIntegration"
 		]
 	},
 	"depends": {
@@ -31,6 +31,6 @@
 		"modmenu": ">=${modmenu_version}"
 	},
 	"mixins": [
-		"civmodern.mixins.json"
+		"civianmod.mixins.json"
 	]
 }
