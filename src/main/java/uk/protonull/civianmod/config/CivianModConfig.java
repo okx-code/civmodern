@@ -5,10 +5,17 @@ import dev.isxander.yacl3.api.YetAnotherConfigLib;
 import dev.isxander.yacl3.config.v2.api.ConfigClassHandler;
 import dev.isxander.yacl3.config.v2.api.SerialEntry;
 import dev.isxander.yacl3.config.v2.api.serializer.GsonConfigSerializerBuilder;
+import java.io.IOException;
+import java.nio.file.FileAlreadyExistsException;
+import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import org.jetbrains.annotations.NotNull;
+import uk.protonull.civianmod.CivianMod;
 import uk.protonull.civianmod.features.CompactedItem;
 
 public final class CivianModConfig {
@@ -31,6 +38,26 @@ public final class CivianModConfig {
                 .build();
         })
         .build();
+
+    public static void migrate() {
+        final Path configDir = FabricLoader.getInstance().getConfigDir();
+        try {
+            Files.copy(
+                configDir.resolve("civmodern.json"),
+                configDir.resolve("civianmod.json"),
+                StandardCopyOption.COPY_ATTRIBUTES
+            );
+        }
+        catch (final NoSuchFileException ignored) {
+            // There's no CivModern config to migrate
+        }
+        catch (final FileAlreadyExistsException ignored) {
+            // CivModern's config has already been migrated / a new config has already been made
+        }
+        catch (final IOException e) {
+            CivianMod.LOGGER.warn("Could not migrate CivModern YACL config!", e);
+        }
+    }
 
     public static void apply(
         final @NotNull CivianModConfig config

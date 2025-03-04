@@ -12,6 +12,8 @@ import net.minecraft.client.gui.screens.Screen;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.lwjgl.glfw.GLFW;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import uk.protonull.civianmod.config.CivianModConfig;
 import uk.protonull.civianmod.events.ClientTickEvent;
 import uk.protonull.civianmod.events.EventBus;
@@ -23,6 +25,7 @@ import uk.protonull.civianmod.features.macros.IceRoadMacro;
 import uk.protonull.civianmod.features.macros.ToggleSneakMacro;
 
 public final class CivianMod {
+    public static final Logger LOGGER = LoggerFactory.getLogger(CivianMod.class);
     public static final EventBus EVENTS = new EventBus("CivianModEvents");
 
     private static final KeyMapping CONFIG_BINDING = new KeyMapping(
@@ -90,6 +93,7 @@ public final class CivianMod {
     private static void enable(
         final @NotNull Minecraft minecraft
     ) {
+        CivianModConfig.migrate();
         CivianModConfig.HANDLER.load();
         CivianModConfig.apply(CivianModConfig.HANDLER.instance());
 
