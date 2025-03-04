@@ -5,13 +5,11 @@ import java.util.List;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.component.DataComponentMap;
 import net.minecraft.core.component.DataComponents;
-import net.minecraft.core.component.PatchedDataComponentMap;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
-import net.minecraft.world.level.ItemLike;
 import org.jetbrains.annotations.NotNull;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -19,7 +17,6 @@ import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.Redirect;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import uk.protonull.civianmod.config.CivianModConfig;
 import uk.protonull.civianmod.config.ItemSettings;
@@ -41,39 +38,26 @@ public abstract class ItemStackMixin implements CompactedItem.PotentiallyCompact
     @Shadow
     public abstract int getMaxDamage();
 
-    @Inject(
-        method = "<init>(Lnet/minecraft/world/level/ItemLike;ILnet/minecraft/core/component/PatchedDataComponentMap;)V",
-        at = @At("TAIL")
-    )
-    protected void civianmod$determineItemTypes(
-        final @NotNull ItemLike item,
-        final int count,
-        final @NotNull PatchedDataComponentMap components,
-        final @NotNull CallbackInfo ci
-    ) {
-        determineIfCompactedItemType();
-    }
-
     // ============================================================
     // Compacted item detection
     // ============================================================
 
     @Unique
-    private CompactedItem.CompactedItemType civianmod$compactedType = CompactedItem.CompactedItemType.NORMAL;
+    private CompactedItem.CompactedItemType civianmod$compactedType = null;
 
-    @Unique
-    private void determineIfCompactedItemType() {
-        final var self = (ItemStack) (Object) this;
-        if (CompactedItem.isCrate(self)) {
-            this.civianmod$compactedType = CompactedItem.CompactedItemType.CRATE;
-        }
-        else if (CompactedItem.isCompacted(self)) {
-            this.civianmod$compactedType = CompactedItem.CompactedItemType.COMPACTED;
-        }
-    }
-
-    @Override
     public @NotNull CompactedItem.CompactedItemType civianmod$getCompactedItemType() {
+        if (this.civianmod$compactedType == null) {
+            final var self = (ItemStack) (Object) this;
+            if (CompactedItem.isCrate(self)) {
+                this.civianmod$compactedType = CompactedItem.CompactedItemType.CRATE;
+            }
+            else if (CompactedItem.isCompacted(self)) {
+                this.civianmod$compactedType = CompactedItem.CompactedItemType.COMPACTED;
+            }
+            else {
+                this.civianmod$compactedType = CompactedItem.CompactedItemType.NORMAL;
+            }
+        }
         return this.civianmod$compactedType;
     }
 
