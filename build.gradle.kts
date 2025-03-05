@@ -1,12 +1,12 @@
 plugins {
-    id("fabric-loom") version "1.9-SNAPSHOT"
+    id("fabric-loom") version("1.9-SNAPSHOT")
 }
 
 version = "${rootProject.extra["mod_version"]}"
 group = "${rootProject.extra["maven_group"]}.mod.fabric"
 
 base {
-    archivesName.set(project.extra["archives_base_name"] as String)
+    archivesName = "${project.extra["archives_base_name"]}"
 }
 
 loom {
@@ -57,9 +57,11 @@ repositories {
 }
 
 java {
-    withSourcesJar()
     sourceCompatibility = JavaVersion.VERSION_21
     targetCompatibility = JavaVersion.VERSION_21
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
 }
 
 tasks {
@@ -70,7 +72,7 @@ tasks {
     }
     compileJava {
         options.encoding = "UTF-8"
-        options.release.set(21)
+        options.release = 21
     }
     processResources {
         filesMatching("fabric.mod.json") {
@@ -93,7 +95,7 @@ tasks {
             filter {
                 it.replace(
                     "\"%FABRIC_AUTHORS_ARRAY%\"",
-                    groovy.json.JsonBuilder((project.extra["mod_authors"] as String).split(",")).toString()
+                    groovy.json.JsonBuilder("${project.extra["mod_authors"]}".split(",")).toString()
                 )
             }
         }
