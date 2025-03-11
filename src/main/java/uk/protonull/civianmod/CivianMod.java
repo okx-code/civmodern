@@ -15,7 +15,7 @@ import org.lwjgl.glfw.GLFW;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.protonull.civianmod.config.CivianModConfig;
-import uk.protonull.civianmod.events.ClientTickEvent;
+import uk.protonull.civianmod.events.StartOfClientTickEvent;
 import uk.protonull.civianmod.events.EventBus;
 import uk.protonull.civianmod.events.PostRenderGameOverlayEvent;
 import uk.protonull.civianmod.features.macros.AttackMacro;
@@ -82,8 +82,8 @@ public final class CivianMod {
         KeyBindingHelper.registerKeyBinding(ICE_ROAD_BINDING);
 
         ClientLifecycleEvents.CLIENT_STARTED.register(CivianMod::enable);
-        ClientTickEvents.START_CLIENT_TICK.register((client) -> {
-            EVENTS.post(new ClientTickEvent());
+        ClientTickEvents.START_CLIENT_TICK.register((minecraft) -> {
+            EVENTS.post(new StartOfClientTickEvent(minecraft));
         });
         HudRenderCallback.EVENT.register((guiGraphics, tickDelta) -> {
             EVENTS.post(new PostRenderGameOverlayEvent(guiGraphics, tickDelta.getGameTimeDeltaPartialTick(true)));
@@ -110,7 +110,7 @@ public final class CivianMod {
     private static final class Listener {
         @Subscribe
         private void tick(
-            final @NotNull ClientTickEvent event
+            final @NotNull StartOfClientTickEvent event
         ) {
             while (CONFIG_BINDING.consumeClick()) {
                 Minecraft.getInstance().setScreen(newConfigGui(null));

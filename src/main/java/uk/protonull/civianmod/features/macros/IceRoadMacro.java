@@ -9,7 +9,7 @@ import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.NotNull;
 import uk.protonull.civianmod.config.CivianModConfig;
 import uk.protonull.civianmod.config.IceRoadSettings;
-import uk.protonull.civianmod.events.ClientTickEvent;
+import uk.protonull.civianmod.events.StartOfClientTickEvent;
 
 public class IceRoadMacro {
     private final KeyMapping key;
@@ -26,9 +26,9 @@ public class IceRoadMacro {
 
     @Subscribe
     private void tick(
-        final @NotNull ClientTickEvent event
+        final @NotNull StartOfClientTickEvent event
     ) {
-        Minecraft mc = Minecraft.getInstance();
+        final Minecraft mc = event.minecraft();
         if (mc.player == null) return;
 
         final IceRoadSettings settings = CivianModConfig.HANDLER.instance().iceRoadSettings;

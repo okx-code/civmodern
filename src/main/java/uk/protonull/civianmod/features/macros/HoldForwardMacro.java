@@ -6,7 +6,7 @@ import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
-import uk.protonull.civianmod.events.ClientTickEvent;
+import uk.protonull.civianmod.events.StartOfClientTickEvent;
 
 public final class HoldForwardMacro {
     private final KeyMapping macroBinding;
@@ -27,9 +27,9 @@ public final class HoldForwardMacro {
 
     @Subscribe
     private void onTick(
-        final @NotNull ClientTickEvent event
+        final @NotNull StartOfClientTickEvent event
     ) {
-        final Minecraft minecraft = Minecraft.getInstance();
+        final Minecraft minecraft = event.minecraft();
         if (minecraft.player == null || this.macroBinding.isUnbound()) {
             enabled = false;
             return;

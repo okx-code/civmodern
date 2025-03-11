@@ -4,7 +4,7 @@ import com.google.common.eventbus.Subscribe;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import org.jetbrains.annotations.NotNull;
-import uk.protonull.civianmod.events.ClientTickEvent;
+import uk.protonull.civianmod.events.StartOfClientTickEvent;
 import uk.protonull.civianmod.events.HotbarSlotChangedEvent;
 
 public class HoldKeyMacro {
@@ -20,9 +20,9 @@ public class HoldKeyMacro {
 
     @Subscribe
     private void tick(
-        final @NotNull ClientTickEvent event
+        final @NotNull StartOfClientTickEvent event
     ) {
-        Minecraft mc = Minecraft.getInstance();
+        final Minecraft mc = event.minecraft();
         if (mc.player == null) {
             return;
         }

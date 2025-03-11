@@ -8,7 +8,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.OptionInstance;
 import net.minecraft.client.player.LocalPlayer;
 import org.jetbrains.annotations.NotNull;
-import uk.protonull.civianmod.events.ClientTickEvent;
+import uk.protonull.civianmod.events.StartOfClientTickEvent;
 import uk.protonull.civianmod.mixins.KeyMappingAccessor;
 
 public final class ToggleSneakMacro {
@@ -29,9 +29,9 @@ public final class ToggleSneakMacro {
 
     @Subscribe
     private void onTick(
-        final @NotNull ClientTickEvent event
+        final @NotNull StartOfClientTickEvent event
     ) {
-        final LocalPlayer player = Minecraft.getInstance().player;
+        final LocalPlayer player = event.minecraft().player;
         if (player == null) {
             return;
         }
@@ -61,7 +61,7 @@ public final class ToggleSneakMacro {
         ) {
             this.toggleSneak.set(false);
             this.sneakBinding.setDown(InputConstants.isKeyDown(
-                Minecraft.getInstance().getWindow().getWindow(),
+                event.minecraft().getWindow().getWindow(),
                 this.sneakBindingAccessor.civianmod$getKey().getValue()
             ));
         }
