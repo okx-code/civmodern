@@ -38,6 +38,9 @@ public final class ClickRailDest {
         if (!(player instanceof final LocalPlayer localPlayer)) {
             return InteractionResult.PASS;
         }
+        if (!player.getItemInHand(hand).isEmpty()) {
+            return InteractionResult.PASS;
+        }
 
         final InteractionResult result; {
             final PlayerInfo info = localPlayer.getPlayerInfo();

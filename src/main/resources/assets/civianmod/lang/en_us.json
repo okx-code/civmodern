@@ -24,7 +24,7 @@
     "civianmod.config.group.polyfills": "Polyfill Features",
     "civianmod.config.group.polyfills.desc": "Features intended to fill in the feature-gaps of CivMC.",
     "civianmod.config.group.polyfills.feature.click-dest.enabled": "Enable ClickDest?",
-    "civianmod.config.group.polyfills.feature.click-dest.enabled.desc": "This will let you click signs entitled [set destination] to set your dest.\n \nCivMC (illegal): Must be OFF!",
+    "civianmod.config.group.polyfills.feature.click-dest.enabled.desc": "This will let you punch signs entitled [set destination] to set your dest.\n \nCivMC (illegal): Must be OFF!",
     "civianmod.config.group.polyfills.feature.click-dest.cooldown": "ClickDest cooldown",
     "civianmod.config.group.polyfills.feature.click-dest.cooldown.desc": "Since ClickDest invokes the /dest command, it's rate limited, or otherwise you risk getting kicked for spam.\n \nEach 1000 = 1 second.",
     "civianmod.config.group.polyfills.feature.click-dest.cooldown.formatter": "%dms",
