@@ -6,6 +6,7 @@ import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
 import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
+import net.fabricmc.fabric.api.event.player.AttackBlockCallback;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
@@ -18,6 +19,7 @@ import uk.protonull.civianmod.config.CivianModConfig;
 import uk.protonull.civianmod.events.StartOfClientTickEvent;
 import uk.protonull.civianmod.events.EventBus;
 import uk.protonull.civianmod.events.PostRenderGameOverlayEvent;
+import uk.protonull.civianmod.features.ClickRailDest;
 import uk.protonull.civianmod.features.macros.AttackMacro;
 import uk.protonull.civianmod.features.macros.HoldForwardMacro;
 import uk.protonull.civianmod.features.macros.HoldKeyMacro;
@@ -88,6 +90,7 @@ public final class CivianMod {
         HudRenderCallback.EVENT.register((guiGraphics, tickDelta) -> {
             EVENTS.post(new PostRenderGameOverlayEvent(guiGraphics, tickDelta.getGameTimeDeltaPartialTick(true)));
         });
+        AttackBlockCallback.EVENT.register(ClickRailDest::handleBlockClick);
     }
 
     private static void enable(

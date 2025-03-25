@@ -1,5 +1,6 @@
 package uk.protonull.civianmod;
 
+import java.util.regex.Pattern;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.Style;
@@ -8,6 +9,8 @@ import net.minecraft.world.item.component.ItemLore;
 import org.jetbrains.annotations.NotNull;
 
 public final class CivianModHelpers {
+    private static final Pattern LEGACY_FORMATTER_REGEX = Pattern.compile("§.");
+
     public static boolean isNullOrEmpty(
         final Component component
     ) {
@@ -56,5 +59,13 @@ public final class CivianModHelpers {
             }
         }
         return false;
+    }
+
+    public static @NotNull String getPlainString(
+        final @NotNull Component component
+    ) {
+        return LEGACY_FORMATTER_REGEX
+            .matcher(component.getString())
+            .replaceAll("");
     }
 }

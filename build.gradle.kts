@@ -10,6 +10,7 @@ base {
 }
 
 loom {
+    accessWidenerPath = file("src/main/resources/civianmod.accesswidener")
     runConfigs.configureEach {
         this.programArgs += "--username LocalModTester".split(" ")
     }
