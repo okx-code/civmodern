@@ -91,7 +91,7 @@ public final class CivianMod {
     ) {
         CivianModConfig.migrate();
         CivianModConfig.HANDLER.load();
-        CivianModConfig.apply(CivianModConfig.HANDLER.instance());
+        CivianModConfig.HANDLER.instance().apply();
 
         EVENTS.register(new Listener());
 

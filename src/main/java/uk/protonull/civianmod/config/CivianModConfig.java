@@ -16,11 +16,13 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import org.jetbrains.annotations.NotNull;
 import uk.protonull.civianmod.CivianMod;
-import uk.protonull.civianmod.features.CompactedItem;
 
 public final class CivianModConfig {
     @SerialEntry(value = "items")
     public final ItemSettings itemSettings = new ItemSettings();
+
+    @SerialEntry(value = "polyfills")
+    public final PolyfillsSettings polyfillsSettings = new PolyfillsSettings();
 
     @SerialEntry(value = "iceRoad")
     public final IceRoadSettings iceRoadSettings = new IceRoadSettings();
@@ -59,11 +61,9 @@ public final class CivianModConfig {
         }
     }
 
-    public static void apply(
-        final @NotNull CivianModConfig config
-    ) {
-        CompactedItem.CRATE_COLOUR = config.itemSettings.crateItemColour.getRGB();
-        CompactedItem.COMPACTED_COLOUR = config.itemSettings.compactedItemColour.getRGB();
+    public void apply() {
+        this.itemSettings.apply();
+        this.polyfillsSettings.apply();
     }
 
     // ============================================================
@@ -79,12 +79,13 @@ public final class CivianModConfig {
                 ConfigCategory.createBuilder()
                     .name(Component.translatable("civianmod.config.category"))
                     .group(ItemSettings.generateGroup(config.itemSettings))
+                    .group(PolyfillsSettings.generateGroup(config.polyfillsSettings))
                     .group(IceRoadSettings.generateGroup(config.iceRoadSettings))
                     .build()
             )
             .save(() -> {
                 HANDLER.save();
-                apply(config);
+                config.apply();
             })
             .build();
     }

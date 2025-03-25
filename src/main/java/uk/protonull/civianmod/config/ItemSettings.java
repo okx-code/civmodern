@@ -42,6 +42,11 @@ public final class ItemSettings {
     @SerialEntry
     public boolean safeMining = DEFAULT_SAFE_MINING;
 
+    void apply() {
+        CompactedItem.CRATE_COLOUR = this.crateItemColour.getRGB();
+        CompactedItem.COMPACTED_COLOUR = this.compactedItemColour.getRGB();
+    }
+
     // ============================================================
     // Screen generation
     // ============================================================

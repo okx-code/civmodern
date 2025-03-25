@@ -18,10 +18,10 @@ import uk.protonull.civianmod.CivianModHelpers;
 
 public final class ClickRailDest {
     public static final boolean DEFAULT_ENABLED = false;
-    public static volatile boolean ENABLED = DEFAULT_ENABLED;
+    public static volatile boolean enabled = DEFAULT_ENABLED;
 
-    public static final long DEFAULT_CLICK_DELAY = 1_000; // 1000ms (1 second)
-    public static volatile long CLICK_DELAY = DEFAULT_CLICK_DELAY;
+    public static final long DEFAULT_COOLDOWN = 1_000; // 1000ms (1 second)
+    public static volatile long cooldown = DEFAULT_COOLDOWN;
 
     private static long lastClickTime = 0;
 
@@ -32,7 +32,7 @@ public final class ClickRailDest {
         final @NotNull BlockPos blockPos,
         final @NotNull Direction direction
     ) {
-        if (!ENABLED) {
+        if (!enabled) {
             return InteractionResult.PASS;
         }
         if (!(player instanceof final LocalPlayer localPlayer)) {
@@ -83,7 +83,7 @@ public final class ClickRailDest {
 
     private static boolean isOnCooldown() {
         final long now = System.currentTimeMillis();
-        final long clickDelay = CLICK_DELAY;
+        final long clickDelay = cooldown;
         if (clickDelay <= 0) {
             lastClickTime = 0L;
         }
