@@ -90,7 +90,9 @@ public final class ClickRailDest {
         else if ((now - lastClickTime) < clickDelay) {
             return true;
         }
-        lastClickTime = now;
+        else {
+            lastClickTime = now;
+        }
         return false;
     }
 }
