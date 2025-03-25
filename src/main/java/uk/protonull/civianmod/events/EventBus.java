@@ -1,6 +1,7 @@
 package uk.protonull.civianmod.events;
 
 import com.google.common.eventbus.DeadEvent;
+import net.minecraft.client.Minecraft;
 import org.jetbrains.annotations.NotNull;
 
 public final class EventBus extends com.google.common.eventbus.EventBus {
@@ -17,5 +18,11 @@ public final class EventBus extends com.google.common.eventbus.EventBus {
         if (!(event instanceof DeadEvent)) {
             super.post(event);
         }
+    }
+
+    public void emitStartOfClientTickEvent(
+        final @NotNull Minecraft minecraft
+    ) {
+        post(new StartOfClientTickEvent(minecraft));
     }
 }

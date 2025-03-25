@@ -5,7 +5,6 @@ import com.mojang.blaze3d.platform.InputConstants.Type;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
-import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
 import net.fabricmc.fabric.api.event.player.AttackBlockCallback;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
@@ -18,7 +17,6 @@ import org.slf4j.LoggerFactory;
 import uk.protonull.civianmod.config.CivianModConfig;
 import uk.protonull.civianmod.events.StartOfClientTickEvent;
 import uk.protonull.civianmod.events.EventBus;
-import uk.protonull.civianmod.events.PostRenderGameOverlayEvent;
 import uk.protonull.civianmod.features.ClickRailDest;
 import uk.protonull.civianmod.features.macros.AttackMacro;
 import uk.protonull.civianmod.features.macros.HoldForwardMacro;
@@ -84,12 +82,7 @@ public final class CivianMod {
         KeyBindingHelper.registerKeyBinding(ICE_ROAD_BINDING);
 
         ClientLifecycleEvents.CLIENT_STARTED.register(CivianMod::enable);
-        ClientTickEvents.START_CLIENT_TICK.register((minecraft) -> {
-            EVENTS.post(new StartOfClientTickEvent(minecraft));
-        });
-        HudRenderCallback.EVENT.register((guiGraphics, tickDelta) -> {
-            EVENTS.post(new PostRenderGameOverlayEvent(guiGraphics, tickDelta.getGameTimeDeltaPartialTick(true)));
-        });
+        ClientTickEvents.START_CLIENT_TICK.register(EVENTS::emitStartOfClientTickEvent);
         AttackBlockCallback.EVENT.register(ClickRailDest::handleBlockClick);
     }
 
