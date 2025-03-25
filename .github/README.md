@@ -27,6 +27,9 @@ which is located at `.minecraft/config/civianmod.json`.
 - Better toggle-sneak (bound to `]` by default). Will automatically deactivate itself if you manually `SHIFT` sneak, or
   if you enter water, or start swimming, sprinting, elytra gliding, or creative flying.
 
+- Signs entitled with `[set destination]` can be punched to set your dest. This is disabled by default since it violates
+  CivMC's block-reading rules. DO NOT USE!
+
 - Added option that shows an item's base-repair level in its tooltip either always, only in advanced tooltips, or never.
   Set to always by default.
 
