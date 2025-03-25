@@ -57,7 +57,7 @@ public final class ExpIngredients {
         final @NotNull ItemStack item
     ) {
         return item.getItem() == Items.ENDER_EYE
-            && CivianModHelpers.hasPlainDisplayName(item, "Player Essence")
-            && CivianModHelpers.hasPlainLoreLine(item, "Activity reward used to fuel pearls");
+            && CivianModHelpers.hasPlainDisplayName(item, "Player Essence", false)
+            && CivianModHelpers.hasPlainLoreLine(item, "Activity reward used to fuel pearls", false);
     }
 }

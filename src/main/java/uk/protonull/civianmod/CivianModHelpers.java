@@ -19,46 +19,49 @@ public final class CivianModHelpers {
 
     public static boolean hasPlainDisplayName(
         final @NotNull ItemStack item,
-        final @NotNull String expected
+        final @NotNull String expected,
+        final boolean ignoreCase
     ) {
-        final Component displayName = item.getComponents().get(DataComponents.CUSTOM_NAME);
-        if (isNullOrEmpty(displayName)) {
-            return false;
-        }
-        final var content = new StringBuilder();
-        for (final Component child : displayName.toFlatList()) {
-            if (!Style.EMPTY.equals(child.getStyle())) {
-                return false;
-            }
-            content.append(child.getString());
-        }
-        return expected.contentEquals(content);
+        return matchesPlainText(item.getComponents().get(DataComponents.CUSTOM_NAME), expected, ignoreCase);
     }
 
     public static boolean hasPlainLoreLine(
         final @NotNull ItemStack item,
-        final @NotNull String expected
+        final @NotNull String expected,
+        final boolean ignoreCase
     ) {
-        final ItemLore lore = item.getComponents().get(DataComponents.LORE);
-        if (lore == null) {
-            return false;
-        }
-        for (final Component line : lore.lines()) {
-            if (isNullOrEmpty(line)) {
-                continue;
-            }
-            final var content = new StringBuilder();
-            for (final Component child : line.toFlatList()) {
-                if (!Style.EMPTY.equals(child.getStyle())) {
-                    return false;
+        if (item.getComponents().get(DataComponents.LORE) instanceof final ItemLore lore) {
+            for (final Component line : lore.lines()) {
+                if (matchesPlainText(line, expected, ignoreCase)) {
+                    return true;
                 }
-                content.append(child.getString());
-            }
-            if (expected.contentEquals(content)) {
-                return true;
             }
         }
         return false;
+    }
+
+    public static boolean matchesPlainText(
+        final Component component,
+        final @NotNull String expected,
+        final boolean ignoreCase
+    ) {
+        if (isNullOrEmpty(component)) {
+            return false;
+        }
+        final var combined = new StringBuilder();
+        for (final Component child : component.toFlatList()) {
+            if (!Style.EMPTY.equals(child.getStyle())) {
+                return false;
+            }
+            final String content = child.getString();
+            if (LEGACY_FORMATTER_REGEX.matcher(content).matches()) {
+                return false;
+            }
+            combined.append(content);
+        }
+        return ignoreCase
+            ? expected.equalsIgnoreCase(combined.toString())
+            : expected.contentEquals(combined);
     }
 
     public static @NotNull String getPlainString(

@@ -24,13 +24,13 @@ public final class CompactedItem {
         final @NotNull ItemStack item
     ) {
         return item.getItem() == Items.CHEST
-            && CivianModHelpers.hasPlainLoreLine(item, CRATE_LORE);
+            && CivianModHelpers.hasPlainLoreLine(item, CRATE_LORE, false);
     }
 
     public static boolean isCompacted(
         final @NotNull ItemStack item
     ) {
-        return CivianModHelpers.hasPlainLoreLine(item, COMPACTED_LORE);
+        return CivianModHelpers.hasPlainLoreLine(item, COMPACTED_LORE, false);
     }
 
     public static @NotNull CompactedItemType getCompactedItemType(

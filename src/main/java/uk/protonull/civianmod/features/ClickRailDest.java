@@ -59,7 +59,7 @@ public final class ClickRailDest {
         if (lines.length < 1) {
             return InteractionResult.PASS;
         }
-        if (!"[set destination]".equalsIgnoreCase(CivianModHelpers.getPlainString(lines[0]))) {
+        if (!CivianModHelpers.matchesPlainText(lines[0], "[set destination]", true)) {
             return InteractionResult.PASS;
         }
 
