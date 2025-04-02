@@ -78,7 +78,7 @@ public final class ClickRailDest {
                 .map(CivianModHelpers::getPlainString)
                 .filter(StringUtils::isNotBlank)
                 .collect(Collectors.joining(" "))
-        );
+        ).trim();
 
         localPlayer.minecraft.execute(() -> localPlayer.connection.sendCommand(dest));
         return result;
