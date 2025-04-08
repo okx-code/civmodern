@@ -93,7 +93,16 @@ public final class CivianMod {
         CivianModConfig.HANDLER.load();
         CivianModConfig.HANDLER.instance().apply();
 
-        EVENTS.register(new Listener());
+        EVENTS.register(new Object() {
+            @Subscribe
+            private void handleTickEvent(
+                final @NotNull StartOfClientTickEvent event
+            ) {
+                while (CONFIG_BINDING.consumeClick()) {
+                    event.minecraft().setScreen(newConfigGui(null));
+                }
+            }
+        });
 
         EVENTS.register(new HoldKeyMacro(HOLD_LEFT_BINDING, minecraft.options.keyAttack));
         EVENTS.register(new HoldKeyMacro(HOLD_RIGHT_BINDING, minecraft.options.keyUse));
@@ -101,17 +110,6 @@ public final class CivianMod {
         EVENTS.register(new ToggleSneakMacro(minecraft, HOLD_SNEAK_BINDING));
         EVENTS.register(new IceRoadMacro(ICE_ROAD_BINDING));
         EVENTS.register(new AttackMacro(ATTACK_BINDING, minecraft.options.keyAttack));
-    }
-
-    private static final class Listener {
-        @Subscribe
-        private void tick(
-            final @NotNull StartOfClientTickEvent event
-        ) {
-            while (CONFIG_BINDING.consumeClick()) {
-                Minecraft.getInstance().setScreen(newConfigGui(null));
-            }
-        }
     }
 
     public static @NotNull Screen newConfigGui(
