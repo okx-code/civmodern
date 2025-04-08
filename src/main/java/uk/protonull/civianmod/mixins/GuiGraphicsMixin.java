@@ -10,6 +10,7 @@ import org.spongepowered.asm.mixin.injection.Constant;
 import org.spongepowered.asm.mixin.injection.ModifyConstant;
 import org.spongepowered.asm.mixin.injection.ModifyVariable;
 import uk.protonull.civianmod.features.CompactedItem;
+import uk.protonull.civianmod.mixing.CivianItemStack;
 
 @Mixin(GuiGraphics.class)
 public abstract class GuiGraphicsMixin {
@@ -25,9 +26,9 @@ public abstract class GuiGraphicsMixin {
         if (value != null) {
             return value;
         }
-        return switch (CompactedItem.getCompactedItemType(item)) {
-            case CRATE, COMPACTED -> String.valueOf(item.getCount());
-            default -> null;
+        return switch (CivianItemStack.getCompactedItemType(item)) {
+            case CompactedItem type -> String.valueOf(item.getCount());
+            case null -> null;
         };
     }
 
@@ -35,14 +36,13 @@ public abstract class GuiGraphicsMixin {
         method = "renderItemCount",
         constant = @Constant(intValue = -1)
     )
-    protected int civianmod$renderItemDecorations$colourItemDecorationIfCompacted(
+    protected int civianmod$colourItemDecorationIfCompacted(
         final int decorationColour,
         final @Local(argsOnly = true) ItemStack item
     ) {
-        return switch (CompactedItem.getCompactedItemType(item)) {
-            case CRATE -> CompactedItem.CRATE_COLOUR;
-            case COMPACTED -> CompactedItem.COMPACTED_COLOUR;
-            default -> decorationColour;
+        return switch (CivianItemStack.getCompactedItemType(item)) {
+            case CompactedItem type -> type.colour;
+            case null -> decorationColour;
         };
     }
 }

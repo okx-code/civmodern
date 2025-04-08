@@ -1,9 +1,13 @@
 package uk.protonull.civianmod;
 
+import java.util.Objects;
 import java.util.regex.Pattern;
+import net.minecraft.core.component.DataComponentMap;
 import net.minecraft.core.component.DataComponents;
+import net.minecraft.core.component.PatchedDataComponentMap;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.Style;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.component.ItemLore;
 import org.jetbrains.annotations.NotNull;
@@ -70,5 +74,19 @@ public final class CivianModHelpers {
         return LEGACY_FORMATTER_REGEX
             .matcher(component.getString())
             .replaceAll("");
+    }
+
+    public static @NotNull ItemStack createMaxStackItem(
+        final @NotNull Item material,
+        final Integer amount,
+        final @NotNull DataComponentMap components
+    ) {
+        final var defaultComponents = new PatchedDataComponentMap(material.components());
+        defaultComponents.setAll(components);
+        return new ItemStack(
+            material,
+            Objects.requireNonNullElseGet(amount, material::getDefaultMaxStackSize),
+            defaultComponents
+        );
     }
 }

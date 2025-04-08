@@ -22,8 +22,8 @@ import org.jetbrains.annotations.NotNull;
 import uk.protonull.civianmod.features.CompactedItem;
 
 public final class ItemSettings {
-    private static final Color DEFAULT_CRATE_ITEM_COLOUR = new Color(CompactedItem.DEFAULT_CRATE_COLOR);
-    private static final Color DEFAULT_COMPACTED_ITEM_COLOUR = new Color(CompactedItem.DEFAULT_COMPACTED_COLOR);
+    private static final Color DEFAULT_CRATE_ITEM_COLOUR = new Color(CompactedItem.CRATE.defaultColour);
+    private static final Color DEFAULT_COMPACTED_ITEM_COLOUR = new Color(CompactedItem.COMPACTED.defaultColour);
     private static final TooltipLineOption DEFAULT_SHOW_REPAIR_LEVEL = TooltipLineOption.ALWAYS;
     private static final TooltipLineOption DEFAULT_SHOW_DAMAGE_LEVEL = TooltipLineOption.ALWAYS;
     private static final boolean DEFAULT_SHOW_IS_EXP_INGREDIENT = true;
@@ -43,8 +43,8 @@ public final class ItemSettings {
     public boolean safeMining = DEFAULT_SAFE_MINING;
 
     void apply() {
-        CompactedItem.CRATE_COLOUR = this.crateItemColour.getRGB();
-        CompactedItem.COMPACTED_COLOUR = this.compactedItemColour.getRGB();
+        CompactedItem.CRATE.colour = this.crateItemColour.getRGB();
+        CompactedItem.COMPACTED.colour = this.compactedItemColour.getRGB();
     }
 
     // ============================================================
@@ -72,13 +72,13 @@ public final class ItemSettings {
         return Option.<Color>createBuilder()
             .name(Component.translatable("civianmod.config.group.items.crateColour"))
             .description(OptionDescription.of(Component.translatable("civianmod.config.group.items.crateColour.desc")))
-            .controller((opt) -> () -> new CompactedItemColourController(opt, CompactedItem.CompactedItemType.CRATE))
+            .controller((opt) -> () -> new CompactedItemColourController(opt, CompactedItem.CRATE))
             .binding(
                 DEFAULT_CRATE_ITEM_COLOUR,
                 () -> itemSettings.crateItemColour,
                 (colour) -> itemSettings.crateItemColour = colour
             )
-            .addListener((opt, event) -> CompactedItem.CRATE_COLOUR = opt.pendingValue().getRGB())
+            .addListener((opt, event) -> CompactedItem.CRATE.colour = opt.pendingValue().getRGB())
             .build();
     }
 
@@ -88,13 +88,13 @@ public final class ItemSettings {
         return Option.<Color>createBuilder()
             .name(Component.translatable("civianmod.config.group.items.compactedColour"))
             .description(OptionDescription.of(Component.translatable("civianmod.config.group.items.compactedColour.desc")))
-            .controller((opt) -> () -> new CompactedItemColourController(opt, CompactedItem.CompactedItemType.COMPACTED))
+            .controller((opt) -> () -> new CompactedItemColourController(opt, CompactedItem.COMPACTED))
             .binding(
                 DEFAULT_COMPACTED_ITEM_COLOUR,
                 () -> itemSettings.compactedItemColour,
                 (colour) -> itemSettings.compactedItemColour = colour
             )
-            .addListener((opt, event) -> CompactedItem.COMPACTED_COLOUR = opt.pendingValue().getRGB())
+            .addListener((opt, event) -> CompactedItem.COMPACTED.colour = opt.pendingValue().getRGB())
             .build();
     }
 
@@ -163,17 +163,14 @@ public final class ItemSettings {
     // ============================================================
 
     private static final class CompactedItemColourController extends ColorController {
-        private final CompactedItem.CompactedItemType type;
+        private final CompactedItem type;
 
         public CompactedItemColourController(
             final @NotNull Option<Color> option,
-            final @NotNull CompactedItem.CompactedItemType type
+            final @NotNull CompactedItem type
         ) {
             super(option, false);
-            this.type = switch (type) {
-                case CRATE, COMPACTED -> type;
-                default -> throw new IllegalArgumentException("Does not support compacted item type: " + type);
-            };
+            this.type = Objects.requireNonNull(type);
         }
 
         @Override
@@ -185,7 +182,6 @@ public final class ItemSettings {
                 switch (this.type) {
                     case CRATE -> CompactedItem.createExampleCrate();
                     case COMPACTED -> CompactedItem.createExampleCompacted();
-                    default -> throw new IllegalStateException("How did [" + this.type + "] get here?!");
                 },
                 this,
                 screen,
