@@ -89,9 +89,13 @@ public final class CivianMod {
     private static void enable(
         final @NotNull Minecraft minecraft
     ) {
-        CivianModConfig.migrate();
+        CivianModConfig.migrateFromCivModernConfig();
         CivianModConfig.HANDLER.load();
-        CivianModConfig.HANDLER.instance().apply();
+        final CivianModConfig config = CivianModConfig.HANDLER.instance();
+        if (CivianModConfig.migrateToFlattenedConfig(config)) {
+            CivianModConfig.HANDLER.save();
+        }
+        config.apply();
 
         EVENTS.register(new Object() {
             @Subscribe

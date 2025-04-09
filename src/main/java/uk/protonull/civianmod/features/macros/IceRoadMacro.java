@@ -8,7 +8,7 @@ import net.minecraft.world.food.FoodProperties;
 import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.NotNull;
 import uk.protonull.civianmod.config.CivianModConfig;
-import uk.protonull.civianmod.config.IceRoadSettings;
+import uk.protonull.civianmod.config.old.LegacyIceRoadSettings;
 import uk.protonull.civianmod.events.StartOfClientTickEvent;
 
 public class IceRoadMacro {
@@ -31,7 +31,7 @@ public class IceRoadMacro {
         final Minecraft mc = event.minecraft();
         if (mc.player == null) return;
 
-        final IceRoadSettings settings = CivianModConfig.HANDLER.instance().iceRoadSettings;
+        final LegacyIceRoadSettings settings = CivianModConfig.HANDLER.instance().legacyIceRoadSettings;
 
         while (this.key.consumeClick()) {
             if (enabled) {
