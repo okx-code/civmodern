@@ -38,13 +38,6 @@ public record ItemDurability(
         );
     }
 
-    @Contract("null -> true")
-    public static boolean isSafeToUse(
-        final ItemDurability durability
-    ) {
-        return durability == null || durability.damage() < (durability.maxDamage() - 1);
-    }
-
     public static final TooltipLineOption DEFAULT_SHOW_REPAIR_LEVEL = TooltipLineOption.ALWAYS;
     public static volatile TooltipLineOption showRepairLevel = DEFAULT_SHOW_REPAIR_LEVEL;
 

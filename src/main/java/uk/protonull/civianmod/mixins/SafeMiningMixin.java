@@ -14,8 +14,6 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
-import uk.protonull.civianmod.config.CivianModConfig;
-import uk.protonull.civianmod.features.ItemDurability;
 import uk.protonull.civianmod.features.SafeMining;
 
 @Mixin(Minecraft.class)
@@ -40,15 +38,10 @@ public abstract class SafeMiningMixin {
         final @Local @NotNull ItemStack tool,
         final @Local @NotNull BlockHitResult hitResult
     ) {
-        if (!CivianModConfig.HANDLER.instance().itemSettings.safeMining) {
-            return;
+        if (SafeMining.preventToolBreak(tool)) {
+            SafeMining.emitPreventedParticle(this.player, hitResult, tool);
+            cir.setReturnValue(true);
         }
-        final ItemDurability durability = ItemDurability.from(tool);
-        if (ItemDurability.isSafeToUse(durability)) {
-            return;
-        }
-        SafeMining.emitPreventedParticle(this.player, hitResult, tool);
-        cir.setReturnValue(true);
     }
 
     @Inject(
@@ -65,16 +58,11 @@ public abstract class SafeMiningMixin {
         final @NotNull CallbackInfo ci,
         final @Local @NotNull BlockHitResult hitResult
     ) {
-        if (!CivianModConfig.HANDLER.instance().itemSettings.safeMining) {
-            return;
-        }
         final ItemStack tool = this.player.getMainHandItem();
-        final ItemDurability durability = ItemDurability.from(tool);
-        if (ItemDurability.isSafeToUse(durability)) {
-            return;
+        if (SafeMining.preventToolBreak(tool)) {
+            SafeMining.emitPreventedParticle(this.player, hitResult, tool);
+            this.gameMode.stopDestroyBlock();
+            ci.cancel();
         }
-        SafeMining.emitPreventedParticle(this.player, hitResult, tool);
-        this.gameMode.stopDestroyBlock();
-        ci.cancel();
     }
 }

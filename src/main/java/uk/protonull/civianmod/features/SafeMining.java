@@ -12,6 +12,26 @@ import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.NotNull;
 
 public final class SafeMining {
+    public static final boolean DEFAULT_ENABLED = true;
+    public static volatile boolean enabled = DEFAULT_ENABLED;
+
+    /**
+     * @apiNote Take example from {@link net.minecraft.world.item.ItemStack#nextDamageWillBreak()}.
+     */
+    public static boolean preventToolBreak(
+        final @NotNull ItemStack tool
+    ) {
+        if (!enabled) {
+            return false;
+        }
+        final ItemDurability durability = ItemDurability.from(tool);
+        if (durability == null) {
+            return false;
+        }
+        final int maximumDamageThreshold = durability.maxDamage() - 1;
+        return durability.damage() >= maximumDamageThreshold;
+    }
+
     public static void emitPreventedParticle(
         final @NotNull LocalPlayer player,
         final @NotNull BlockHitResult hitResult,

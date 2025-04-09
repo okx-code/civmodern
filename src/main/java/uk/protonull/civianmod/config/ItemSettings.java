@@ -22,10 +22,9 @@ import org.jetbrains.annotations.NotNull;
 import uk.protonull.civianmod.features.CompactedItem;
 import uk.protonull.civianmod.features.ExpIngredients;
 import uk.protonull.civianmod.features.ItemDurability;
+import uk.protonull.civianmod.features.SafeMining;
 
 public final class ItemSettings {
-    private static final boolean DEFAULT_SAFE_MINING = true;
-
     @SerialEntry
     public @NotNull Color crateItemColour = CompactedItem.CRATE.defaultAwtColor;
     @SerialEntry
@@ -37,7 +36,7 @@ public final class ItemSettings {
     @SerialEntry
     public boolean showIsExpIngredient = ExpIngredients.DEFAULT_ENABLED;
     @SerialEntry
-    public boolean safeMining = DEFAULT_SAFE_MINING;
+    public boolean safeMining = SafeMining.DEFAULT_ENABLED;
 
     void apply() {
         CompactedItem.CRATE.colour = this.crateItemColour.getRGB();
@@ -45,6 +44,7 @@ public final class ItemSettings {
         ItemDurability.showDamageLevel = this.showDamageLevel;
         ItemDurability.showRepairLevel = this.showRepairLevel;
         ExpIngredients.enabled = this.showIsExpIngredient;
+        SafeMining.enabled = this.safeMining;
     }
 
     // ============================================================
@@ -151,7 +151,7 @@ public final class ItemSettings {
             .description(OptionDescription.of(Component.translatable("civianmod.config.group.items.safeMining.desc")))
             .controller(BooleanControllerBuilder::create)
             .binding(
-                DEFAULT_SAFE_MINING,
+                SafeMining.DEFAULT_ENABLED,
                 () -> itemSettings.safeMining,
                 (enabled) -> itemSettings.safeMining = enabled
             )
