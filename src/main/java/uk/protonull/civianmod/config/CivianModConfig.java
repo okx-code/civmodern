@@ -27,6 +27,7 @@ import uk.protonull.civianmod.features.CompactedItem;
 import uk.protonull.civianmod.features.ExpIngredients;
 import uk.protonull.civianmod.features.ItemDurability;
 import uk.protonull.civianmod.features.SafeMining;
+import uk.protonull.civianmod.features.macros.IceRoadMacro;
 
 public final class CivianModConfig {
     @SerialEntry
@@ -52,18 +53,14 @@ public final class CivianModConfig {
     @SerialEntry
     public long clickDestCooldown = ClickRailDest.DEFAULT_COOLDOWN;
 
-    public static final boolean DEFAULT_SNAP_PITCH = false;
-    public static final boolean DEFAULT_SNAP_YAW = true;
-    public static final boolean DEFAULT_AUTO_EAT = false;
-    public static final boolean DEFAULT_STOP_WHEN_HUNGRY = true;
     @SerialEntry
-    public boolean iceRoadSnapPitch = DEFAULT_SNAP_PITCH;
+    public boolean iceRoadSnapPitch = IceRoadMacro.DEFAULT_SNAP_PITCH;
     @SerialEntry
-    public boolean iceRoadSnapYaw = DEFAULT_SNAP_YAW;
+    public boolean iceRoadSnapYaw = IceRoadMacro.DEFAULT_SNAP_YAW;
     @SerialEntry
-    public boolean iceRoadAutoEat = DEFAULT_AUTO_EAT;
+    public boolean iceRoadAutoEat = IceRoadMacro.DEFAULT_AUTO_EAT;
     @SerialEntry
-    public boolean iceRoadStopWhenHungry = DEFAULT_STOP_WHEN_HUNGRY;
+    public boolean iceRoadStopWhenStarving = IceRoadMacro.DEFAULT_STOP_WHEN_STARVING;
 
     public void apply() {
         // Items tab
@@ -77,6 +74,11 @@ public final class CivianModConfig {
         // Integrations tab
         ClickRailDest.enabled = this.clickDestEnabled;
         ClickRailDest.cooldown = this.clickDestCooldown;
+        // Macros tab
+        IceRoadMacro.snapPitch = this.iceRoadSnapPitch;
+        IceRoadMacro.snapYaw = this.iceRoadSnapYaw;
+        IceRoadMacro.autoEat = this.iceRoadAutoEat;
+        IceRoadMacro.stopWhenStarving = this.iceRoadStopWhenStarving;
     }
 
     // ============================================================
@@ -149,7 +151,7 @@ public final class CivianModConfig {
             config.iceRoadSnapPitch = legacy.snapPitch;
             config.iceRoadSnapYaw = legacy.snapYaw;
             config.iceRoadAutoEat = legacy.autoEat;
-            config.iceRoadStopWhenHungry = legacy.stopWhenHungry;
+            config.iceRoadStopWhenStarving = legacy.stopWhenHungry;
             config.legacyIceRoadSettings = null; // Remove legacy
             hadLegacySettings = true;
         }

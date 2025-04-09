@@ -8,6 +8,7 @@ import dev.isxander.yacl3.api.controller.BooleanControllerBuilder;
 import net.minecraft.network.chat.Component;
 import org.jetbrains.annotations.NotNull;
 import uk.protonull.civianmod.config.CivianModConfig;
+import uk.protonull.civianmod.features.macros.IceRoadMacro;
 
 public final class MacroConfigGui {
     public static @NotNull ConfigCategory generateCategory(
@@ -32,7 +33,7 @@ public final class MacroConfigGui {
             .description(OptionDescription.of(Component.translatable("civianmod.config.tab.macros.option.ice-road-pitch.desc")))
             .controller(BooleanControllerBuilder::create)
             .binding(
-                CivianModConfig.DEFAULT_SNAP_PITCH,
+                IceRoadMacro.DEFAULT_SNAP_PITCH,
                 () -> config.iceRoadSnapPitch,
                 (snap) -> config.iceRoadSnapPitch = snap
             )
@@ -47,7 +48,7 @@ public final class MacroConfigGui {
             .description(OptionDescription.of(Component.translatable("civianmod.config.tab.macros.option.ice-road-yaw.desc")))
             .controller(BooleanControllerBuilder::create)
             .binding(
-                CivianModConfig.DEFAULT_SNAP_YAW,
+                IceRoadMacro.DEFAULT_SNAP_YAW,
                 () -> config.iceRoadSnapYaw,
                 (snap) -> config.iceRoadSnapYaw = snap
             )
@@ -61,7 +62,7 @@ public final class MacroConfigGui {
             .name(Component.translatable("civianmod.config.tab.macros.option.ice-road-eat.label"))
             .controller(BooleanControllerBuilder::create)
             .binding(
-                CivianModConfig.DEFAULT_AUTO_EAT,
+                IceRoadMacro.DEFAULT_AUTO_EAT,
                 () -> config.iceRoadAutoEat,
                 (eat) -> config.iceRoadAutoEat = eat
             )
@@ -75,9 +76,9 @@ public final class MacroConfigGui {
             .name(Component.translatable("civianmod.config.tab.macros.option.ice-road-starving.label"))
             .controller(BooleanControllerBuilder::create)
             .binding(
-                CivianModConfig.DEFAULT_STOP_WHEN_HUNGRY,
-                () -> config.iceRoadStopWhenHungry,
-                (stop) -> config.iceRoadStopWhenHungry = stop
+                IceRoadMacro.DEFAULT_STOP_WHEN_STARVING,
+                () -> config.iceRoadStopWhenStarving,
+                (stop) -> config.iceRoadStopWhenStarving = stop
             )
             .build();
     }

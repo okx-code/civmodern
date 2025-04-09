@@ -7,11 +7,21 @@ import net.minecraft.core.component.DataComponents;
 import net.minecraft.world.food.FoodProperties;
 import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.NotNull;
-import uk.protonull.civianmod.config.CivianModConfig;
-import uk.protonull.civianmod.config.old.LegacyIceRoadSettings;
 import uk.protonull.civianmod.events.StartOfClientTickEvent;
 
 public class IceRoadMacro {
+    public static final boolean DEFAULT_SNAP_PITCH = false;
+    public static volatile boolean snapPitch = DEFAULT_SNAP_PITCH;
+
+    public static final boolean DEFAULT_SNAP_YAW = true;
+    public static volatile boolean snapYaw = DEFAULT_SNAP_YAW;
+
+    public static final boolean DEFAULT_AUTO_EAT = false;
+    public static volatile boolean autoEat = DEFAULT_AUTO_EAT;
+
+    public static final boolean DEFAULT_STOP_WHEN_STARVING = true;
+    public static volatile boolean stopWhenStarving = DEFAULT_STOP_WHEN_STARVING;
+
     private final KeyMapping key;
     // alternate between true and false for maximum jumpage
     private boolean enabled = false;
@@ -31,8 +41,6 @@ public class IceRoadMacro {
         final Minecraft mc = event.minecraft();
         if (mc.player == null) return;
 
-        final LegacyIceRoadSettings settings = CivianModConfig.HANDLER.instance().legacyIceRoadSettings;
-
         while (this.key.consumeClick()) {
             if (enabled) {
                 mc.options.keySprint.setDown(false);
@@ -48,11 +56,11 @@ public class IceRoadMacro {
                 eating = null;
                 enabled = false;
             } else {
-                if (settings.snapYaw) {
+                if (snapYaw) {
                     float roty = Math.round(mc.player.getYRot() / 45) * 45;
                     mc.player.setYRot(roty);
                 }
-                if (settings.snapPitch) {
+                if (snapPitch) {
                     float rotx = Math.round(mc.player.getXRot() / 45) * 45;
                     mc.player.setXRot(rotx);
                 }
@@ -64,7 +72,7 @@ public class IceRoadMacro {
         if (enabled) {
             if (!jump) {
                 AUTO_EAT:
-                if (settings.autoEat) {
+                if (autoEat) {
                     if (this.eating != null) {
                         if (!mc.player.isUsingItem() || !this.eating.equals(mc.player.getUseItem())) {
                             this.eating = null;
@@ -82,7 +90,7 @@ public class IceRoadMacro {
                     }
                 }
 
-                if (settings.stopWhenHungry && mc.player.getFoodData().getFoodLevel() <= 6) {
+                if (stopWhenStarving && mc.player.getFoodData().getFoodLevel() <= 6) {
                     waitingForFood = true;
                     mc.options.keyUp.setDown(false);
                     return;

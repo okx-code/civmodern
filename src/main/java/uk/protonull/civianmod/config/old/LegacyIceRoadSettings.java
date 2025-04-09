@@ -1,15 +1,15 @@
 package uk.protonull.civianmod.config.old;
 
 import dev.isxander.yacl3.config.v2.api.SerialEntry;
-import uk.protonull.civianmod.config.CivianModConfig;
+import uk.protonull.civianmod.features.macros.IceRoadMacro;
 
 public final class LegacyIceRoadSettings {
     @SerialEntry
-    public boolean snapPitch = CivianModConfig.DEFAULT_SNAP_PITCH;
+    public boolean snapPitch = IceRoadMacro.DEFAULT_SNAP_PITCH;
     @SerialEntry
-    public boolean snapYaw = CivianModConfig.DEFAULT_SNAP_YAW;
+    public boolean snapYaw = IceRoadMacro.DEFAULT_SNAP_YAW;
     @SerialEntry
-    public boolean autoEat = CivianModConfig.DEFAULT_AUTO_EAT;
+    public boolean autoEat = IceRoadMacro.DEFAULT_AUTO_EAT;
     @SerialEntry
-    public boolean stopWhenHungry = CivianModConfig.DEFAULT_STOP_WHEN_HUNGRY;
+    public boolean stopWhenHungry = IceRoadMacro.DEFAULT_STOP_WHEN_STARVING;
 }
