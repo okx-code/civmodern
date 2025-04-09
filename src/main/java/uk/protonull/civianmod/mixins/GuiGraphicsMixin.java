@@ -41,7 +41,7 @@ public abstract class GuiGraphicsMixin {
         final @Local(argsOnly = true) ItemStack item
     ) {
         return switch (CivianItemStack.getCompactedItemType(item)) {
-            case CompactedItem type -> type.colour;
+            case CompactedItem type -> type.getRBG();
             case null -> decorationColour;
         };
     }

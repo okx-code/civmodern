@@ -29,6 +29,10 @@ public enum CompactedItem {
         this.colour = defaultColour;
     }
 
+    public int getRBG() {
+        return this.colour & 0xFF_FF_FF;
+    }
+
     private static final String CRATE_LORE = "Crate";
     private static final String COMPACTED_LORE = "Compacted Item";
 
