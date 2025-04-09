@@ -1,6 +1,9 @@
 package uk.protonull.civianmod.features;
 
+import java.util.List;
 import java.util.Set;
+import net.minecraft.ChatFormatting;
+import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -8,6 +11,26 @@ import org.jetbrains.annotations.NotNull;
 import uk.protonull.civianmod.CivianModHelpers;
 
 public final class ExpIngredients {
+    public static final boolean DEFAULT_ENABLED = true;
+    public static volatile boolean enabled = DEFAULT_ENABLED;
+
+    public static void addExpTooltip(
+        final @NotNull ItemStack item,
+        final @NotNull List<Component> tooltipLines
+    ) {
+        if (!enabled) {
+            return;
+        }
+        if (!isExpIngredient(item)) {
+            return;
+        }
+        tooltipLines.add(
+            Component.empty()
+                .withStyle(ChatFormatting.YELLOW)
+                .append(Component.translatable("civianmod.xp.ingredient"))
+        );
+    }
+
     private static final Set<Item> EXP_MATERIALS = Set.of(
         Items.NETHER_WART,
         Items.MELON,

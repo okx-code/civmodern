@@ -2,7 +2,6 @@ package uk.protonull.civianmod.mixins;
 
 import com.llamalad7.mixinextras.sugar.Local;
 import java.util.List;
-import net.minecraft.ChatFormatting;
 import net.minecraft.core.component.PatchedDataComponentMap;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Player;
@@ -19,8 +18,6 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
-import uk.protonull.civianmod.config.CivianModConfig;
-import uk.protonull.civianmod.config.ItemSettings;
 import uk.protonull.civianmod.features.CompactedItem;
 import uk.protonull.civianmod.features.ExpIngredients;
 import uk.protonull.civianmod.features.ItemDurability;
@@ -73,30 +70,10 @@ public abstract class ItemStackMixin implements CivianItemStack {
         final @NotNull CallbackInfoReturnable<List<Component>> cir,
         final @Local @NotNull List<Component> tooltipLines
     ) {
-        final ItemSettings itemSettings = CivianModConfig.HANDLER.instance().itemSettings;
         final var self = (ItemStack) (Object) this;
         ItemDurability.addRepairLevelLine(self, tooltipLines, tooltipFlag);
         ItemDurability.addDamageLevelLine(self, tooltipLines, tooltipFlag);
-        addExpIngredientLine(tooltipLines, tooltipFlag, itemSettings.showIsExpIngredient);
-    }
-
-    @Unique
-    private void addExpIngredientLine(
-        final @NotNull List<Component> tooltipLines,
-        final @NotNull TooltipFlag tooltipFlag,
-        final boolean show
-    ) {
-        if (!show) {
-            return;
-        }
-        if (!ExpIngredients.isExpIngredient((ItemStack) (Object) this)) {
-            return;
-        }
-        tooltipLines.add(
-            Component.empty()
-                .withStyle(ChatFormatting.YELLOW)
-                .append(Component.translatable("civianmod.xp.ingredient"))
-        );
+        ExpIngredients.addExpTooltip(self, tooltipLines);
     }
 
     /**

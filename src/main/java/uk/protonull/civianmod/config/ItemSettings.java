@@ -20,10 +20,10 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.NotNull;
 import uk.protonull.civianmod.features.CompactedItem;
+import uk.protonull.civianmod.features.ExpIngredients;
 import uk.protonull.civianmod.features.ItemDurability;
 
 public final class ItemSettings {
-    private static final boolean DEFAULT_SHOW_IS_EXP_INGREDIENT = true;
     private static final boolean DEFAULT_SAFE_MINING = true;
 
     @SerialEntry
@@ -35,7 +35,7 @@ public final class ItemSettings {
     @SerialEntry
     public @NotNull TooltipLineOption showDamageLevel = ItemDurability.DEFAULT_SHOW_DAMAGE_LEVEL;
     @SerialEntry
-    public boolean showIsExpIngredient = DEFAULT_SHOW_IS_EXP_INGREDIENT;
+    public boolean showIsExpIngredient = ExpIngredients.DEFAULT_ENABLED;
     @SerialEntry
     public boolean safeMining = DEFAULT_SAFE_MINING;
 
@@ -44,6 +44,7 @@ public final class ItemSettings {
         CompactedItem.COMPACTED.colour = this.compactedItemColour.getRGB();
         ItemDurability.showDamageLevel = this.showDamageLevel;
         ItemDurability.showRepairLevel = this.showRepairLevel;
+        ExpIngredients.enabled = this.showIsExpIngredient;
     }
 
     // ============================================================
@@ -135,7 +136,7 @@ public final class ItemSettings {
             .description(OptionDescription.of(Component.translatable("civianmod.config.group.items.isExpIngredient.desc")))
             .controller(BooleanControllerBuilder::create)
             .binding(
-                DEFAULT_SHOW_IS_EXP_INGREDIENT,
+                ExpIngredients.DEFAULT_ENABLED,
                 () -> itemSettings.showIsExpIngredient,
                 (show) -> itemSettings.showIsExpIngredient = show
             )
