@@ -5,10 +5,46 @@ import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
+import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import uk.protonull.civianmod.config.TooltipLineOption;
 
-public final class ItemDurability {
+public record ItemDurability(
+    int damage,
+    int maxDamage
+) {
+    @Contract("null -> null")
+    public static @Nullable ItemDurability from(
+        final ItemStack item
+    ) {
+        if (item == null || item.isEmpty()) {
+            return null;
+        }
+        if (item.has(DataComponents.UNBREAKABLE)) {
+            return null;
+        }
+        final Integer max = item.get(DataComponents.MAX_DAMAGE);
+        if (max == null) {
+            return null;
+        }
+        final Integer damage = item.get(DataComponents.DAMAGE);
+        if (damage == null) {
+            return null;
+        }
+        return new ItemDurability(
+            damage,
+            max
+        );
+    }
+
+    @Contract("null -> true")
+    public static boolean isSafeToUse(
+        final ItemDurability durability
+    ) {
+        return durability == null || durability.damage() < (durability.maxDamage() - 1);
+    }
+
     public static final TooltipLineOption DEFAULT_SHOW_REPAIR_LEVEL = TooltipLineOption.ALWAYS;
     public static volatile TooltipLineOption showRepairLevel = DEFAULT_SHOW_REPAIR_LEVEL;
 
@@ -49,18 +85,17 @@ public final class ItemDurability {
         if (show == TooltipLineOption.ADVANCED && !tooltipFlag.isAdvanced()) {
             return;
         }
-        if (!item.isDamageableItem()) {
+        final ItemDurability durability = from(item);
+        if (durability == null) {
             return;
         }
-        final int damage = item.getDamageValue();
-        if (damage <= 0) {
+        if (durability.damage() <= 0) {
             return;
         }
-        final int maxDamage = item.getMaxDamage();
         tooltipLines.add(Component.translatable(
             "item.durability",
-            maxDamage - damage,
-            maxDamage
+            durability.maxDamage() - durability.damage(),
+            durability.maxDamage()
         ));
     }
 }
