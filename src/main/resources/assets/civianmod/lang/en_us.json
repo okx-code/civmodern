@@ -21,6 +21,8 @@
     "civianmod.config.group.items.isExpIngredient.desc": "Show whether an item is an exp ingredient?",
     "civianmod.config.group.items.safeMining": "Safe Mining?",
     "civianmod.config.group.items.safeMining.desc": "Whether you should be prevented from mining blocks if your tool would break.",
+    "civianmod.config.group.items.safe-mining-threshold": "Safe Mining Threshold",
+    "civianmod.config.group.items.safe-mining-threshold.desc": "How much durability should remain when Safe Mining kicks in? Keep in mind that instabreak tools can still break if you set this too low.",
     "civianmod.config.group.polyfills": "Polyfill Features",
     "civianmod.config.group.polyfills.desc": "Features intended to fill in the feature-gaps of CivMC.",
     "civianmod.config.group.polyfills.feature.click-dest.enabled": "Enable ClickDest?",

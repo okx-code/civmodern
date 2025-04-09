@@ -5,6 +5,7 @@ import dev.isxander.yacl3.api.Option;
 import dev.isxander.yacl3.api.OptionDescription;
 import dev.isxander.yacl3.api.OptionGroup;
 import dev.isxander.yacl3.api.controller.BooleanControllerBuilder;
+import dev.isxander.yacl3.api.controller.IntegerSliderControllerBuilder;
 import dev.isxander.yacl3.api.utils.Dimension;
 import dev.isxander.yacl3.api.utils.MutableDimension;
 import dev.isxander.yacl3.config.v2.api.SerialEntry;
@@ -36,7 +37,9 @@ public final class ItemSettings {
     @SerialEntry
     public boolean showIsExpIngredient = ExpIngredients.DEFAULT_ENABLED;
     @SerialEntry
-    public boolean safeMining = SafeMining.DEFAULT_ENABLED;
+    public boolean safeMiningEnabled = SafeMining.DEFAULT_ENABLED;
+    @SerialEntry
+    public int safeMiningThreshold = SafeMining.DEFAULT_THRESHOLD;
 
     void apply() {
         CompactedItem.CRATE.colour = this.crateItemColour.getRGB();
@@ -44,7 +47,8 @@ public final class ItemSettings {
         ItemDurability.showDamageLevel = this.showDamageLevel;
         ItemDurability.showRepairLevel = this.showRepairLevel;
         ExpIngredients.enabled = this.showIsExpIngredient;
-        SafeMining.enabled = this.safeMining;
+        SafeMining.enabled = this.safeMiningEnabled;
+        SafeMining.threshold = this.safeMiningThreshold;
     }
 
     // ============================================================
@@ -62,7 +66,8 @@ public final class ItemSettings {
             .option(generateShowRepairLevel(itemSettings))
             .option(generateShowDamageLevel(itemSettings))
             .option(generateShowIsExpIngredient(itemSettings))
-            .option(generateSafeMining(itemSettings))
+            .option(generateSafeMiningEnabled(itemSettings))
+            .option(generateSafeMiningThreshold(itemSettings))
             .build();
     }
 
@@ -143,7 +148,7 @@ public final class ItemSettings {
             .build();
     }
 
-    private static @NotNull Option<?> generateSafeMining(
+    private static @NotNull Option<?> generateSafeMiningEnabled(
         final @NotNull ItemSettings itemSettings
     ) {
         return Option.<Boolean>createBuilder()
@@ -152,8 +157,26 @@ public final class ItemSettings {
             .controller(BooleanControllerBuilder::create)
             .binding(
                 SafeMining.DEFAULT_ENABLED,
-                () -> itemSettings.safeMining,
-                (enabled) -> itemSettings.safeMining = enabled
+                () -> itemSettings.safeMiningEnabled,
+                (enabled) -> itemSettings.safeMiningEnabled = enabled
+            )
+            .build();
+    }
+
+    private static @NotNull Option<?> generateSafeMiningThreshold(
+        final @NotNull ItemSettings settings
+    ) {
+        return Option.<Integer>createBuilder()
+            .name(Component.translatable("civianmod.config.group.items.safe-mining-threshold"))
+            .description(OptionDescription.of(Component.translatable("civianmod.config.group.items.safe-mining-threshold.desc")))
+            .controller((opt) -> IntegerSliderControllerBuilder.create(opt)
+                .range(1, 20)
+                .step(1)
+            )
+            .binding(
+                SafeMining.DEFAULT_THRESHOLD,
+                () -> settings.safeMiningThreshold,
+                (threshold) -> settings.safeMiningThreshold = threshold
             )
             .build();
     }

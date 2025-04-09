@@ -15,6 +15,9 @@ public final class SafeMining {
     public static final boolean DEFAULT_ENABLED = true;
     public static volatile boolean enabled = DEFAULT_ENABLED;
 
+    public static final int DEFAULT_THRESHOLD = 5;
+    public static volatile int threshold = DEFAULT_THRESHOLD;
+
     /**
      * @apiNote Take example from {@link net.minecraft.world.item.ItemStack#nextDamageWillBreak()}.
      */
@@ -28,7 +31,7 @@ public final class SafeMining {
         if (durability == null) {
             return false;
         }
-        final int maximumDamageThreshold = durability.maxDamage() - 1;
+        final int maximumDamageThreshold = durability.maxDamage() - Math.max(threshold, 1);
         return durability.damage() >= maximumDamageThreshold;
     }
 
