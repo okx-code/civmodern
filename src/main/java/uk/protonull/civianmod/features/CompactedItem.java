@@ -1,5 +1,6 @@
 package uk.protonull.civianmod.features;
 
+import java.awt.Color;
 import java.util.List;
 import net.minecraft.core.component.DataComponentMap;
 import net.minecraft.core.component.DataComponents;
@@ -17,12 +18,14 @@ public enum CompactedItem {
     ;
 
     public final int defaultColour;
+    public final Color defaultAwtColor;
     public volatile int colour;
 
     CompactedItem(
         final int defaultColour
     ) {
         this.defaultColour = defaultColour;
+        this.defaultAwtColor = new Color(defaultColour);
         this.colour = defaultColour;
     }
 

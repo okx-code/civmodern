@@ -22,17 +22,15 @@ import org.jetbrains.annotations.NotNull;
 import uk.protonull.civianmod.features.CompactedItem;
 
 public final class ItemSettings {
-    private static final Color DEFAULT_CRATE_ITEM_COLOUR = new Color(CompactedItem.CRATE.defaultColour);
-    private static final Color DEFAULT_COMPACTED_ITEM_COLOUR = new Color(CompactedItem.COMPACTED.defaultColour);
     private static final TooltipLineOption DEFAULT_SHOW_REPAIR_LEVEL = TooltipLineOption.ALWAYS;
     private static final TooltipLineOption DEFAULT_SHOW_DAMAGE_LEVEL = TooltipLineOption.ALWAYS;
     private static final boolean DEFAULT_SHOW_IS_EXP_INGREDIENT = true;
     private static final boolean DEFAULT_SAFE_MINING = true;
 
     @SerialEntry
-    public @NotNull Color crateItemColour = DEFAULT_CRATE_ITEM_COLOUR;
+    public @NotNull Color crateItemColour = CompactedItem.CRATE.defaultAwtColor;
     @SerialEntry
-    public @NotNull Color compactedItemColour = DEFAULT_COMPACTED_ITEM_COLOUR;
+    public @NotNull Color compactedItemColour = CompactedItem.COMPACTED.defaultAwtColor;
     @SerialEntry
     public @NotNull TooltipLineOption showRepairLevel = DEFAULT_SHOW_REPAIR_LEVEL;
     @SerialEntry
@@ -74,7 +72,7 @@ public final class ItemSettings {
             .description(OptionDescription.of(Component.translatable("civianmod.config.group.items.crateColour.desc")))
             .controller((opt) -> () -> new CompactedItemColourController(opt, CompactedItem.CRATE))
             .binding(
-                DEFAULT_CRATE_ITEM_COLOUR,
+                CompactedItem.CRATE.defaultAwtColor,
                 () -> itemSettings.crateItemColour,
                 (colour) -> itemSettings.crateItemColour = colour
             )
@@ -90,7 +88,7 @@ public final class ItemSettings {
             .description(OptionDescription.of(Component.translatable("civianmod.config.group.items.compactedColour.desc")))
             .controller((opt) -> () -> new CompactedItemColourController(opt, CompactedItem.COMPACTED))
             .binding(
-                DEFAULT_COMPACTED_ITEM_COLOUR,
+                CompactedItem.COMPACTED.defaultAwtColor,
                 () -> itemSettings.compactedItemColour,
                 (colour) -> itemSettings.compactedItemColour = colour
             )
