@@ -20,10 +20,9 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.NotNull;
 import uk.protonull.civianmod.features.CompactedItem;
+import uk.protonull.civianmod.features.ItemDurability;
 
 public final class ItemSettings {
-    private static final TooltipLineOption DEFAULT_SHOW_REPAIR_LEVEL = TooltipLineOption.ALWAYS;
-    private static final TooltipLineOption DEFAULT_SHOW_DAMAGE_LEVEL = TooltipLineOption.ALWAYS;
     private static final boolean DEFAULT_SHOW_IS_EXP_INGREDIENT = true;
     private static final boolean DEFAULT_SAFE_MINING = true;
 
@@ -32,9 +31,9 @@ public final class ItemSettings {
     @SerialEntry
     public @NotNull Color compactedItemColour = CompactedItem.COMPACTED.defaultAwtColor;
     @SerialEntry
-    public @NotNull TooltipLineOption showRepairLevel = DEFAULT_SHOW_REPAIR_LEVEL;
+    public @NotNull TooltipLineOption showRepairLevel = ItemDurability.DEFAULT_SHOW_REPAIR_LEVEL;
     @SerialEntry
-    public @NotNull TooltipLineOption showDamageLevel = DEFAULT_SHOW_DAMAGE_LEVEL;
+    public @NotNull TooltipLineOption showDamageLevel = ItemDurability.DEFAULT_SHOW_DAMAGE_LEVEL;
     @SerialEntry
     public boolean showIsExpIngredient = DEFAULT_SHOW_IS_EXP_INGREDIENT;
     @SerialEntry
@@ -43,6 +42,8 @@ public final class ItemSettings {
     void apply() {
         CompactedItem.CRATE.colour = this.crateItemColour.getRGB();
         CompactedItem.COMPACTED.colour = this.compactedItemColour.getRGB();
+        ItemDurability.showDamageLevel = this.showDamageLevel;
+        ItemDurability.showRepairLevel = this.showRepairLevel;
     }
 
     // ============================================================
@@ -104,7 +105,7 @@ public final class ItemSettings {
             .description(OptionDescription.of(Component.translatable("civianmod.config.group.items.repairLevel.desc")))
             .controller(TooltipLineOption::controller)
             .binding(
-                DEFAULT_SHOW_REPAIR_LEVEL,
+                ItemDurability.DEFAULT_SHOW_REPAIR_LEVEL,
                 () -> itemSettings.showRepairLevel,
                 (show) -> itemSettings.showRepairLevel = show
             )
@@ -119,7 +120,7 @@ public final class ItemSettings {
             .description(OptionDescription.of(Component.translatable("civianmod.config.group.items.damageLevel.desc")))
             .controller(TooltipLineOption::controller)
             .binding(
-                DEFAULT_SHOW_DAMAGE_LEVEL,
+                ItemDurability.DEFAULT_SHOW_DAMAGE_LEVEL,
                 () -> itemSettings.showDamageLevel,
                 (show) -> itemSettings.showDamageLevel = show
             )
