@@ -1,37 +1,37 @@
 {
-	"schemaVersion": 1,
-	"id": "civianmod",
-	"name": "${mod_name}",
-	"version": "${mod_version}",
-	"description": "${mod_description}",
-	"authors": "%FABRIC_AUTHORS_ARRAY%",
-	"license": "${mod_copyright}",
-	"contact": {
-		"homepage": "${mod_home_url}",
-		"sources": "${mod_source_url}",
-		"issues": "${mod_issues_url}"
-	},
-	"icon": "assets/civianmod/icon.png",
-	"environment": "client",
-	"entrypoints": {
-		"client": [
-			"uk.protonull.civianmod.CivianMod::bootstrap"
-		],
-		"modmenu": [
-			"uk.protonull.civianmod.features.modmenu.ModMenuIntegration"
-		]
-	},
-	"depends": {
-		"minecraft": "${minecraft_version}",
-		"fabricloader": ">=${fabric_loader_version}",
-		"fabric": "*",
-		"yet_another_config_lib_v3": ">=${yacl_version}"
-	},
-	"suggests": {
-		"modmenu": ">=${modmenu_version}"
-	},
-	"accessWidener": "civianmod.accesswidener",
-	"mixins": [
-		"civianmod.mixins.json"
-	]
+    "schemaVersion": 1,
+    "id": "civianmod",
+    "name": "${mod_name}",
+    "version": "${mod_version}",
+    "description": "${mod_description}",
+    "authors": "%FABRIC_AUTHORS_ARRAY%",
+    "license": "${mod_copyright}",
+    "contact": {
+        "homepage": "${mod_home_url}",
+        "sources": "${mod_source_url}",
+        "issues": "${mod_issues_url}"
+    },
+    "icon": "assets/civianmod/icon.png",
+    "environment": "client",
+    "entrypoints": {
+        "client": [
+            "uk.protonull.civianmod.CivianMod::bootstrap"
+        ],
+        "modmenu": [
+            "uk.protonull.civianmod.features.modmenu.ModMenuIntegration"
+        ]
+    },
+    "depends": {
+        "minecraft": "${minecraft_version}",
+        "fabricloader": ">=${fabric_loader_version}",
+        "fabric": "*",
+        "yet_another_config_lib_v3": ">=${yacl_version}"
+    },
+    "suggests": {
+        "modmenu": ">=${modmenu_version}"
+    },
+    "accessWidener": "civianmod.accesswidener",
+    "mixins": [
+        "civianmod.mixins.json"
+    ]
 }

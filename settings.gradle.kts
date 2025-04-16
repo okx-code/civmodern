@@ -4,11 +4,11 @@
 enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
 
 pluginManagement {
-	repositories {
-		maven(url = "https://maven.fabricmc.net/")
-		mavenCentral()
-		gradlePluginPortal()
-	}
+    repositories {
+        maven(url = "https://maven.fabricmc.net/")
+        mavenCentral()
+        gradlePluginPortal()
+    }
 }
 
 rootProject.name = "CivianMod"
