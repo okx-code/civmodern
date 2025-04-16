@@ -5,7 +5,7 @@
 	"version": "${mod_version}",
 	"description": "${mod_description}",
 	"authors": "%FABRIC_AUTHORS_ARRAY%",
-	"license": "${copyright_licence}",
+	"license": "${mod_copyright}",
 	"contact": {
 		"homepage": "${mod_home_url}",
 		"sources": "${mod_source_url}",
