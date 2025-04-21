@@ -5,7 +5,7 @@
     "compatibilityLevel": "JAVA_21",
     "client": [
         "GuiGraphicsMixin",
-        "HoldForwardMixin",
+        "HoldInputsMixin",
         "InventoryMixin",
         "ItemStackMixin",
         "KeyMappingAccessor",
