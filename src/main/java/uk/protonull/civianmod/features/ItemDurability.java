@@ -5,7 +5,6 @@ import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
-import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import uk.protonull.civianmod.config.TooltipLineOption;
@@ -14,7 +13,15 @@ public record ItemDurability(
     int damage,
     int maxDamage
 ) {
-    @Contract("null -> null")
+    /**
+     * Damage is stored starting at 0 and increasing until reaching MAX, whereas
+     * items display the durability starting at MAX and decreasing until it
+     * breaks. This returns the latter.
+     */
+    public int getCurrentDurability() {
+        return maxDamage() - damage();
+    }
+
     public static @Nullable ItemDurability from(
         final ItemStack item
     ) {
@@ -87,7 +94,7 @@ public record ItemDurability(
         }
         tooltipLines.add(Component.translatable(
             "item.durability",
-            durability.maxDamage() - durability.damage(),
+            durability.getCurrentDurability(),
             durability.maxDamage()
         ));
     }
