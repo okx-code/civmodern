@@ -19,9 +19,7 @@ import net.minecraft.client.multiplayer.PlayerInfo;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.player.RemotePlayer;
 import net.minecraft.client.renderer.CoreShaders;
-import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.texture.OverlayTexture;
-import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -299,22 +297,17 @@ public class Radar {
         } else {
             guiGraphics.pose().mulPose(Axis.ZP.rotationDegrees(player.getViewYRot(delta)));
         }
-        BakedModel bakedModel = Minecraft.getInstance().getItemRenderer().getModel(item, player.level(), player, 0);
+        ClientLevel world = Minecraft.getInstance().level;
         guiGraphics.pose().translate(0, 0, blit);
         guiGraphics.pose().scale(config.getIconSize(), config.getIconSize(), 1);
         guiGraphics.pose().mulPose(new Matrix4f().scaling(1.0f, -1.0f, 1.0f));
         guiGraphics.pose().scale(16.0f, 16.0f, 16.0f);
 
-        boolean notUseBlockLight = !bakedModel.usesBlockLight();
-        if (notUseBlockLight) {
-            Lighting.setupForFlatItems();
-        }
+        Lighting.setupForFlatItems();
         guiGraphics.drawSpecial(source ->
-            Minecraft.getInstance().getItemRenderer().render(item, ItemDisplayContext.GUI, false, guiGraphics.pose(), source, 0xF000F0, OverlayTexture.NO_OVERLAY, bakedModel));
+            Minecraft.getInstance().getItemRenderer().renderStatic(player, item, ItemDisplayContext.GUI, false, guiGraphics.pose(), source, world, 0xF000F0, OverlayTexture.NO_OVERLAY, 0));
         guiGraphics.flush();
-        if (notUseBlockLight) {
-            Lighting.setupFor3DItems();
-        }
+        Lighting.setupFor3DItems();
 
         guiGraphics.pose().popPose();
     }
