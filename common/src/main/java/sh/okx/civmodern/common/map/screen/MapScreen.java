@@ -185,7 +185,7 @@ public class MapScreen extends Screen {
             matrices.pushPose();
             matrices.translate(mouseX, mouseY, 0);
 
-            Waypoint targetWaypoint = new Waypoint("", 0, 0, 0, "target");
+            Waypoint targetWaypoint = new Waypoint("", 0, 0, 0, "waypoint");
             int transparency = newWaypointModal.isTargeting() ? 0x7F : 0xFF;
             targetWaypoint.render(buffer, matrices.last().pose(), 7, transparency << 24);
 
@@ -202,7 +202,7 @@ public class MapScreen extends Screen {
                 matrices.pushPose();
                 matrices.translate((x - this.x) / scale, (z- this.y) / scale, 0);
 
-                Waypoint targetWaypoint = new Waypoint("", 0, 0, 0, "target");
+                Waypoint targetWaypoint = new Waypoint("", 0, 0, 0, "waypoint");
                 targetWaypoint.render(buffer, matrices.last().pose(), 7, 0x7F << 24);
 
                 matrices.popPose();

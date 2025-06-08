@@ -12,6 +12,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumSet;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
@@ -55,7 +56,7 @@ public class MapCache {
             Mth.lengthSquared(r1.x() * 512 + 256 - px, r1.z() * 512 + 256 - pz),
             Mth.lengthSquared(r2.x() * 512 + 256 - px, r2.z() * 512 + 256 - pz));
     });
-    private final ScheduledExecutorService executor = Executors.newScheduledThreadPool(Math.min(16, Runtime.getRuntime().availableProcessors()) - 1);
+    private final ScheduledExecutorService executor = Executors.newScheduledThreadPool(Math.min(2, Runtime.getRuntime().availableProcessors()) - 1);
 
     private final Map<ChunkPos, ScheduledFuture<?>> debounced = new ConcurrentHashMap<>();
 
@@ -161,6 +162,7 @@ public class MapCache {
 
     private void cacheEvict(Map<RegionKey, RegionData> cache) {
         Iterator<Map.Entry<RegionKey, RegionData>> iterator = cache.entrySet().iterator();
+        Map<RegionKey, RegionData> toSave = new HashMap<>();
         while (iterator.hasNext()) {
             Map.Entry<RegionKey, RegionData> entry = iterator.next();
             int px = Minecraft.getInstance().player.getBlockX();
@@ -169,10 +171,11 @@ public class MapCache {
             if (dist > 96 * 16 * 96 * 16) {
                 iterator.remove();
                 if (this.dirtySaveRegions.remove(entry.getKey())) {
-                    this.mapFile.save(entry.getKey(), entry.getValue());
+                    toSave.put(entry.getKey(), entry.getValue());
                 }
             }
         }
+        this.mapFile.saveBulk(toSave);
     }
 
     public RegionAtlasTexture getTexture(RegionKey atlas) {
@@ -215,24 +218,21 @@ public class MapCache {
 
     public void save() {
         // todo save not just on gui close but on world unload or 60 second interval
-        Future<?> toSave = SAVE.submit(() -> {
+        SAVE.submit(() -> {
+            Map<RegionKey, RegionData> toSave = new HashMap<>();
             for (Iterator<RegionKey> iterator = dirtySaveRegions.iterator(); iterator.hasNext(); ) {
                 RegionKey dirtySave = iterator.next();
                 RegionData cached = this.cache.get(dirtySave);
                 if (cached != null) {
-                    this.mapFile.save(dirtySave, cached);
+                    toSave.put(dirtySave, cached);
                     iterator.remove();
                 }
             }
+            this.mapFile.saveBulk(toSave);
             this.mapFile.saveBlockIds(this.blockLookup.getBlockNames());
         });
-        executor.shutdownNow();
-        try {
-            executor.awaitTermination(1000, TimeUnit.DAYS);
-            toSave.get();
-        } catch (InterruptedException | ExecutionException e) {
-            throw new RuntimeException(e);
-        }
+        executor.close();
+        SAVE.close();
     }
 
     public void free() {

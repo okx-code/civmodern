@@ -55,7 +55,7 @@ public class WorldListener {
         mapFile.mkdirs();
         this.file = new MapFolder(mapFile);
         VoxelMapConverter voxelMapConverter = new VoxelMapConverter(this.file, name, dimension, level.registryAccess());
-        if (!voxelMapConverter.voxelMapFileExists() && false) { // todo fix
+        if (!voxelMapConverter.hasAlreadyConverted() && voxelMapConverter.voxelmapFilesAvailable() && false) {
             converter = new Thread(() -> {
                 try {
                     voxelMapConverter.convert();
@@ -71,7 +71,7 @@ public class WorldListener {
             this.cache = new MapCache(this.file);
             this.minimap = new Minimap(this.cache, this.config, this.provider);
         }
-        this.waypoints = new Waypoints(mapFile);
+        this.waypoints = new Waypoints(this.file.getConnection());
     }
 
     @Subscribe

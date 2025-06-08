@@ -25,7 +25,7 @@ public class Minimap {
     private static final RegionAtlasTexture blank = new RegionAtlasTexture();
 
     static {
-        blank.init();
+        RenderSystem.recordRenderCall(blank::init);
     }
 
 

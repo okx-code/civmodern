@@ -32,8 +32,12 @@ public class VoxelMapConverter {
         this.registryAccess = registryAccess;
     }
 
-    public boolean voxelMapFileExists() {
+    public boolean hasAlreadyConverted() {
         return this.mapFile.getFolder().toPath().resolve("voxelmap").toFile().exists();
+    }
+
+    public boolean voxelmapFilesAvailable() {
+        return Minecraft.getInstance().gameDirectory.toPath().resolve("voxelmap").resolve("cache").resolve(name).resolve(dimension).toFile().exists();
     }
 
     public void convert() {
@@ -62,7 +66,7 @@ public class VoxelMapConverter {
             return;
         }
 
-        BlockLookup blockLookup = new BlockLookup(Collections.emptyList());
+        BlockLookup blockLookup = new BlockLookup(mapFile.blockIds());
 
         // 2859 regions
         // multithreaded processing - 1 minutes 16 seconds
@@ -158,11 +162,7 @@ public class VoxelMapConverter {
             regionMap.clear();
         }
 
-        try {
-            service.shutdown();
-            service.awaitTermination(100, TimeUnit.DAYS);
-        } catch (InterruptedException ignored) {
-        }
+        service.close();
 
         mapFile.saveBlockIds(blockLookup.getBlockNames());
 

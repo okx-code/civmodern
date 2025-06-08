@@ -22,6 +22,11 @@ import sh.okx.civmodern.common.events.WorldRenderLastEvent;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -39,56 +44,48 @@ public class Waypoints {
 
     private final Int2ObjectMap<Int2ObjectMap<Waypoint>> waypoints = new Int2ObjectOpenHashMap<>();
     private Waypoint target;
-    private final File waypointsFile;
+    private final Connection connection;
 
-    public Waypoints(File mapFile) {
-        this.waypointsFile = new File(mapFile, "waypoints.txt");
+    public Waypoints(Connection connection) {
+        this.connection = connection;
         // TODO waypoint on death
         load();
     }
 
     private void load() {
-        if (!this.waypointsFile.exists()) {
-            return;
-        }
-        try {
-            for (String line : Files.readAllLines(this.waypointsFile.toPath())) {
-                String[] parts = line.split("\0");
-                if (parts.length < 4) continue;
+        try (Statement statement = connection.createStatement()) {
+            ResultSet resultSet = statement.executeQuery("SELECT name, x, y, z, icon FROM waypoints");
 
-                String name = parts[0];
-                int x;
-                int y;
-                int z;
-                try {
-                    x = Integer.parseInt(parts[1]);
-                    y = Integer.parseInt(parts[2]);
-                    z = Integer.parseInt(parts[3]);
-                } catch (NumberFormatException ex) {
-                    continue;
-                }
-
-                this.addWaypoint(new Waypoint(name, x, y, z, "waypoint"));
+            while (resultSet.next()) {
+                this.addWaypoint(new Waypoint(
+                    resultSet.getString("name"),
+                    resultSet.getInt("x"),
+                    resultSet.getInt("y"),
+                    resultSet.getInt("z"),
+                    resultSet.getString("icon")
+                ));
             }
-        } catch (IOException e) {
-            e.printStackTrace();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
         }
     }
 
     public void save() {
-        StringBuilder waypointString = new StringBuilder();
-        for (Int2ObjectMap<Waypoint> zEntry : waypoints.values()) {
-            for (Waypoint waypoint : zEntry.values()) {
-                waypointString.append(waypoint.name()).append("\0")
-                    .append(waypoint.x()).append("\0")
-                    .append(waypoint.y()).append("\0")
-                    .append(waypoint.z()).append("\0")
-                    .append("\n");
+        try (PreparedStatement statement = connection.prepareStatement("INSERT INTO waypoints VALUES (?, ?, ?, ?, ?) ON CONFLICT DO UPDATE SET name = ?, icon = ?")) {
+            for (Int2ObjectMap<Waypoint> zEntry : waypoints.values()) {
+                for (Waypoint waypoint : zEntry.values()) {
+                    statement.setString(1, waypoint.name());
+                    statement.setInt(2, waypoint.x());
+                    statement.setInt(3, waypoint.y());
+                    statement.setInt(4, waypoint.z());
+                    statement.setString(5, "waypoint");
+                    statement.setString(6, waypoint.name());
+                    statement.setString(7, "waypoint");
+                    statement.addBatch();
+                }
             }
-        }
-        try {
-            Files.writeString(this.waypointsFile.toPath(), waypointString);
-        } catch (IOException e) {
+            statement.executeBatch();
+        } catch (SQLException e) {
             e.printStackTrace();
         }
     }
