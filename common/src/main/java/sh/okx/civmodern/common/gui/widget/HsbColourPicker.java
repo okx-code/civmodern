@@ -10,7 +10,8 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
-import net.minecraft.client.renderer.GameRenderer;
+import net.minecraft.client.renderer.CoreShaders;
+import net.minecraft.client.renderer.RenderType;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
@@ -61,7 +62,7 @@ public class HsbColourPicker extends AbstractWidget {
 
         RenderSystem.setShaderTexture(0, COLOUR_PICKER_ICON);
         RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
-        guiGraphics.blit(COLOUR_PICKER_ICON, this.getX(), this.getY(), 10, 0, isHoveredOrFocused() ? 20 : 0, this.width,
+        guiGraphics.blit(RenderType::guiTextured, COLOUR_PICKER_ICON, this.getX(), this.getY(), 0, isHoveredOrFocused() ? 20 : 0, this.width,
             this.height, 20, 40);
 
         if (showPalette) {
@@ -78,7 +79,7 @@ public class HsbColourPicker extends AbstractWidget {
             guiGraphics.pose().pushPose();
             guiGraphics.pose().translate(0, 0, 1000);
             // Saturation and brightness selector
-            RenderSystem.setShader(GameRenderer::getPositionTexShader);
+            RenderSystem.setShader(CoreShaders.POSITION_TEX);
             Matrix4f matrix4f = guiGraphics.pose().last().pose();
             BufferBuilder bufferBuilder = Tesselator.getInstance().begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX);
 
@@ -90,7 +91,7 @@ public class HsbColourPicker extends AbstractWidget {
 
             // Hue selector
             hueSelector.bind();
-            RenderSystem.setShader(GameRenderer::getPositionTexShader);
+            RenderSystem.setShader(CoreShaders.POSITION_TEX);
             bufferBuilder = Tesselator.getInstance().begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX);
             bufferBuilder.addVertex(matrix4f, this.getX() + 106, renderY + height, 0).setUv(0, 0);
             bufferBuilder.addVertex(matrix4f, this.getX() + 106, renderY + height + 101, 0).setUv(0, 1);
