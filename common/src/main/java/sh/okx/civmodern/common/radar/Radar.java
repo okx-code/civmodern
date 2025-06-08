@@ -39,6 +39,8 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import org.jetbrains.annotations.NotNull;
 import org.joml.Matrix4f;
+import org.lwjgl.glfw.GLFW;
+import org.lwjgl.glfw.GLFWVidMode;
 import sh.okx.civmodern.common.CivMapConfig;
 import sh.okx.civmodern.common.ColourProvider;
 import sh.okx.civmodern.common.events.ClientTickEvent;
@@ -78,10 +80,14 @@ public class Radar {
     private int bgColour;
     private int fgColour;
 
+    private int lastWindowHeight = -1;
+    private float scaleFactor = 1.0f;
+
     public Radar(CivMapConfig config, EventBus eventBus, ColourProvider colourProvider) {
         this.config = config;
         this.eventBus = eventBus;
         this.colourProvider = colourProvider;
+        this.scaleFactor = getScaleFactor();
         eventBus.register(this);
     }
 
@@ -102,6 +108,31 @@ public class Radar {
         if (client.level == null) {
             this.playersInRange = Collections.emptySet();
         }
+
+        int currentHeight = client.getWindow().getHeight();
+        if (currentHeight != lastWindowHeight) {
+            lastWindowHeight = currentHeight;
+            updateScale();
+        }
+    }
+
+    private float getScaleFactor() {
+        long monitor = Minecraft.getInstance().getWindow().getWindow();
+        GLFWVidMode videoMode = GLFW.glfwGetVideoMode(monitor);
+        if (videoMode != null) {
+            int monitorHeight = videoMode.height();
+            float scale = monitorHeight >= 2160 ? 1.2f : monitorHeight >= 1440 ? 1.1f : monitorHeight >= 1080 ? 1.0f : 0.9f;
+            return scale;
+        }
+        return 1.0f;
+    }
+
+    public void updateScale() {
+        this.scaleFactor = getScaleFactor();
+    }
+
+    private int unscaledRadius() {
+        return config.getRadarSize();
     }
 
     private boolean hideY() {
@@ -189,7 +220,7 @@ public class Radar {
     }
 
     private int radius() {
-        return config.getRadarSize();
+        return Math.round(config.getRadarSize() * scaleFactor);
     }
 
     public void render(GuiGraphics guiGraphics, float delta) {
@@ -205,8 +236,8 @@ public class Radar {
         LocalPlayer player = client.player;
         guiGraphics.pose().pushPose();
 
-        int offsetX = config.getX() + config.getRadarSize();
-        int offsetY = config.getY() + config.getRadarSize();
+        int offsetX = config.getX() + unscaledRadius();
+        int offsetY = config.getY() + unscaledRadius();
 
         int height = client.getWindow().getGuiScaledHeight();
         int width = client.getWindow().getGuiScaledWidth();
@@ -277,7 +308,7 @@ public class Radar {
     }
 
     private void renderEntity(GuiGraphics guiGraphics, Player player, Entity entity, float delta, ItemStack item, float blit) {
-        double scale = config.getRadarSize() / config.getRange();
+        double scale = (config.getRadarSize() * scaleFactor) / config.getRange();
 
         double px = player.xOld + (player.getX() - player.xOld) * delta;
         double pz =
@@ -336,7 +367,7 @@ public class Radar {
 
             guiGraphics.pose().pushPose();
             guiGraphics.pose().translate(dx * v, dz * v, 2011);
-            guiGraphics.pose().scale(0.9f, 0.9f, 0);
+            guiGraphics.pose().scale(0.9f * scaleFactor, 0.9f * scaleFactor, 0);
 
             PlayerInfo entry = minecraft.player.connection.getPlayerInfo(player.getUUID());
             if (config.isNorthUp()) {
@@ -345,7 +376,7 @@ public class Radar {
                 guiGraphics.pose().mulPose(Axis.ZP.rotationDegrees(minecraft.player.getViewYRot(delta)));
             }
             guiGraphics.pose().pushPose();
-            guiGraphics.pose().scale(config.getIconSize(), config.getIconSize(), 0);
+            guiGraphics.pose().scale(config.getIconSize() * scaleFactor, config.getIconSize() * scaleFactor, 0);
             ResourceLocation location;
             if (entry != null) {
                 location = entry.getSkin().texture();
@@ -357,7 +388,7 @@ public class Radar {
             RenderSystem.disableBlend();
             guiGraphics.pose().popPose();
             guiGraphics.pose().translate(0, 4.5f * config.getIconSize(), 0);
-            guiGraphics.pose().scale(0.6f * config.getTextSize(), 0.6f * config.getTextSize(), 0);
+            guiGraphics.pose().scale(0.6f * config.getTextSize() * scaleFactor, 0.6f * config.getTextSize() * scaleFactor, 0);
             Component component = Component.literal(
                 player.getScoreboardName() + " (" + (hideY() ? ((int) Math.round(Math.sqrt(dx * dx + dz * dz))) : (int) player.getY()) + ")");
             guiGraphics.drawCenteredString(minecraft.font, component, 0, 0, 0xffffff);
@@ -395,7 +426,7 @@ public class Radar {
         Tesselator tessellator = Tesselator.getInstance();
         BufferBuilder buffer = tessellator.begin(Mode.TRIANGLE_STRIP, DefaultVertexFormat.POSITION_COLOR);
 
-        float thickness = radius == radius() ? 1f : 0.5f;
+        float thickness = (radius == radius() ? 1f : 0.5f) * scaleFactor;
 
         Matrix4f pose = stack.last().pose();
         for (int i = 0; i <= 360; i++) {
@@ -454,7 +485,7 @@ public class Radar {
         Tesselator tesselator = Tesselator.getInstance();
         BufferBuilder buffer = tesselator.begin(Mode.QUADS, DefaultVertexFormat.POSITION_COLOR);
 
-        float thickness = 0.5f;
+        float thickness = 0.5f * scaleFactor;
         float left = -thickness / 2;
         float right = thickness / 2;
 
