@@ -93,9 +93,9 @@ final class IceRoadConfigScreen extends AbstractConfigScreen {
                         this.minecraft.setScreen(this.parent);
                     }
                 )
-                .width(98)
+                .width(150)
                 .pos(
-                    this.centreX - 49,
+                    this.centreX - 75,
                     getFooterY(offsetY)
                 )
                 .build()

@@ -12,7 +12,8 @@
         "ScreenAccessor",
         "StorageSourceAccessor",
         "RespawnMixin",
-        "BlockStateChangeMixin"
+        "BlockStateChangeMixin",
+        "ChatMixin"
     ],
     "server": [],
     "injectors": {

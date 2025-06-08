@@ -232,7 +232,7 @@ public class VoxelMapConverter {
         int[] westY = new int[256];
         Arrays.fill(westY, Integer.MIN_VALUE);
         int northY = Integer.MIN_VALUE;
-        ResourceLocation water = registryAccess.registryOrThrow(Registries.BLOCK).getKey(Blocks.WATER);
+        ResourceLocation water = registryAccess.lookupOrThrow(Registries.BLOCK).getKey(Blocks.WATER);
         for (int x = 0; x < 256; x++) {
             for (int z = 0; z < 256; z++) {
                 int y = getHeight(data, x, z);

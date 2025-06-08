@@ -9,6 +9,7 @@ import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.client.renderer.FogParameters;
 import net.minecraft.client.renderer.FogRenderer;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.resources.ResourceLocation;
@@ -54,7 +55,7 @@ public class Waypoints {
 
     private void load() {
         try (Statement statement = connection.createStatement()) {
-            ResultSet resultSet = statement.executeQuery("SELECT name, x, y, z, icon FROM waypoints");
+            ResultSet resultSet = statement.executeQuery("SELECT name, x, y, z, icon, colour FROM waypoints");
 
             while (resultSet.next()) {
                 this.addWaypoint(new Waypoint(
@@ -62,7 +63,8 @@ public class Waypoints {
                     resultSet.getInt("x"),
                     resultSet.getInt("y"),
                     resultSet.getInt("z"),
-                    resultSet.getString("icon")
+                    resultSet.getString("icon"),
+                    resultSet.getInt("colour")
                 ));
             }
         } catch (SQLException e) {
@@ -71,7 +73,7 @@ public class Waypoints {
     }
 
     public void save() {
-        try (PreparedStatement statement = connection.prepareStatement("INSERT INTO waypoints VALUES (?, ?, ?, ?, ?) ON CONFLICT DO UPDATE SET name = ?, icon = ?")) {
+        try (PreparedStatement statement = connection.prepareStatement("INSERT INTO waypoints VALUES (?, ?, ?, ?, ?, ?) ON CONFLICT DO UPDATE SET name = ?, icon = ?, colour = ?")) {
             for (Int2ObjectMap<Waypoint> zEntry : waypoints.values()) {
                 for (Waypoint waypoint : zEntry.values()) {
                     statement.setString(1, waypoint.name());
@@ -79,8 +81,10 @@ public class Waypoints {
                     statement.setInt(3, waypoint.y());
                     statement.setInt(4, waypoint.z());
                     statement.setString(5, "waypoint");
-                    statement.setString(6, waypoint.name());
-                    statement.setString(7, "waypoint");
+                    statement.setInt(6, waypoint.colour());
+                    statement.setString(7, waypoint.name());
+                    statement.setString(8, "waypoint");
+                    statement.setInt(9, waypoint.colour());
                     statement.addBatch();
                 }
             }
@@ -159,8 +163,9 @@ public class Waypoints {
         PoseStack matrices = event.stack();
         Vec3 pos = camera.getPosition();
         Tesselator tessellator = Tesselator.getInstance();
-        RenderSystem.depthFunc(GL_ALWAYS);
-        FogRenderer.setupNoFog(); // May break other mods if they rely on no fog at this event
+        RenderSystem.depthMask(false);
+        RenderSystem.disableDepthTest();
+        RenderSystem.setShaderFog(FogParameters.NO_FOG);
         for (Waypoint waypoint : nearbyWaypoints) {
             BufferBuilder buffer = tessellator.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX_COLOR);
             double x = waypoint.x() + 0.5 - pos.x;
@@ -234,7 +239,7 @@ public class Waypoints {
             int k = (int) (getTransparency(distance, 0.44f) * 63.0F) << 24;
             int k2 = (int) (getTransparency(distance, 0.11f) * 255.0F) << 24;
             font.drawInBatch(str, -font.width(str) / 2f, (float) 0, 0x20FFFFFF, false, last, source, Font.DisplayMode.SEE_THROUGH, k, 15728640);
-            font.drawInBatch(str, -font.width(str) / 2f, (float) 0, k2 | 0xffffff, false, last, source, Font.DisplayMode.NORMAL, 0, 15728880);
+            font.drawInBatch(str, -font.width(str) / 2f, (float) 0, k2 | 0xffffff, false, last, source, Font.DisplayMode.SEE_THROUGH, 0, 15728880);
             matrices.popPose();
         }
         RenderSystem.depthFunc(GL_LEQUAL);

@@ -4,16 +4,20 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
+import net.minecraft.client.gui.components.Renderable;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
+import org.jetbrains.annotations.NotNull;
 import sh.okx.civmodern.common.CivMapConfig;
 import sh.okx.civmodern.common.ColourProvider;
 import sh.okx.civmodern.common.gui.DoubleValue;
 import sh.okx.civmodern.common.gui.widget.DoubleOptionUpdateableSliderWidget;
 import sh.okx.civmodern.common.gui.widget.HsbColourPicker;
 import sh.okx.civmodern.common.gui.widget.ImageButton;
+import sh.okx.civmodern.common.gui.widget.ToggleButton;
+import sh.okx.civmodern.common.mixins.ScreenAccessor;
 
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -41,10 +45,8 @@ public class MapConfigScreen extends AbstractConfigScreen {
         int centre = left + 80;
         int right = left + 160;
         int offset = this.height / 6 - 18;
-        addRenderableWidget(Button.builder(getMinimapToggleMessage(), button -> {
-            config.setMinimapEnabled(!config.isMinimapEnabled());
-            button.setMessage(getMinimapToggleMessage());
-        }).pos(centre, offset).size(150, 20).build());
+        addRenderableWidget(new ToggleButton(left, offset, ToggleButton.DEFAULT_BUTTON_WIDTH, Component.translatable("civmodern.screen.minimap"), this.config::isMinimapEnabled, this.config::setMinimapEnabled, null, ToggleButton.DEFAULT_NARRATION));
+        addRenderableWidget(new ToggleButton(right, offset, ToggleButton.DEFAULT_BUTTON_WIDTH, Component.translatable("civmodern.screen.mapping"), this.config::isMappingEnabled, this.config::setMappingEnabled, null, ToggleButton.DEFAULT_NARRATION));
         offset += 24;
         addRenderableWidget(Button.builder(Component.translatable("civmodern.screen.radar.alignment", config.getMinimapAlignment().toString()), button -> {
             config.setMinimapAlignment(config.getMinimapAlignment().next());
@@ -82,7 +84,7 @@ public class MapConfigScreen extends AbstractConfigScreen {
 
             @Override
             public Component getText(double value) {
-                return Component.translatable("civmodern.screen.radar.x", String.valueOf((int) value));
+                return Component.translatable("civmodern.screen.map.x", String.valueOf((int) value));
             }
         }));
         addRenderableWidget(new DoubleOptionUpdateableSliderWidget(right, offset, 150, 20, 0, 300, new DoubleValue() {
@@ -99,7 +101,7 @@ public class MapConfigScreen extends AbstractConfigScreen {
 
             @Override
             public Component getText(double value) {
-                return Component.translatable("civmodern.screen.radar.y", String.valueOf((int) value));
+                return Component.translatable("civmodern.screen.map.y", String.valueOf((int) value));
             }
         }));
         offset += 24;
@@ -115,7 +117,7 @@ public class MapConfigScreen extends AbstractConfigScreen {
         addRenderableWidget(Button.builder(CommonComponents.GUI_DONE, button -> {
             config.save();
             Minecraft.getInstance().setScreen(parent);
-        }).pos(centre, offset).size(150, 20).build());
+        }).pos(centre, getFooterY(offset)).size(150, 20).build());
     }
 
     private HsbColourPicker addColourPicker(int x, int y, int defaultColour, Supplier<Integer> colourGet, Consumer<Integer> colourSet, Consumer<Integer> preview) {
@@ -176,14 +178,9 @@ public class MapConfigScreen extends AbstractConfigScreen {
 
         graphics.drawCenteredString(this.font, this.title, this.width / 2, 15, 0xffffff);
 
-        super.render(graphics, mouseX, mouseY, delta);
-    }
-
-    private Component getMinimapToggleMessage() {
-        if (config.isMinimapEnabled()) {
-            return Component.literal("Minimap: Enabled");
-        } else {
-            return Component.literal("Minimap: Disabled");
+        // Don't call super since we don't want the dark or blurred background to obscure changes to the radar
+        for (final Renderable renderable : ((ScreenAccessor) (Object) this).civmodern$getRenderables()) {
+            renderable.render(graphics, mouseX, mouseY, delta);
         }
     }
 }

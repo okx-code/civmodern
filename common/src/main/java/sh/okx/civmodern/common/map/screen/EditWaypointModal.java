@@ -12,15 +12,20 @@ import io.wispforest.owo.ui.core.Sizing;
 import io.wispforest.owo.ui.core.Surface;
 import io.wispforest.owo.ui.core.VerticalAlignment;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
+import sh.okx.civmodern.common.gui.widget.HsbColourPicker;
 import sh.okx.civmodern.common.gui.widget.ImageButton;
 import sh.okx.civmodern.common.map.waypoints.Waypoint;
 import sh.okx.civmodern.common.map.waypoints.Waypoints;
 
+import java.awt.*;
+import java.awt.datatransfer.StringSelection;
+import java.util.Objects;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
 
@@ -31,6 +36,9 @@ public class EditWaypointModal extends Modal<FlowLayout> {
     private TextBoxComponent xBox;
     private TextBoxComponent yBox;
     private TextBoxComponent zBox;
+    private HsbColourPicker colourPicker;
+    private int colour = 0xFF0000;
+    private int previewColour = colour;
 
     private TextBoxComponent nameBox;
 
@@ -40,7 +48,8 @@ public class EditWaypointModal extends Modal<FlowLayout> {
     private boolean targeting = false;
 
     public EditWaypointModal(Waypoints waypoints) {
-        super(OwoUIAdapter.createWithoutScreen(Minecraft.getInstance().getWindow().getGuiScaledWidth() / 2 - 104, 64, 196, 116, Containers::verticalFlow));
+        super(OwoUIAdapter.createWithoutScreen(Minecraft.getInstance().getWindow().getGuiScaledWidth() / 2 - 104, 48, 196, 116, Containers::verticalFlow));
+        super.layout.rootComponent.allowOverflow(true);
         this.waypoints = waypoints;
     }
 
@@ -69,6 +78,33 @@ public class EditWaypointModal extends Modal<FlowLayout> {
             this.waypoint = null;
             setVisible(false);
         });
+        ImageButton copyButton = new ImageButton(0, 0, 20, 20, ResourceLocation.fromNamespaceAndPath("civmodern", "gui/copy.png"), imbg -> {
+            setVisible(false);
+            StringBuilder builder = new StringBuilder("[");
+            if (!this.waypoint.name().isBlank()) {
+                builder.append("name:%s,".formatted(this.waypoint.name()));
+            }
+            builder.append("x:%s,y:%s,z:%s]".formatted(this.waypoint.x(), this.waypoint.y(), this.waypoint.z()));
+            Minecraft.getInstance().keyboardHandler.setClipboard(builder.toString());
+        });
+        colourPicker = new HsbColourPicker(
+            0,
+            0,
+            20,
+            20,
+            waypoint.colour(),
+            (colour) -> {
+                this.colour = colour;
+                this.previewColour = colour;
+            },
+            preview -> {
+                this.previewColour = Objects.requireNonNullElse(preview, colour);
+            },
+            () -> {
+            }
+        );
+        this.colour = this.previewColour = waypoint.colour();
+        colourPicker.setRVisible(false);
         ImageButton coordsButton = new ImageButton(0, 0, 20, 20, ResourceLocation.fromNamespaceAndPath("civmodern", "gui/target.png"), imbg -> {
             this.visible = false;
             this.targeting = true;
@@ -76,7 +112,7 @@ public class EditWaypointModal extends Modal<FlowLayout> {
         xBox = Components.textBox(Sizing.fixed(44), Integer.toString(waypoint.x()));
         xBox.setFilter(numFilter);
         xBox.onChanged().subscribe(value -> this.updateDone());
-        yBox = Components.textBox(Sizing.fixed(44), Integer.toString(waypoint.y()));
+        yBox = Components.textBox(Sizing.fixed(26), Integer.toString(waypoint.y()));
         yBox.setFilter(numFilter);
         yBox.onChanged().subscribe(value -> this.updateDone());
         zBox = Components.textBox(Sizing.fixed(44), Integer.toString(waypoint.z()));
@@ -97,26 +133,32 @@ public class EditWaypointModal extends Modal<FlowLayout> {
                             .child(Components.label(Component.literal("X")).margins(Insets.of(0, 4, 1, 0)), 0, 0)
                             .child(Components.label(Component.literal("Y")).margins(Insets.of(0, 4, 1, 0)), 0, 1)
                             .child(Components.label(Component.literal("Z")).margins(Insets.of(0, 4, 1, 0)), 0, 2)
-                            .child(xBox.margins(Insets.right(4)), 1, 0)
-                            .child(yBox.margins(Insets.right(4)), 1, 1)
-                            .child(zBox.margins(Insets.right(4)), 1, 2)
+                            .child(xBox.margins(Insets.right(3)), 1, 0)
+                            .child(yBox.margins(Insets.right(3)), 1, 1)
+                            .child(zBox.margins(Insets.right(3)), 1, 2)
                             .positioning(Positioning.relative(0, 0))
                         )
                         .child(
-                            coordsButton.margins(Insets.bottom(6)).positioning(Positioning.relative(100, 100))
+                            Containers.horizontalFlow(Sizing.content(), Sizing.fixed(40))
+                                .child(coordsButton.margins(Insets.right(4)))
+                                .child(colourPicker)
+                                .margins(Insets.bottom(6))
+                                .alignment(HorizontalAlignment.RIGHT, VerticalAlignment.BOTTOM)
+                                .positioning(Positioning.relative(100, 100))
                         )
                     )
                     .margins(Insets.horizontal(4).withTop(4))
             )
             .child(
                 Containers.horizontalFlow(Sizing.fill(), Sizing.content())
-                    .child(doneButton.horizontalSizing(Sizing.fill(40)).positioning(Positioning.relative(0, 0)))
+                    .child(doneButton.horizontalSizing(Sizing.fill(35)).positioning(Positioning.relative(0, 0)))
                     .child(cancelButton.horizontalSizing(Sizing.fill(30)).margins(Insets.right(8)))
+                    .child(copyButton.margins(Insets.right(4)))
                     .child(deleteButton)
                     .horizontalAlignment(HorizontalAlignment.RIGHT)
                     .margins(Insets.horizontal(4).withTop(4)))
             .surface(Surface.DARK_PANEL)
-            .padding(Insets.of(8));
+            .padding(Insets.of(6));
 
         this.layout.inflateAndMount();
     }
@@ -127,6 +169,65 @@ public class EditWaypointModal extends Modal<FlowLayout> {
 
     public Waypoint getWaypoint() {
         return waypoint;
+    }
+
+    @Override
+    public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float delta) {
+        super.render(guiGraphics, mouseX, mouseY, delta);
+        if (visible) {
+            this.colourPicker.setRVisible(true);
+            this.colourPicker.renderWidget(guiGraphics, mouseX, mouseY, delta);
+            this.colourPicker.setRVisible(false);
+        }
+    }
+
+    @Override
+    public boolean isMouseOver(double d, double e) {
+        if (!visible) {
+            return false;
+        }
+        if (super.isMouseOver(d, e)) {
+            return true;
+        }
+        return this.colourPicker.isMouseOver(d, e);
+    }
+
+    @Override
+    public boolean mouseClicked(double d, double e, int i) {
+        if (!visible) {
+            return false;
+        }
+        return this.colourPicker.mouseClicked(d, e, i) || super.mouseClicked(d, e, i);
+    }
+
+    @Override
+    public void mouseMoved(double d, double e) {
+        if (!visible) {
+            return;
+        }
+        this.colourPicker.mouseMoved(d, e);
+    }
+
+    @Override
+    public boolean mouseDragged(double d, double e, int i, double f, double g) {
+        if (!visible) {
+            return false;
+        }
+        if (this.colourPicker.mouseDragged(d, e, i, f, g)) {
+            return true;
+        }
+        return super.mouseDragged(d, e, i, f, g);
+    }
+
+    @Override
+    public boolean mouseReleased(double d, double e, int i) {
+        if (!visible) {
+            return false;
+        }
+        if (this.colourPicker.mouseReleased(d, e, i)) {
+            return true;
+        }
+        return super.mouseReleased(d, e, i);
     }
 
     public void updateDone() {
@@ -147,7 +248,7 @@ public class EditWaypointModal extends Modal<FlowLayout> {
             int y = Integer.parseInt(this.yBox.getValue());
             int z = Integer.parseInt(this.zBox.getValue());
             waypoints.removeWaypoint(this.waypoint);
-            waypoints.addWaypoint(new Waypoint(this.nameBox.getValue(), x, y, z, this.waypoint.icon()));
+            waypoints.addWaypoint(new Waypoint(this.nameBox.getValue(), x, y, z, this.waypoint.icon(), this.colour));
             setVisible(false);
         } catch (NumberFormatException ignored) {
 
@@ -160,7 +261,7 @@ public class EditWaypointModal extends Modal<FlowLayout> {
 
     public boolean hasChanged() {
         try {
-            return getX() != this.waypoint.x() || getZ() != this.waypoint.z();
+            return getX() != this.waypoint.x() || getZ() != this.waypoint.z() || getY() != this.waypoint.y() || previewColour != this.waypoint.colour();
         } catch (NumberFormatException ex) {
             return false;
         }
@@ -177,7 +278,15 @@ public class EditWaypointModal extends Modal<FlowLayout> {
         return Integer.parseInt(this.xBox.getValue());
     }
 
+    public int getY() {
+        return Integer.parseInt(this.yBox.getValue());
+    }
+
     public int getZ() {
         return Integer.parseInt(this.zBox.getValue());
+    }
+
+    public int getPreviewColour() {
+        return previewColour;
     }
 }

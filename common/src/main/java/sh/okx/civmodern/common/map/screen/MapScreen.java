@@ -15,9 +15,9 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Renderable;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.player.LocalPlayer;
-import net.minecraft.client.renderer.GameRenderer;
-import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.CoreShaders;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.phys.Vec2;
@@ -65,6 +65,8 @@ public class MapScreen extends Screen {
 
     private boolean boating = false;
 
+    private Waypoint newWaypoint;
+
     public MapScreen(AbstractCivModernMod mod, MapCache mapCache, BoatNavigation navigation, Waypoints waypoints) {
         super(Component.translatable("civmodern.screen.map.title"));
 
@@ -84,9 +86,16 @@ public class MapScreen extends Screen {
             this.boating = !boating;
         }));
         newWaypointModal = new NewWaypointModal(waypoints);
+        if (newWaypoint == null) {
+            LocalPlayer player = Minecraft.getInstance().player;
+            newWaypointModal.open("", player.getBlockX(), player.getBlockY(), player.getBlockZ());
+        } else {
+            newWaypointModal.open(newWaypoint.name(), newWaypoint.x(), newWaypoint.y(), newWaypoint.z());
+            newWaypointModal.setVisible(true);
+        }
         editWaypointModal = new EditWaypointModal(waypoints);
 
-        openWaypointButton = new ImageButton(this.width / 2 - 22, 10, 20, 20, ResourceLocation.fromNamespaceAndPath("civmodern", "gui/boat.png"), imbg -> {
+        openWaypointButton = new ImageButton(this.width / 2 - 22, 10, 20, 20, ResourceLocation.fromNamespaceAndPath("civmodern", "gui/new.png"), imbg -> {
             newWaypointModal.setVisible(!newWaypointModal.isVisible());
             if (newWaypointModal.isVisible()) {
                 editWaypointModal.setVisible(false);
@@ -103,6 +112,10 @@ public class MapScreen extends Screen {
 
         addRenderableWidget(newWaypointModal);
         addRenderableWidget(editWaypointModal);
+    }
+
+    public void setNewWaypoint(Waypoint waypoint) {
+        this.newWaypoint = waypoint;
     }
 
     @Override
@@ -139,6 +152,9 @@ public class MapScreen extends Screen {
         List<Waypoint> waypointList = waypoints.getWaypoints();
         Map<String, List<Waypoint>> waypointByIcon = new HashMap<>();
         for (Waypoint waypoint : waypointList) {
+            if (editWaypointModal.getWaypoint() == waypoint && editWaypointModal.hasChanged()) {
+                continue;
+            }
             waypointByIcon.computeIfAbsent(waypoint.icon(), k -> new ArrayList<>()).add(waypoint);
         }
 
@@ -155,7 +171,6 @@ public class MapScreen extends Screen {
             }
             BufferUploader.drawWithShader(buffer.buildOrThrow());
 
-            MultiBufferSource source = guiGraphics.bufferSource();
             for (Waypoint waypoint : waypointGroup) {
                 if (waypoint.name().isBlank()) {
                     continue;
@@ -172,8 +187,11 @@ public class MapScreen extends Screen {
                 matrices.translate(0, -15, -10);
                 Matrix4f last = matrices.last().pose();
                 RenderSystem.enableBlend();
-                font.drawInBatch(str, -font.width(str) / 2f, (float) 0, 0xFFFFFFFF, false, last, source, Font.DisplayMode.SEE_THROUGH, 1056964608, 15728640, false);
-                font.drawInBatch(str, -font.width(str) / 2f, (float) 0, 0xCCCCCC, false, last, source, Font.DisplayMode.NORMAL, 0, 15728880, true);
+                guiGraphics.drawSpecial(source -> {
+                    MutableComponent comp = Component.literal(str);
+                    font.drawInBatch(comp, -font.width(comp) / 2f, (float) 0, 0xFFFFFFFF, false, last, source, Font.DisplayMode.SEE_THROUGH, 1056964608, 15728640, false);
+                    font.drawInBatch(comp, -font.width(comp) / 2f, (float) 0, 0xCCCCCC, false, last, source, Font.DisplayMode.NORMAL, 0, 15728880, true);
+                });
                 matrices.popPose();
             }
         }
@@ -185,7 +203,7 @@ public class MapScreen extends Screen {
             matrices.pushPose();
             matrices.translate(mouseX, mouseY, 0);
 
-            Waypoint targetWaypoint = new Waypoint("", 0, 0, 0, "waypoint");
+            Waypoint targetWaypoint = new Waypoint("", 0, 0, 0, targeting ? "target" : "waypoint", 0xFF0000);
             int transparency = newWaypointModal.isTargeting() ? 0x7F : 0xFF;
             targetWaypoint.render(buffer, matrices.last().pose(), 7, transparency << 24);
 
@@ -202,7 +220,7 @@ public class MapScreen extends Screen {
                 matrices.pushPose();
                 matrices.translate((x - this.x) / scale, (z- this.y) / scale, 0);
 
-                Waypoint targetWaypoint = new Waypoint("", 0, 0, 0, "waypoint");
+                Waypoint targetWaypoint = new Waypoint("", 0, 0, 0, "waypoint", newWaypointModal.getPreviewColour());
                 targetWaypoint.render(buffer, matrices.last().pose(), 7, 0x7F << 24);
 
                 matrices.popPose();
@@ -235,7 +253,7 @@ public class MapScreen extends Screen {
                 matrices.translate((x - this.x) / scale, (z - this.y) / scale, 0);
             }
 
-            Waypoint targetWaypoint = new Waypoint("", 0, 0, 0, editWaypointModal.getWaypoint().icon());
+            Waypoint targetWaypoint = new Waypoint("", 0, 0, 0, editWaypointModal.getWaypoint().icon(), editWaypointModal.getPreviewColour());
             targetWaypoint.render(buffer, matrices.last().pose(), 7, 0x7F << 24);
 
             BufferUploader.drawWithShader(buffer.buildOrThrow());
@@ -247,9 +265,11 @@ public class MapScreen extends Screen {
                 matrices.translate(0, -15, -10);
                 Matrix4f last = matrices.last().pose();
                 RenderSystem.enableBlend();
-                MultiBufferSource source = guiGraphics.bufferSource();
-                font.drawInBatch(str, -font.width(str) / 2f, (float) 0, 0xFFFFFFFF, false, last, source, Font.DisplayMode.SEE_THROUGH, 1056964608, 15728640, false);
-                font.drawInBatch(str, -font.width(str) / 2f, (float) 0, 0xCCCCCC, false, last, source, Font.DisplayMode.NORMAL, 0, 15728880, true);
+                guiGraphics.drawSpecial(source -> {
+                    Component comp = Component.literal(str);
+                    font.drawInBatch(comp, -font.width(comp) / 2f, (float) 0, 0xFFFFFFFF, false, last, source, Font.DisplayMode.SEE_THROUGH, 1056964608, 15728640, false);
+                    font.drawInBatch(comp, -font.width(comp) / 2f, (float) 0, 0xCCCCCC, false, last, source, Font.DisplayMode.NORMAL, 0, 15728880, true);
+                });
             }
             matrices.popPose();
         }
@@ -261,7 +281,7 @@ public class MapScreen extends Screen {
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
         glEnable(GL_POLYGON_SMOOTH);
-        RenderSystem.setShader(GameRenderer::getPositionColorShader);
+        RenderSystem.setShader(CoreShaders.POSITION_COLOR);
         BufferBuilder bufferBuilder = tesselator.begin(VertexFormat.Mode.TRIANGLE_STRIP, DefaultVertexFormat.POSITION_COLOR);
         matrices.translate(prx, pry, 0);
         matrices.scale(4, 4, 0);
@@ -285,7 +305,7 @@ public class MapScreen extends Screen {
         if (boating || !dests.isEmpty()) {
             RenderSystem.enableBlend();
             glEnable(GL_POLYGON_SMOOTH);
-            RenderSystem.setShader(GameRenderer::getPositionColorShader);
+            RenderSystem.setShader(CoreShaders.POSITION_COLOR);
 
             BufferBuilder buffer = tesselator.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_COLOR);
 
@@ -358,7 +378,7 @@ public class MapScreen extends Screen {
             } else if (editWaypointModal.isTargeting()) {
                 editWaypointModal.setTargetResult((int) Math.round(mouseWorldX), (int) Math.round(mouseWorldY));
             } else {
-                this.waypoints.setTarget(new Waypoint("", (int) Math.round(mouseWorldX), 64, (int) Math.round(mouseWorldY), "target"));
+                this.waypoints.setTarget(new Waypoint("", (int) Math.round(mouseWorldX), 64, (int) Math.round(mouseWorldY), "target", 0xFF0000));
                 targeting = false;
             }
             return true;
@@ -423,6 +443,9 @@ public class MapScreen extends Screen {
                 highlightedWaypoint = closest;
             }
         }
+
+        editWaypointModal.mouseMoved(mouseX, mouseY);
+        newWaypointModal.mouseMoved(mouseX, mouseY);
 
         super.mouseMoved(mouseX, mouseY);
     }

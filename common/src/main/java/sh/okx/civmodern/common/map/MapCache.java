@@ -175,6 +175,7 @@ public class MapCache {
                 }
             }
         }
+        this.mapFile.saveBlockIds(this.blockLookup.getBlockNames());
         this.mapFile.saveBulk(toSave);
     }
 
@@ -228,8 +229,8 @@ public class MapCache {
                     iterator.remove();
                 }
             }
-            this.mapFile.saveBulk(toSave);
             this.mapFile.saveBlockIds(this.blockLookup.getBlockNames());
+            this.mapFile.saveBulk(toSave);
         });
         executor.close();
         SAVE.close();

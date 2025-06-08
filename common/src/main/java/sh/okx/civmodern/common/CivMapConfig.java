@@ -39,6 +39,7 @@ public class CivMapConfig {
     private boolean northUp;
     private int chevronColour;
     private boolean minimapEnabled;
+    private boolean mappingEnabled;
     private int minimapX;
     private int minimapY;
     private Alignment minimapAlignment;
@@ -70,6 +71,7 @@ public class CivMapConfig {
         this.northUp = Boolean.parseBoolean(properties.getProperty("north_up", "false"));
         this.chevronColour = Integer.parseInt(properties.getProperty("chevron_colour", Integer.toString(DEFAULT_CHEVRON_COLOUR)));
         this.minimapEnabled = Boolean.parseBoolean(properties.getProperty("minimap_enabled", "true"));
+        this.mappingEnabled = Boolean.parseBoolean(properties.getProperty("mapping_enabled", "true"));
         this.minimapX = Integer.parseInt(properties.getProperty("minimap_x", "5"));
         this.minimapY = Integer.parseInt(properties.getProperty("minimap_y", "5"));
         this.minimapAlignment = Alignment.valueOf(properties.getProperty("minimap_alignment", "top_right").toUpperCase());
@@ -299,6 +301,14 @@ public class CivMapConfig {
 
     public void setMinimapEnabled(boolean minimapEnabled) {
         this.minimapEnabled = minimapEnabled;
+    }
+
+    public boolean isMappingEnabled() {
+        return mappingEnabled;
+    }
+
+    public void setMappingEnabled(boolean mappingEnabled) {
+        this.mappingEnabled = mappingEnabled;
     }
 
     public Alignment getMinimapAlignment() {

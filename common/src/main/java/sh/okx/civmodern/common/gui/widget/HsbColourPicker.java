@@ -43,6 +43,8 @@ public class HsbColourPicker extends AbstractWidget {
 
     private int renderY;
 
+    private boolean rvisible = true;
+
     public HsbColourPicker(int x, int y, int width, int height, int colour, Consumer<Integer> colourConsumer, Consumer<Integer> previewConsumer, Runnable closeable) {
         super(x, y, width, height, Component.literal("HSB Colour Picker"));
 
@@ -55,8 +57,15 @@ public class HsbColourPicker extends AbstractWidget {
         this.previewConsumer = previewConsumer;
     }
 
+    public void setRVisible(boolean rvisible) {
+        this.rvisible = rvisible;
+    }
+
     @Override
     public void renderWidget(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTicks) {
+        if (!rvisible) {
+            return;
+        }
         // Render colour picker above button if it would exceed the screen height otherwise
         this.renderY = (this.getY() + 101 > Minecraft.getInstance().getWindow().getGuiScaledHeight()) ? this.getY() - 101 - this.height : this.getY();
 
@@ -137,6 +146,14 @@ public class HsbColourPicker extends AbstractWidget {
         if (this.hueMouseDown) {
             setHue(mouseX, mouseY, 0, true);
         }
+    }
+
+    @Override
+    public boolean isMouseOver(double mouseX, double mouseY) {
+        if (super.isMouseOver(mouseX, mouseY)) {
+            return true;
+        }
+        return active && visible && showPalette && (isOverGrid(mouseX, mouseY) || (mouseY >= renderY + height && mouseY <= renderY + height + 101 && mouseX >= this.getX() + 106 && mouseX <= this.getX() + 106 + 10));
     }
 
     @Override

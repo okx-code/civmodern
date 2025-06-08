@@ -54,13 +54,14 @@ public class WorldListener {
         File mapFile = config.resolve(type).resolve(name.replace(":", "_")).resolve(dimension).toFile();
         mapFile.mkdirs();
         this.file = new MapFolder(mapFile);
+        this.waypoints = new Waypoints(this.file.getConnection());
         VoxelMapConverter voxelMapConverter = new VoxelMapConverter(this.file, name, dimension, level.registryAccess());
         if (!voxelMapConverter.hasAlreadyConverted() && voxelMapConverter.voxelmapFilesAvailable() && false) {
             converter = new Thread(() -> {
                 try {
                     voxelMapConverter.convert();
                     this.cache = new MapCache(this.file);
-                    this.minimap = new Minimap(this.cache, this.config, this.provider);
+                    this.minimap = new Minimap(this.waypoints, this.cache, this.config, this.provider);
                 } catch (RuntimeException ex) {
                     ex.printStackTrace();
                 }
@@ -69,9 +70,8 @@ public class WorldListener {
         } else {
             converter = null;
             this.cache = new MapCache(this.file);
-            this.minimap = new Minimap(this.cache, this.config, this.provider);
+            this.minimap = new Minimap(this.waypoints, this.cache, this.config, this.provider);
         }
-        this.waypoints = new Waypoints(this.file.getConnection());
     }
 
     @Subscribe
@@ -110,14 +110,14 @@ public class WorldListener {
 
     @Subscribe
     public void onChunkLoad(ChunkLoadEvent event) {
-        if (this.cache != null) {
+        if (this.cache != null && config.isMappingEnabled()) {
             this.cache.updateChunk(event.chunk());
         }
     }
 
     @Subscribe
     public void onChunkLoad(BlockStateChangeEvent event) {
-        if (this.cache != null) {
+        if (this.cache != null && config.isMappingEnabled()) {
             this.cache.updateChunk(event.level().getChunkAt(event.pos()));
         }
     }

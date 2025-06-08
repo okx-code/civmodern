@@ -1,7 +1,9 @@
 package sh.okx.civmodern.common;
 
 import com.google.common.eventbus.Subscribe;
+import com.mojang.blaze3d.platform.InputConstants;
 import com.mojang.blaze3d.platform.InputConstants.Type;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -9,10 +11,15 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Path;
 import java.util.Properties;
+
+import com.mojang.brigadier.arguments.StringArgumentType;
+import com.mojang.brigadier.builder.LiteralArgumentBuilder;
+import com.mojang.brigadier.builder.RequiredArgumentBuilder;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.Options;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.multiplayer.ClientSuggestionProvider;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -25,6 +32,8 @@ import sh.okx.civmodern.common.macro.HoldKeyMacro;
 import sh.okx.civmodern.common.macro.IceRoadMacro;
 import sh.okx.civmodern.common.map.*;
 import sh.okx.civmodern.common.map.screen.MapScreen;
+import sh.okx.civmodern.common.map.waypoints.Waypoint;
+import sh.okx.civmodern.common.parser.ParsedWaypoint;
 import sh.okx.civmodern.common.radar.Radar;
 
 public abstract class AbstractCivModernMod {
@@ -140,6 +149,33 @@ public abstract class AbstractCivModernMod {
     }
 
     public abstract void registerKeyBinding(KeyMapping mapping);
+
+    @Subscribe
+    private void registerCommands(CommandRegistration registration) {
+        registration.dispatcher().register(LiteralArgumentBuilder.<ClientSuggestionProvider>literal("civmodern_openwaypoint").then(RequiredArgumentBuilder.<ClientSuggestionProvider, String>argument("data", StringArgumentType.greedyString()).executes(context -> {
+            ParsedWaypoint parsed = ParsedWaypoint.parseWaypoints(StringArgumentType.getString(context, "data")).getFirst();
+            if (parsed == null) {
+                return 0;
+            }
+            Waypoint waypoint = new Waypoint(
+                parsed.name(),
+                parsed.x(),
+                parsed.y(),
+                parsed.z(),
+                "target",
+                0xFF0000
+            );
+            boolean control = InputConstants.isKeyDown(Minecraft.getInstance().getWindow().getWindow(), InputConstants.KEY_LCONTROL);
+            if (!control) {
+                this.worlds.getWaypoints().setTarget(waypoint);
+            } else {
+                MapScreen screen = new MapScreen(this, worlds.getCache(), boatNavigation, worlds.getWaypoints());
+                screen.setNewWaypoint(waypoint);
+                Minecraft.getInstance().setScreen(screen);
+            }
+            return 0;
+        })));
+    }
 
     @Subscribe
     private void tick(

@@ -54,15 +54,15 @@ public class RegionData {
                 block = state.getBlock();
                 depth = 0;
             }
-            if (ColoursConfig.BLOCK_COLOURS.getOrDefault(registryAccess.registryOrThrow(Registries.BLOCK).getKey(block).toString(), block.defaultMapColor().col) > 0) {
+            if (ColoursConfig.BLOCK_COLOURS.getOrDefault(registryAccess.lookupOrThrow(Registries.BLOCK).getKey(block).toString(), block.defaultMapColor().col) > 0) {
                 break;
             }
-        } while (pos.getY() > chunk.getMinBuildHeight());
+        } while (pos.getY() > chunk.getMinY());
         return pos.getY() - depth;
     }
 
     public boolean updateChunk(RegistryAccess registryAccess, ChunkAccess chunk, ChunkAccess north, ChunkAccess west) {
-        Registry<Biome> registry = registryAccess.registry(Registries.BIOME).get();
+        Registry<Biome> registry = registryAccess.lookupOrThrow(Registries.BIOME);
         boolean updated = false;
 
         int rx = chunk.getPos().getRegionLocalX() * 16;
@@ -107,12 +107,12 @@ public class RegionData {
                         depth = 0;
                     }
 
-                    if (ColoursConfig.BLOCK_COLOURS.getOrDefault(registryAccess.registryOrThrow(Registries.BLOCK).getKey(block).toString(), block.defaultMapColor().col) > 0) {
+                    if (ColoursConfig.BLOCK_COLOURS.getOrDefault(registryAccess.lookupOrThrow(Registries.BLOCK).getKey(block).toString(), block.defaultMapColor().col) > 0) {
                         break;
                     }
-                } while (pos.getY() > chunk.getMinBuildHeight());
+                } while (pos.getY() > chunk.getMinY());
 
-                int blockId = blockLookup.getOrCreateBlockId(registryAccess.registryOrThrow(Registries.BLOCK).getKey(block).toString()) + 1;
+                int blockId = blockLookup.getOrCreateBlockId(registryAccess.lookupOrThrow(Registries.BLOCK).getKey(block).toString()) + 1;
                 if (blockId > 0xFFFE) {
                     AbstractCivModernMod.LOGGER.warn("block " + blockId + " at pos " + pos);
                     blockId = 0;
@@ -182,7 +182,7 @@ public class RegionData {
         Int2IntMap blockCache = new Int2IntOpenHashMap();
         // todo fix
         RegistryAccess registryAccess = Minecraft.getInstance().player.level().registryAccess();
-        Registry<Biome> registry = registryAccess.registry(Registries.BIOME).get();
+        Registry<Biome> registry = registryAccess.lookupOrThrow(Registries.BIOME);
         for (int x = minX; x < maxX; x++) {
             for (int z = minZ; z < maxZ; z++) {
                 int packedData = data[z + x * 512];
@@ -197,7 +197,7 @@ public class RegionData {
                     if (blockId == 0) {
                         color = 0;
                     } else {
-                        Optional<Holder.Reference<Block>> holder = registryAccess.registryOrThrow(Registries.BLOCK).getHolder(ResourceLocation.parse(blockLookup.getBlockName(blockId - 1)));
+                        Optional<Holder.Reference<Block>> holder = registryAccess.lookupOrThrow(Registries.BLOCK).get(ResourceLocation.parse(blockLookup.getBlockName(blockId - 1)));
                         if (holder.isEmpty()) {
                             color = 0;
                         } else {

@@ -4,19 +4,31 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.*;
 import com.mojang.math.Axis;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.Font;
 import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.client.renderer.CoreShaders;
 import net.minecraft.client.renderer.GameRenderer;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.util.Mth;
 import org.joml.Matrix4f;
 import sh.okx.civmodern.common.CivMapConfig;
 import sh.okx.civmodern.common.ColourProvider;
 import sh.okx.civmodern.common.events.PostRenderGameOverlayEvent;
+import sh.okx.civmodern.common.map.waypoints.Waypoint;
+import sh.okx.civmodern.common.map.waypoints.Waypoints;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import static org.lwjgl.opengl.GL11.*;
 import static sh.okx.civmodern.common.map.RegionAtlasTexture.SIZE;
 
 public class Minimap {
 
+    private final Waypoints waypoints;
     private final MapCache cache;
     private final CivMapConfig config;
     private final ColourProvider provider;
@@ -29,7 +41,8 @@ public class Minimap {
     }
 
 
-    public Minimap(MapCache cache, CivMapConfig config, ColourProvider provider) {
+    public Minimap(Waypoints waypoints, MapCache cache, CivMapConfig config, ColourProvider provider) {
+        this.waypoints = waypoints;
         this.cache = cache;
         this.config = config;
         this.provider = provider;
@@ -110,15 +123,47 @@ public class Minimap {
             drawnX += screenX == 0 ? tmp / 2 : SIZE;
         }
 
+
+        List<Waypoint> waypointList = waypoints.getWaypoints();
+        Map<String, List<Waypoint>> waypointByIcon = new HashMap<>();
+        for (Waypoint waypoint : waypointList) {
+            waypointByIcon.computeIfAbsent(waypoint.icon(), k -> new ArrayList<>()).add(waypoint);
+        }
+        matrices.pushPose();
+        Tesselator tesselator = Tesselator.getInstance();
+        for (List<Waypoint> waypointGroup : waypointByIcon.values()) {
+            BufferBuilder buffer = tesselator.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX_COLOR);
+            boolean waypointRendered = false;
+            for (Waypoint waypoint : waypointGroup) {
+                double wx = waypoint.x() + 0.5;
+                double wz = waypoint.z() + 0.5;
+                double tx = (wx - x) / zoom;
+                double ty = (wz - y) / zoom;
+                if (tx < 0 || ty < 0 || tx > size || ty > size) {
+                    continue;
+                }
+                matrices.pushPose();
+                matrices.translate(tx, ty, 0);
+
+                waypoint.render(buffer, matrices.last().pose(), 7, 0xFF << 24);
+                matrices.popPose();
+                waypointRendered = true;
+            }
+            if (waypointRendered) {
+                BufferUploader.drawWithShader(buffer.buildOrThrow());
+            }
+        }
+        matrices.popPose();
+
         matrices.pushPose();
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
         glEnable(GL_POLYGON_SMOOTH);
-        RenderSystem.setShader(GameRenderer::getPositionColorShader);
+        RenderSystem.setShader(CoreShaders.POSITION_COLOR);
         BufferBuilder bufferBuilder = Tesselator.getInstance().begin(VertexFormat.Mode.TRIANGLE_STRIP, DefaultVertexFormat.POSITION_COLOR);
         matrices.translate(size / 2, size / 2, 0);
         matrices.mulPose(Axis.ZP.rotationDegrees(player.getViewYRot(event.deltaTick()) % 360f));
-        matrices.scale(4, 4, 0);
+        matrices.scale(4, 4, 1);
         int chevronColour = provider.getChevronColour() | 0xFF000000;
         Matrix4f pose = matrices.last().pose();
         bufferBuilder.addVertex(pose, -1, -1.5f, 0).setColor(chevronColour);
