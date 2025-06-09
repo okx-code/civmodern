@@ -43,7 +43,7 @@ public class Waypoints {
         new WaypointTexture(ResourceLocation.fromNamespaceAndPath("civmodern", "map/focus.png")).register();
     }
 
-    private final Int2ObjectMap<Int2ObjectMap<Waypoint>> waypoints = new Int2ObjectOpenHashMap<>();
+    private final Int2ObjectMap<Int2ObjectMap<Int2ObjectMap<Waypoint>>> waypoints = new Int2ObjectOpenHashMap<>();
     private Waypoint target;
     private final Connection connection;
 
@@ -74,18 +74,20 @@ public class Waypoints {
 
     public void save() {
         try (PreparedStatement statement = connection.prepareStatement("INSERT INTO waypoints VALUES (?, ?, ?, ?, ?, ?) ON CONFLICT DO UPDATE SET name = ?, icon = ?, colour = ?")) {
-            for (Int2ObjectMap<Waypoint> zEntry : waypoints.values()) {
-                for (Waypoint waypoint : zEntry.values()) {
-                    statement.setString(1, waypoint.name());
-                    statement.setInt(2, waypoint.x());
-                    statement.setInt(3, waypoint.y());
-                    statement.setInt(4, waypoint.z());
-                    statement.setString(5, "waypoint");
-                    statement.setInt(6, waypoint.colour());
-                    statement.setString(7, waypoint.name());
-                    statement.setString(8, "waypoint");
-                    statement.setInt(9, waypoint.colour());
-                    statement.addBatch();
+            for (Int2ObjectMap<Int2ObjectMap<Waypoint>> zEntry : waypoints.values()) {
+                for (Int2ObjectMap<Waypoint> yEntry : zEntry.values()) {
+                    for (Waypoint waypoint : yEntry.values()) {
+                        statement.setString(1, waypoint.name());
+                        statement.setInt(2, waypoint.x());
+                        statement.setInt(3, waypoint.y());
+                        statement.setInt(4, waypoint.z());
+                        statement.setString(5, "waypoint");
+                        statement.setInt(6, waypoint.colour());
+                        statement.setString(7, waypoint.name());
+                        statement.setString(8, "waypoint");
+                        statement.setInt(9, waypoint.colour());
+                        statement.addBatch();
+                    }
                 }
             }
             statement.executeBatch();
@@ -96,13 +98,17 @@ public class Waypoints {
 
     public void addWaypoint(Waypoint waypoint) {
         this.waypoints.computeIfAbsent(waypoint.x(), k -> new Int2ObjectOpenHashMap<>())
-            .put(waypoint.z(), waypoint);
+            .computeIfAbsent(waypoint.z(), k -> new Int2ObjectOpenHashMap<>())
+            .put(waypoint.y(), waypoint);
     }
 
     public void removeWaypoint(Waypoint waypoint) {
-        Int2ObjectMap<Waypoint> wx = this.waypoints.get(waypoint.x());
+        Int2ObjectMap<Int2ObjectMap<Waypoint>> wx = this.waypoints.get(waypoint.x());
         if (wx != null) {
-            wx.remove(waypoint.z());
+            Int2ObjectMap<Waypoint> wz = wx.get(waypoint.z());
+            if (wz != null) {
+                wz.remove(waypoint.y());
+            }
         }
     }
 
@@ -116,8 +122,10 @@ public class Waypoints {
 
     public List<Waypoint> getWaypoints() {
         List<Waypoint> list = new ArrayList<>();
-        for (Int2ObjectMap<Waypoint> map : waypoints.values()) {
-            list.addAll(map.values());
+        for (Int2ObjectMap<Int2ObjectMap<Waypoint>> map : waypoints.values()) {
+            for (Int2ObjectMap<Waypoint> i : map.values()) {
+                list.addAll(i.values());
+            }
         }
         if (target != null) {
             list.add(target);
@@ -128,21 +136,12 @@ public class Waypoints {
     public List<Waypoint> getWaypoints(int x, int y, int z, int distance) {
         List<Waypoint> nearbyWaypoints = new ArrayList<>();
 
-        for (Int2ObjectMap.Entry<Int2ObjectMap<Waypoint>> xEntry : waypoints.int2ObjectEntrySet()) {
-            int dx = Math.abs(xEntry.getIntKey() - x);
-            if (dx > distance) {
-                continue;
-            }
+        for (Waypoint waypoint : getWaypoints()) {
+            int dx = Math.abs(waypoint.x() - x);
+            int dz = Math.abs(waypoint.z() - z);
 
-            for (Int2ObjectMap.Entry<Waypoint> zEntry : xEntry.getValue().int2ObjectEntrySet()) {
-                int dz = Math.abs(zEntry.getIntKey() - z);
-                if (dz > distance) {
-                    continue;
-                }
-
-                if (dx * dx + dz * dz < distance * distance) {
-                    nearbyWaypoints.add(zEntry.getValue());
-                }
+            if (dx * dx + dz * dz < distance * distance) {
+                nearbyWaypoints.add(waypoint);
             }
         }
 
