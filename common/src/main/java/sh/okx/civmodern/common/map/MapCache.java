@@ -219,7 +219,7 @@ public class MapCache {
 
     public void save() {
         // todo save not just on gui close but on world unload or 60 second interval
-        SAVE.submit(() -> {
+        Future<?> submit = SAVE.submit(() -> {
             Map<RegionKey, RegionData> toSave = new HashMap<>();
             for (Iterator<RegionKey> iterator = dirtySaveRegions.iterator(); iterator.hasNext(); ) {
                 RegionKey dirtySave = iterator.next();
@@ -233,7 +233,13 @@ public class MapCache {
             this.mapFile.saveBulk(toSave);
         });
         executor.close();
-        SAVE.close();
+        try {
+            submit.get();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        } catch (ExecutionException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public void free() {
