@@ -20,6 +20,7 @@ import net.minecraft.world.phys.Vec3;
 import org.joml.Matrix4f;
 import sh.okx.civmodern.common.events.WorldRenderLastEvent;
 
+import javax.swing.plaf.nimbus.State;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -54,45 +55,61 @@ public class Waypoints {
     }
 
     private void load() {
-        try (Statement statement = connection.createStatement()) {
-            ResultSet resultSet = statement.executeQuery("SELECT name, x, y, z, icon, colour FROM waypoints");
+        synchronized (this.connection) {
+            try (Statement statement = connection.createStatement()) {
+                ResultSet resultSet = statement.executeQuery("SELECT name, x, y, z, icon, colour FROM waypoints");
 
-            while (resultSet.next()) {
-                this.addWaypoint(new Waypoint(
-                    resultSet.getString("name"),
-                    resultSet.getInt("x"),
-                    resultSet.getInt("y"),
-                    resultSet.getInt("z"),
-                    resultSet.getString("icon"),
-                    resultSet.getInt("colour")
-                ));
+                while (resultSet.next()) {
+                    this.addWaypoint(new Waypoint(
+                        resultSet.getString("name"),
+                        resultSet.getInt("x"),
+                        resultSet.getInt("y"),
+                        resultSet.getInt("z"),
+                        resultSet.getString("icon"),
+                        resultSet.getInt("colour")
+                    ));
+                }
+            } catch (SQLException e) {
+                throw new RuntimeException(e);
             }
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
         }
     }
 
     public void save() {
-        try (PreparedStatement statement = connection.prepareStatement("INSERT INTO waypoints VALUES (?, ?, ?, ?, ?, ?) ON CONFLICT DO UPDATE SET name = ?, icon = ?, colour = ?")) {
-            for (Int2ObjectMap<Int2ObjectMap<Waypoint>> zEntry : waypoints.values()) {
-                for (Int2ObjectMap<Waypoint> yEntry : zEntry.values()) {
-                    for (Waypoint waypoint : yEntry.values()) {
-                        statement.setString(1, waypoint.name());
-                        statement.setInt(2, waypoint.x());
-                        statement.setInt(3, waypoint.y());
-                        statement.setInt(4, waypoint.z());
-                        statement.setString(5, "waypoint");
-                        statement.setInt(6, waypoint.colour());
-                        statement.setString(7, waypoint.name());
-                        statement.setString(8, "waypoint");
-                        statement.setInt(9, waypoint.colour());
-                        statement.addBatch();
+        synchronized (this.connection) {
+            try {
+                this.connection.setAutoCommit(false);
+                try (PreparedStatement statement = connection.prepareStatement("INSERT INTO waypoints VALUES (?, ?, ?, ?, ?, ?) ON CONFLICT DO UPDATE SET name = ?, icon = ?, colour = ?");
+                     Statement delete = connection.createStatement()) {
+                    delete.executeUpdate("DELETE FROM waypoints");
+                    for (Int2ObjectMap<Int2ObjectMap<Waypoint>> zEntry : waypoints.values()) {
+                        for (Int2ObjectMap<Waypoint> yEntry : zEntry.values()) {
+                            for (Waypoint waypoint : yEntry.values()) {
+                                statement.setString(1, waypoint.name());
+                                statement.setInt(2, waypoint.x());
+                                statement.setInt(3, waypoint.y());
+                                statement.setInt(4, waypoint.z());
+                                statement.setString(5, "waypoint");
+                                statement.setInt(6, waypoint.colour());
+                                statement.setString(7, waypoint.name());
+                                statement.setString(8, "waypoint");
+                                statement.setInt(9, waypoint.colour());
+                                statement.addBatch();
+                            }
+                        }
                     }
+
+                    statement.executeBatch();
+                }
+                this.connection.commit();
+            } catch (SQLException e) {
+                e.printStackTrace();
+            } finally {
+                try {
+                    this.connection.setAutoCommit(true);
+                } catch (SQLException e) {
                 }
             }
-            statement.executeBatch();
-        } catch (SQLException e) {
-            e.printStackTrace();
         }
     }
 

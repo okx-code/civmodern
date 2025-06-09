@@ -57,100 +57,110 @@ public class MapFolder {
     }
 
     public void saveBulk(Map<RegionKey, RegionData> dataMap) {
-        try (PreparedStatement statement = this.connection.prepareStatement("INSERT INTO regions (x, z, data) VALUES (?, ?, ?) ON CONFLICT DO UPDATE SET data = ?")) {
+        synchronized (this.connection) {
+            try (PreparedStatement statement = this.connection.prepareStatement("INSERT INTO regions (x, z, data) VALUES (?, ?, ?) ON CONFLICT DO UPDATE SET data = ?")) {
 
-            for (Map.Entry<RegionKey, RegionData> entry : dataMap.entrySet()) {
-                statement.setInt(1, entry.getKey().x());
-                statement.setInt(2, entry.getKey().z());
+                for (Map.Entry<RegionKey, RegionData> entry : dataMap.entrySet()) {
+                    statement.setInt(1, entry.getKey().x());
+                    statement.setInt(2, entry.getKey().z());
 
-                ByteBuffer buf = ByteBuffer.allocate(512 * 512 * 4);
-                buf.asIntBuffer().put(entry.getValue().getData());
+                    ByteBuffer buf = ByteBuffer.allocate(512 * 512 * 4);
+                    buf.asIntBuffer().put(entry.getValue().getData());
 
-                ByteArrayOutputStream out = new ByteArrayOutputStream();
-                GZIPOutputStream gzip = new GZIPOutputStream(out);
-                gzip.write(buf.array());
-                gzip.close();
+                    ByteArrayOutputStream out = new ByteArrayOutputStream();
+                    GZIPOutputStream gzip = new GZIPOutputStream(out);
+                    gzip.write(buf.array());
+                    gzip.close();
 
-                byte[] bytes = out.toByteArray();
-                statement.setBytes(3, bytes);
-                statement.setBytes(4, bytes);
+                    byte[] bytes = out.toByteArray();
+                    statement.setBytes(3, bytes);
+                    statement.setBytes(4, bytes);
 
-                statement.addBatch();
+                    statement.addBatch();
+                }
+
+                statement.executeBatch();
+            } catch (SQLException | IOException e) {
+                e.printStackTrace();
             }
-
-            statement.executeBatch();
-        } catch (SQLException | IOException e) {
-            e.printStackTrace();
         }
     }
 
     public Set<RegionKey> listRegions() {
-        try (Statement statement = this.connection.createStatement()) {
-            ResultSet resultSet = statement.executeQuery("SELECT x, z FROM regions");
+        synchronized (this.connection) {
+            try (Statement statement = this.connection.createStatement()) {
+                ResultSet resultSet = statement.executeQuery("SELECT x, z FROM regions");
 
-            Set<RegionKey> keys = new HashSet<>();
-            while (resultSet.next()) {
-                keys.add(new RegionKey(resultSet.getInt("x"), resultSet.getInt("z")));
+                Set<RegionKey> keys = new HashSet<>();
+                while (resultSet.next()) {
+                    keys.add(new RegionKey(resultSet.getInt("x"), resultSet.getInt("z")));
+                }
+
+                return keys;
+            } catch (SQLException e) {
+                throw new RuntimeException(e);
             }
-
-            return keys;
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
         }
     }
 
     public Int2ObjectMap<String> blockIds() {
-        try (Statement statement = this.connection.createStatement()) {
-            ResultSet resultSet = statement.executeQuery("SELECT name, id FROM blocks");
+        synchronized (this.connection) {
+            try (Statement statement = this.connection.createStatement()) {
+                ResultSet resultSet = statement.executeQuery("SELECT name, id FROM blocks");
 
-            Int2ObjectMap<String> blockIds = new Int2ObjectOpenHashMap<>();
-            while (resultSet.next()) {
-                blockIds.put(resultSet.getInt("id"), resultSet.getString("name"));
+                Int2ObjectMap<String> blockIds = new Int2ObjectOpenHashMap<>();
+                while (resultSet.next()) {
+                    blockIds.put(resultSet.getInt("id"), resultSet.getString("name"));
+                }
+
+                return blockIds;
+            } catch (SQLException e) {
+                throw new RuntimeException(e);
             }
-
-            return blockIds;
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
         }
     }
 
     public void saveBlockIds(Int2ObjectMap<String> blockIds) {
-        try (PreparedStatement statement = this.connection.prepareStatement("INSERT INTO blocks (name, id) VALUES (?, ?) ON CONFLICT DO NOTHING")) {
+        synchronized (this.connection) {
+            try (PreparedStatement statement = this.connection.prepareStatement("INSERT INTO blocks (name, id) VALUES (?, ?) ON CONFLICT DO NOTHING")) {
 
-            for (Int2ObjectMap.Entry<String> entry : blockIds.int2ObjectEntrySet()) {
-                statement.setString(1, entry.getValue());
-                statement.setInt(2, entry.getIntKey());
-                statement.addBatch();
+                for (Int2ObjectMap.Entry<String> entry : blockIds.int2ObjectEntrySet()) {
+                    statement.setString(1, entry.getValue());
+                    statement.setInt(2, entry.getIntKey());
+                    statement.addBatch();
+                }
+
+                statement.executeBatch();
+            } catch (SQLException e) {
+                e.printStackTrace();
             }
-
-            statement.executeBatch();
-        } catch (SQLException e) {
-            e.printStackTrace();
         }
     }
 
     public RegionData getRegion(BlockLookup blockLookup, RegionKey key) {
-        try (PreparedStatement statement = this.connection.prepareStatement("SELECT data FROM regions WHERE x = ? AND z = ?")) {
-            statement.setInt(1, key.x());
-            statement.setInt(2, key.z());
+        synchronized (this.connection) {
+            try (PreparedStatement statement = this.connection.prepareStatement("SELECT data FROM regions WHERE x = ? AND z = ?")) {
+                statement.setInt(1, key.x());
+                statement.setInt(2, key.z());
 
-            ResultSet resultSet = statement.executeQuery();
-            if (!resultSet.next()) {
-                return null;
+                ResultSet resultSet = statement.executeQuery();
+                if (!resultSet.next()) {
+                    return null;
+                }
+
+                RegionData region = new RegionData(blockLookup);
+                byte[] compressed = resultSet.getBytes("data");
+
+                ByteArrayInputStream in = new ByteArrayInputStream(compressed);
+                GZIPInputStream gzip = new GZIPInputStream(in);
+                byte[] data = gzip.readAllBytes();
+                gzip.close();
+                ByteBuffer.wrap(data).asIntBuffer().get(region.getData());
+
+                return region;
+            } catch (SQLException | IOException e) {
+                throw new RuntimeException(e);
             }
-
-            RegionData region = new RegionData(blockLookup);
-            byte[] compressed = resultSet.getBytes("data");
-
-            ByteArrayInputStream in = new ByteArrayInputStream(compressed);
-            GZIPInputStream gzip = new GZIPInputStream(in);
-            byte[] data = gzip.readAllBytes();
-            gzip.close();
-            ByteBuffer.wrap(data).asIntBuffer().get(region.getData());
-
-            return region;
-        } catch (SQLException | IOException e) {
-            throw new RuntimeException(e);
         }
     }
 }

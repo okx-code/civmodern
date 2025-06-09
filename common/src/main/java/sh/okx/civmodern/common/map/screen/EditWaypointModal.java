@@ -289,4 +289,8 @@ public class EditWaypointModal extends Modal<FlowLayout> {
     public int getPreviewColour() {
         return previewColour;
     }
+
+    public int getColour() {
+        return colour;
+    }
 }

@@ -254,7 +254,11 @@ public class MapScreen extends Screen {
             }
 
             Waypoint targetWaypoint = new Waypoint("", 0, 0, 0, editWaypointModal.getWaypoint().icon(), editWaypointModal.getPreviewColour());
-            targetWaypoint.render(buffer, matrices.last().pose(), 7, 0x7F << 24);
+            if (editWaypointModal.getPreviewColour() != editWaypointModal.getColour()) {
+                targetWaypoint.render(buffer, matrices.last().pose(), 7, 0xFF << 24);
+            } else {
+                targetWaypoint.render(buffer, matrices.last().pose(), 7, 0x7F << 24);
+            }
 
             BufferUploader.drawWithShader(buffer.buildOrThrow());
 
