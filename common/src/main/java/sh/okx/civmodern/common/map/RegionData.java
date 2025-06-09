@@ -33,6 +33,8 @@ public class RegionData {
     // 8 bits - biome
     // big endian
     private final int[] data = new int[512 * 512];
+    private byte[] ylevels;
+    private short[] light;
     private final BlockLookup blockLookup;
 
     public RegionData(BlockLookup blockLookup) {

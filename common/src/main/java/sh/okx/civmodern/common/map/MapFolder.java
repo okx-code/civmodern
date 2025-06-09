@@ -33,9 +33,9 @@ public class MapFolder {
 
             try (Statement statement = connection.createStatement()) {
                 statement.execute("CREATE TABLE IF NOT EXISTS meta (key TEXT NOT NULL PRIMARY KEY, value BLOB)");
-                statement.execute("CREATE TABLE IF NOT EXISTS waypoints (name TEXT NOT NULL, x INT NOT NULL, y INT NOT NULL, z INT NOT NULL, icon TEXT NOT NULL, colour INT NOT NULL, PRIMARY KEY (x, y, z))");
+                statement.execute("CREATE TABLE IF NOT EXISTS waypoints (name TEXT NOT NULL, x INT NOT NULL, y INT NOT NULL, z INT NOT NULL, icon TEXT NOT NULL, colour INT NOT NULL, UNIQUE (x, y, z))");
                 statement.execute("CREATE TABLE IF NOT EXISTS blocks (name TEXT NOT NULL UNIQUE, id INTEGER NOT NULL UNIQUE)");
-                statement.execute("CREATE TABLE IF NOT EXISTS regions (x INT NOT NULL, z INT NOT NULL, data BLOB NOT NULL, PRIMARY KEY (x, z))");
+                statement.execute("CREATE TABLE IF NOT EXISTS regions (x INT NOT NULL, z INT NOT NULL, type TEXT NOT NULL, data BLOB NOT NULL, PRIMARY KEY (x, z, type))");
 
                 statement.execute("INSERT INTO meta VALUES (\"version\", " + VERSION + ") ON CONFLICT DO NOTHING");
             }
@@ -58,11 +58,12 @@ public class MapFolder {
 
     public void saveBulk(Map<RegionKey, RegionData> dataMap) {
         synchronized (this.connection) {
-            try (PreparedStatement statement = this.connection.prepareStatement("INSERT INTO regions (x, z, data) VALUES (?, ?, ?) ON CONFLICT DO UPDATE SET data = ?")) {
+            try (PreparedStatement statement = this.connection.prepareStatement("INSERT INTO regions (x, z, type, data) VALUES (?, ?, ?, ?) ON CONFLICT DO UPDATE SET data = ?")) {
 
                 for (Map.Entry<RegionKey, RegionData> entry : dataMap.entrySet()) {
                     statement.setInt(1, entry.getKey().x());
                     statement.setInt(2, entry.getKey().z());
+                    statement.setString(3, "map");
 
                     ByteBuffer buf = ByteBuffer.allocate(512 * 512 * 4);
                     buf.asIntBuffer().put(entry.getValue().getData());
@@ -139,19 +140,26 @@ public class MapFolder {
 
     public RegionData getRegion(BlockLookup blockLookup, RegionKey key) {
         synchronized (this.connection) {
-            try (PreparedStatement statement = this.connection.prepareStatement("SELECT data FROM regions WHERE x = ? AND z = ?")) {
+            try (PreparedStatement statement = this.connection.prepareStatement("SELECT type, data FROM regions WHERE x = ? AND z = ?")) {
                 statement.setInt(1, key.x());
                 statement.setInt(2, key.z());
 
                 ResultSet resultSet = statement.executeQuery();
-                if (!resultSet.next()) {
+
+                byte[] mapData = null;
+                while (resultSet.next()) {
+                    if (resultSet.getString("type").equals("map")) {
+                        mapData = resultSet.getBytes("data");
+                        break;
+                    }
+                }
+                if (mapData == null) {
                     return null;
                 }
 
                 RegionData region = new RegionData(blockLookup);
-                byte[] compressed = resultSet.getBytes("data");
 
-                ByteArrayInputStream in = new ByteArrayInputStream(compressed);
+                ByteArrayInputStream in = new ByteArrayInputStream(mapData);
                 GZIPInputStream gzip = new GZIPInputStream(in);
                 byte[] data = gzip.readAllBytes();
                 gzip.close();
