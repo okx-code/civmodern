@@ -1,7 +1,11 @@
 package sh.okx.civmodern.common.map.waypoints;
 
 import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.vertex.*;
+import com.mojang.blaze3d.vertex.BufferBuilder;
+import com.mojang.blaze3d.vertex.DefaultVertexFormat;
+import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.Tesselator;
+import com.mojang.blaze3d.vertex.VertexFormat;
 import com.mojang.math.Axis;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
@@ -9,9 +13,8 @@ import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.player.LocalPlayer;
-import net.minecraft.client.renderer.FogParameters;
-import net.minecraft.client.renderer.FogRenderer;
 import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.RenderType;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
@@ -20,10 +23,6 @@ import net.minecraft.world.phys.Vec3;
 import org.joml.Matrix4f;
 import sh.okx.civmodern.common.events.WorldRenderLastEvent;
 
-import javax.swing.plaf.nimbus.State;
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -33,8 +32,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-
-import static org.lwjgl.opengl.GL11.*;
 
 public class Waypoints {
 
@@ -179,9 +176,6 @@ public class Waypoints {
         PoseStack matrices = event.stack();
         Vec3 pos = camera.getPosition();
         Tesselator tessellator = Tesselator.getInstance();
-        RenderSystem.depthMask(false);
-        RenderSystem.disableDepthTest();
-        RenderSystem.setShaderFog(FogParameters.NO_FOG);
         for (Waypoint waypoint : nearbyWaypoints) {
             BufferBuilder buffer = tessellator.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX_COLOR);
             double x = waypoint.x() + 0.5 - pos.x;
@@ -210,7 +204,8 @@ public class Waypoints {
             int k = (int) (getTransparency(distance, 0.11f) * 255.0F) << 24;
             waypoint.render(buffer, matrices.last().pose(), 8, k);
             matrices.popPose();
-            BufferUploader.drawWithShader(buffer.buildOrThrow());
+            RenderType.guiTextured(waypoint.resourceLocation()).draw(buffer.buildOrThrow());
+//            BufferUploader.drawWithShader(buffer.buildOrThrow());
         }
         RenderSystem.disableBlend();
         MultiBufferSource source = event.source();
@@ -251,14 +246,16 @@ public class Waypoints {
 
             matrices.translate(0, -20, 0);
             Matrix4f last = matrices.last().pose();
-            RenderSystem.enableBlend();
+
             int k = (int) (getTransparency(distance, 0.44f) * 63.0F) << 24;
             int k2 = (int) (getTransparency(distance, 0.11f) * 255.0F) << 24;
-            font.drawInBatch(str, -font.width(str) / 2f, (float) 0, 0x20FFFFFF, false, last, source, Font.DisplayMode.SEE_THROUGH, k, 15728640);
-            font.drawInBatch(str, -font.width(str) / 2f, (float) 0, k2 | 0xffffff, false, last, source, Font.DisplayMode.SEE_THROUGH, 0, 15728880);
+
+            float bgOpacity = Minecraft.getInstance().options.getBackgroundOpacity(0.25f);
+            int bgColor = (int) (bgOpacity * 255.0f) << 24;
+            font.drawInBatch(str, -font.width(str) / 2f, 0, 0x20FFFFFF, false, last, source, Font.DisplayMode.NORMAL, k, 0);
+            font.drawInBatch(str, -font.width(str) / 2f, 0, k2 | 0xFFFFFF, false, last, source, Font.DisplayMode.SEE_THROUGH, bgColor, 0);
             matrices.popPose();
         }
-        RenderSystem.depthFunc(GL_LEQUAL);
     }
 
     private float getTransparency(float distance, float clamp) {

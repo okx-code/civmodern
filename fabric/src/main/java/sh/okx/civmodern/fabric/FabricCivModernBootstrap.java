@@ -44,7 +44,9 @@ public class FabricCivModernBootstrap implements ClientModInitializer {
         ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> mod.eventBus.post(new LeaveEvent()));
         HudRenderCallback.EVENT.register(((matrixStack, tickDelta) -> mod.eventBus.post(new PostRenderGameOverlayEvent(matrixStack, tickDelta.getGameTimeDeltaPartialTick(true)))));
         ClientChunkEvents.CHUNK_LOAD.register((level, chunk) -> mod.eventBus.post(new ChunkLoadEvent(level, chunk)));
-        WorldRenderEvents.LAST.register(context -> mod.eventBus.post(new WorldRenderLastEvent(context.matrixStack(), context.consumers(), context.tickCounter().getGameTimeDeltaPartialTick(true)))); // TODO forge
+        WorldRenderEvents.LAST.register(context -> {
+            mod.eventBus.post(new WorldRenderLastEvent(context.matrixStack(), context.consumers(), context.tickCounter().getGameTimeDeltaPartialTick(true)));
+        }); // TODO forge
 
         ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) -> mod.eventBus.post(new CommandRegistration((CommandDispatcher<ClientSuggestionProvider>) (CommandDispatcher<?>) dispatcher, registryAccess)));
     }

@@ -94,7 +94,6 @@ public class BoatNavigation {
       diff -= 2 * Mth.PI;
     }
     double remainingMovement = Math.toRadians((Math.abs(rotation) + 1.1) * 10);
-    // todo fix signs here, this is not differentiating between left and right rotation
     rotation *= 0.9;
     if (diff < remainingMovement || Math.PI * 2 - diff < remainingMovement) {
       mc.options.keyLeft.setDown(false);
