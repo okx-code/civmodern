@@ -187,9 +187,9 @@ public class Minimap {
     }
 
     public void cycleZoom() {
-        zoom *= 2;
-        if (zoom >= 32) {
-            zoom = 0.5f;
+        zoom /= 2;
+        if (zoom < 0.5f) {
+            zoom = 16f;
         }
     }
 }
