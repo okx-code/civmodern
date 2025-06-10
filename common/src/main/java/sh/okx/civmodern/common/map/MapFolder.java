@@ -206,4 +206,11 @@ public class MapFolder {
             }
         }
     }
+
+    public void close() {
+        try {
+            this.connection.close();
+        } catch (SQLException e) {
+        }
+    }
 }

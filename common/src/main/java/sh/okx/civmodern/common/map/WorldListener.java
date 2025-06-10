@@ -90,6 +90,7 @@ public class WorldListener {
             this.cache.free();
         }
         this.minimap = null;
+        this.file.close();
         this.file = null;
         this.cache = null;
         if (this.waypoints != null) {
