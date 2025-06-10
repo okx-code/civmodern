@@ -132,7 +132,6 @@ public class VoxelMapConverter {
 
                     // version specific processing
                     if (version == 2) {
-                        System.out.println("Version 2 found!");
 
                         // load in data
                         ze = zFile.getEntry("data");
@@ -496,13 +495,11 @@ public class VoxelMapConverter {
         }
 
         public int getFoliageHeight(byte[] data, int x, int z) {
-            // TODO: bit is probably wrong
-            return (getData(data, x, z, 15) << 8) | getData(data, x, z, 16) & 0xFF;
+            return getTransparentHeight(data, x, z);
         }
 
         public int getFoliageBlockstate(byte[] data, int x, int z) {
-            // TODO: bit is probbly wrong
-            return (getData(data, x, z, 17) & 0xFF) << 8 | getData(data, x, z, 18) & 0xFF;
+            return getTransparentBlockstate(data, x, z);
         }
 
         public int getTransparentHeight(byte[] data, int x, int z) {
