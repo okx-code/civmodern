@@ -136,15 +136,11 @@ public class VoxelMapConverter {
                         // load in data
                         ze = zFile.getEntry("data");
                         is = zFile.getInputStream(ze);
-
-                        // using old read method in attempt to avoid java.lang.ArrayIndexOutOfBoundsException
-                        // doesn't seem to be working however
-                        int count;
-                        int total = 0;
-                        byte[] data = new byte[256 * 256 * 18];
-                        for (byte[] byteData = new byte[2048]; (count = is.read(byteData, 0, 2048)) != -1 && count + total <= 256 * 256 * 18; total += count)
-                            System.arraycopy(byteData, 0, data, total, count);
+                        byte[] data = is.readAllBytes(); // 256 * 256 * 18
                         is.close();
+                        if (data.length != v2DataLength) {
+                            continue;
+                        }
 
                         // will be empty because biome data is not stored in v2 format
                         Int2ObjectMap<String> biomeMap = new Int2ObjectOpenHashMap<>();
