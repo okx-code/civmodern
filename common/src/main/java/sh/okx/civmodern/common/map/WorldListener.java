@@ -12,6 +12,7 @@ import sh.okx.civmodern.common.events.LeaveEvent;
 import sh.okx.civmodern.common.events.PostRenderGameOverlayEvent;
 import sh.okx.civmodern.common.events.RespawnEvent;
 import sh.okx.civmodern.common.events.WorldRenderLastEvent;
+import sh.okx.civmodern.common.map.converters.VoxelMapConverter;
 import sh.okx.civmodern.common.map.waypoints.Waypoints;
 import sh.okx.civmodern.common.mixins.StorageSourceAccessor;
 
