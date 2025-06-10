@@ -184,6 +184,7 @@ public class RegionData {
         short[] colours = new short[(maxX - minX) * (maxZ - minZ)];
 
         Int2IntMap blockCache = new Int2IntOpenHashMap();
+        Int2IntMap biomeCache = new Int2IntOpenHashMap();
         // todo fix
         RegistryAccess registryAccess = Minecraft.getInstance().player.level().registryAccess();
         Registry<Biome> registry = registryAccess.lookupOrThrow(Registries.BIOME);
@@ -224,9 +225,14 @@ public class RegionData {
                 }
 
                 if (waterDepth > 0) {
-                    // todo cache biome?
-                    Biome biome = registry.getValue(ResourceLocation.parse(biomeLookup.getName(biomeId)));
-                    int fluidColor = fancyFluids(biome, 0.05F);
+                    int fluidColor;
+                    if (biomeCache.containsKey(biomeId)) {
+                        fluidColor = biomeCache.get(biomeId);
+                    } else {
+                        Biome biome = registry.getValue(ResourceLocation.parse(biomeLookup.getName(biomeId)));
+                        fluidColor = fancyFluids(biome, 0.05F);
+                        biomeCache.put(biomeId, fluidColor);
+                    }
                     color = blend(fluidColor, color | 0xFF000000) & 0xFFFFFF;
                 }
 

@@ -174,36 +174,34 @@ public class MapFolder {
     }
 
     public RegionData getRegion(IdLookup blockLookup, IdLookup biomeLookup, RegionKey key) {
-        synchronized (this.connection) {
-            try (PreparedStatement statement = this.connection.prepareStatement("SELECT type, data FROM regions WHERE x = ? AND z = ?")) {
-                statement.setInt(1, key.x());
-                statement.setInt(2, key.z());
+        try (PreparedStatement statement = this.connection.prepareStatement("SELECT type, data FROM regions WHERE x = ? AND z = ?")) {
+            statement.setInt(1, key.x());
+            statement.setInt(2, key.z());
 
-                ResultSet resultSet = statement.executeQuery();
+            ResultSet resultSet = statement.executeQuery();
 
-                byte[] mapData = null;
-                while (resultSet.next()) {
-                    if (resultSet.getString("type").equals("map")) {
-                        mapData = resultSet.getBytes("data");
-                        break;
-                    }
+            byte[] mapData = null;
+            while (resultSet.next()) {
+                if (resultSet.getString("type").equals("map")) {
+                    mapData = resultSet.getBytes("data");
+                    break;
                 }
-                if (mapData == null) {
-                    return null;
-                }
-
-                RegionData region = new RegionData(blockLookup, biomeLookup);
-
-                ByteArrayInputStream in = new ByteArrayInputStream(mapData);
-                GZIPInputStream gzip = new GZIPInputStream(in);
-                byte[] data = gzip.readAllBytes();
-                gzip.close();
-                ByteBuffer.wrap(data).asIntBuffer().get(region.getData());
-
-                return region;
-            } catch (SQLException | IOException e) {
-                throw new RuntimeException(e);
             }
+            if (mapData == null) {
+                return null;
+            }
+
+            RegionData region = new RegionData(blockLookup, biomeLookup);
+
+            ByteArrayInputStream in = new ByteArrayInputStream(mapData);
+            GZIPInputStream gzip = new GZIPInputStream(in);
+            byte[] data = gzip.readAllBytes();
+            gzip.close();
+            ByteBuffer.wrap(data).asIntBuffer().get(region.getData());
+
+            return region;
+        } catch (SQLException | IOException e) {
+            throw new RuntimeException(e);
         }
     }
 

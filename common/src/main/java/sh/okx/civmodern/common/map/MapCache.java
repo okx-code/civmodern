@@ -29,8 +29,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class MapCache {
-    private static final ExecutorService SAVE = Executors.newSingleThreadExecutor();
-
     private static final int ATLAS_LENGTH = RegionAtlasTexture.SIZE / RegionData.SIZE;
     private static final int ATLAS_BITS = Integer.numberOfTrailingZeros(RegionAtlasTexture.SIZE / RegionData.SIZE);
 
@@ -51,7 +49,7 @@ public class MapCache {
             Mth.lengthSquared(r1.x() * 512 + 256 - px, r1.z() * 512 + 256 - pz),
             Mth.lengthSquared(r2.x() * 512 + 256 - px, r2.z() * 512 + 256 - pz));
     });
-    private final ScheduledExecutorService executor = Executors.newScheduledThreadPool(Math.min(2, Runtime.getRuntime().availableProcessors()) - 1);
+    private final ScheduledExecutorService executor = Executors.newScheduledThreadPool(Math.max(2, Runtime.getRuntime().availableProcessors()) - 1);
 
     private final Map<ChunkPos, ScheduledFuture<?>> debounced = new ConcurrentHashMap<>();
 
@@ -217,7 +215,7 @@ public class MapCache {
 
     public void save() {
         // todo save not just on gui close but on world unload or 60 second interval
-        Future<?> submit = SAVE.submit(() -> {
+        executor.submit(() -> {
             Map<RegionKey, RegionData> toSave = new HashMap<>();
             for (Iterator<RegionKey> iterator = dirtySaveRegions.iterator(); iterator.hasNext(); ) {
                 RegionKey dirtySave = iterator.next();
@@ -232,13 +230,6 @@ public class MapCache {
             this.mapFile.saveBulk(toSave);
         });
         executor.close();
-        try {
-            submit.get();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        } catch (ExecutionException e) {
-            throw new RuntimeException(e);
-        }
     }
 
     public void free() {
