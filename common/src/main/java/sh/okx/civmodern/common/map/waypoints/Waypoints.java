@@ -2,6 +2,7 @@ package sh.okx.civmodern.common.map.waypoints;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.BufferBuilder;
+import com.mojang.blaze3d.vertex.BufferUploader;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.Tesselator;
@@ -13,10 +14,14 @@ import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.client.renderer.FogParameters;
+import net.minecraft.client.renderer.FogRenderer;
 import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.RenderStateShard;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
+import net.minecraft.util.TriState;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
@@ -32,6 +37,9 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+
+import static net.minecraft.client.renderer.RenderStateShard.*;
+import static org.lwjgl.opengl.GL11.*;
 
 public class Waypoints {
 
@@ -178,6 +186,7 @@ public class Waypoints {
         Tesselator tessellator = Tesselator.getInstance();
         for (Waypoint waypoint : nearbyWaypoints) {
             BufferBuilder buffer = tessellator.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX_COLOR);
+            BufferBuilder buffer2 = tessellator.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX_COLOR);
             double x = waypoint.x() + 0.5 - pos.x;
             double y = waypoint.y() + 0.5 - pos.y;
             double z = waypoint.z() + 0.5 - pos.z;
@@ -203,11 +212,11 @@ public class Waypoints {
 
             int k = (int) (getTransparency(distance, 0.11f) * 255.0F) << 24;
             waypoint.render(buffer, matrices.last().pose(), 8, k);
+            RenderType.guiOpaqueTexturedBackground(waypoint.resourceLocation()).draw(buffer.buildOrThrow());
+            waypoint.render(buffer2, matrices.last().pose(), 8, k);
+            BufferUploader.drawWithShader(buffer2.buildOrThrow());
             matrices.popPose();
-            RenderType.guiTexturedOverlay(waypoint.resourceLocation()).draw(buffer.buildOrThrow());
-//            BufferUploader.drawWithShader(buffer.buildOrThrow());
         }
-        RenderSystem.disableBlend();
         MultiBufferSource source = event.source();
         int rendered = 0;
         Collections.reverse(nearbyWaypoints);
