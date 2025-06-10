@@ -35,6 +35,7 @@ public class MapFolder {
                 statement.execute("CREATE TABLE IF NOT EXISTS meta (key TEXT NOT NULL PRIMARY KEY, value BLOB)");
                 statement.execute("CREATE TABLE IF NOT EXISTS waypoints (name TEXT NOT NULL, x INT NOT NULL, y INT NOT NULL, z INT NOT NULL, icon TEXT NOT NULL, colour INT NOT NULL, UNIQUE (x, y, z))");
                 statement.execute("CREATE TABLE IF NOT EXISTS blocks (name TEXT NOT NULL UNIQUE, id INTEGER NOT NULL UNIQUE)");
+                statement.execute("CREATE TABLE IF NOT EXISTS biomes (name TEXT NOT NULL UNIQUE, id INTEGER NOT NULL UNIQUE)");
                 statement.execute("CREATE TABLE IF NOT EXISTS regions (x INT NOT NULL, z INT NOT NULL, type TEXT NOT NULL, data BLOB NOT NULL, PRIMARY KEY (x, z, type))");
 
                 statement.execute("INSERT INTO meta VALUES (\"version\", " + VERSION + ") ON CONFLICT DO NOTHING");
@@ -74,8 +75,8 @@ public class MapFolder {
                     gzip.close();
 
                     byte[] bytes = out.toByteArray();
-                    statement.setBytes(3, bytes);
                     statement.setBytes(4, bytes);
+                    statement.setBytes(5, bytes);
 
                     statement.addBatch();
                 }
@@ -121,6 +122,23 @@ public class MapFolder {
         }
     }
 
+    public Int2ObjectMap<String> biomeIds() {
+        synchronized (this.connection) {
+            try (Statement statement = this.connection.createStatement()) {
+                ResultSet resultSet = statement.executeQuery("SELECT name, id FROM biomes");
+
+                Int2ObjectMap<String> biomeIds = new Int2ObjectOpenHashMap<>();
+                while (resultSet.next()) {
+                    biomeIds.put(resultSet.getInt("id"), resultSet.getString("name"));
+                }
+
+                return biomeIds;
+            } catch (SQLException e) {
+                throw new RuntimeException(e);
+            }
+        }
+    }
+
     public void saveBlockIds(Int2ObjectMap<String> blockIds) {
         synchronized (this.connection) {
             try (PreparedStatement statement = this.connection.prepareStatement("INSERT INTO blocks (name, id) VALUES (?, ?) ON CONFLICT DO NOTHING")) {
@@ -138,7 +156,24 @@ public class MapFolder {
         }
     }
 
-    public RegionData getRegion(BlockLookup blockLookup, RegionKey key) {
+    public void saveBiomeIds(Int2ObjectMap<String> biomeIds) {
+        synchronized (this.connection) {
+            try (PreparedStatement statement = this.connection.prepareStatement("INSERT INTO biomes (name, id) VALUES (?, ?) ON CONFLICT DO NOTHING")) {
+
+                for (Int2ObjectMap.Entry<String> entry : biomeIds.int2ObjectEntrySet()) {
+                    statement.setString(1, entry.getValue());
+                    statement.setInt(2, entry.getIntKey());
+                    statement.addBatch();
+                }
+
+                statement.executeBatch();
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    public RegionData getRegion(IdLookup blockLookup, IdLookup biomeLookup, RegionKey key) {
         synchronized (this.connection) {
             try (PreparedStatement statement = this.connection.prepareStatement("SELECT type, data FROM regions WHERE x = ? AND z = ?")) {
                 statement.setInt(1, key.x());
@@ -157,7 +192,7 @@ public class MapFolder {
                     return null;
                 }
 
-                RegionData region = new RegionData(blockLookup);
+                RegionData region = new RegionData(blockLookup, biomeLookup);
 
                 ByteArrayInputStream in = new ByteArrayInputStream(mapData);
                 GZIPInputStream gzip = new GZIPInputStream(in);

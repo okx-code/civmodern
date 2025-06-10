@@ -8,19 +8,14 @@ import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.level.chunk.status.ChunkStatus;
 import net.minecraft.world.level.levelgen.Heightmap;
 
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.LinkedHashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Queue;
-import java.util.SequencedSet;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
@@ -63,12 +58,14 @@ public class MapCache {
     private final MapFolder mapFile;
 
     private final Set<RegionKey> availableRegions;
-    private final BlockLookup blockLookup;
+    private final IdLookup blockLookup;
+    private final IdLookup biomeLookup;
 
     public MapCache(MapFolder mapFile) {
         this.mapFile = mapFile;
         this.availableRegions = mapFile.listRegions();
-        this.blockLookup = new BlockLookup(mapFile.blockIds());
+        this.blockLookup = new IdLookup(mapFile.blockIds(), "minecraft:air");
+        this.biomeLookup = new IdLookup(mapFile.biomeIds(), "minecraft:void");
     }
 
     private void primeHeightmaps(ChunkAccess chunk) {
@@ -109,8 +106,8 @@ public class MapCache {
             boolean[] created = new boolean[]{false};
             RegionData data = cache.computeIfAbsent(region, k -> {
                 created[0] = true;
-                RegionData region1 = mapFile.getRegion(blockLookup, k);
-                return Objects.requireNonNullElseGet(region1, () -> new RegionData(this.blockLookup));
+                RegionData region1 = mapFile.getRegion(blockLookup, biomeLookup, k);
+                return Objects.requireNonNullElseGet(region1, () -> new RegionData(this.blockLookup, this.biomeLookup));
             });
             // TODO fully get rid of banding, this is only a partial solution
             boolean updated;
@@ -175,7 +172,8 @@ public class MapCache {
                 }
             }
         }
-        this.mapFile.saveBlockIds(this.blockLookup.getBlockNames());
+        this.mapFile.saveBlockIds(this.blockLookup.getNames());
+        this.mapFile.saveBiomeIds(this.biomeLookup.getNames());
         this.mapFile.saveBulk(toSave);
     }
 
@@ -210,7 +208,7 @@ public class MapCache {
             if (poll == null) {
                 return;
             }
-            RegionData data = mapFile.getRegion(blockLookup, poll);
+            RegionData data = mapFile.getRegion(blockLookup, biomeLookup, poll);
             if (data != null) {
                 data.render(this.textureCache.get(new RegionKey(poll.x() >> ATLAS_BITS, poll.z() >> ATLAS_BITS)), poll.x() & ATLAS_LENGTH - 1, poll.z() & ATLAS_LENGTH - 1);
             }
@@ -229,7 +227,8 @@ public class MapCache {
                     iterator.remove();
                 }
             }
-            this.mapFile.saveBlockIds(this.blockLookup.getBlockNames());
+            this.mapFile.saveBlockIds(this.blockLookup.getNames());
+            this.mapFile.saveBiomeIds(this.biomeLookup.getNames());
             this.mapFile.saveBulk(toSave);
         });
         executor.close();

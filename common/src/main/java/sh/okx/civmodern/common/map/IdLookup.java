@@ -4,37 +4,37 @@ import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
-public class BlockLookup {
+public class IdLookup {
     private final ReadWriteLock lock = new ReentrantReadWriteLock();
-    private final Int2ObjectMap<String> idToBlock;
-    private final Map<String, Integer> blockToId;
+    private final Int2ObjectMap<String> fromId;
+    private final Map<String, Integer> toId;
+    private final String defaultLookup;
 
     private int highest = 0;
 
-    public BlockLookup(Int2ObjectMap<String> blockNames) {
-        this.idToBlock = new Int2ObjectOpenHashMap<>(blockNames);
+    public IdLookup(Int2ObjectMap<String> names, String defaultLookup) {
+        this.fromId = new Int2ObjectOpenHashMap<>(names);
+        this.defaultLookup = defaultLookup;
 
-        this.blockToId = new Object2IntOpenHashMap<>();
-        for (Int2ObjectMap.Entry<String> entry : blockNames.int2ObjectEntrySet()) {
-            this.blockToId.put(entry.getValue(), entry.getIntKey());
+        this.toId = new Object2IntOpenHashMap<>();
+        for (Int2ObjectMap.Entry<String> entry : names.int2ObjectEntrySet()) {
+            this.toId.put(entry.getValue(), entry.getIntKey());
             if (entry.getIntKey() > highest) {
                 highest = entry.getIntKey();
             }
         }
     }
 
-    public int getOrCreateBlockId(String blockName) {
+    public int getOrCreateId(String name) {
         try {
             lock.writeLock().lock();
-            return blockToId.computeIfAbsent(blockName, k -> {
+            return toId.computeIfAbsent(name, k -> {
                 highest++;
-                idToBlock.put(highest, k);
+                fromId.put(highest, k);
                 return highest;
             });
         } finally {
@@ -42,16 +42,16 @@ public class BlockLookup {
         }
     }
 
-    public String getBlockName(int id) {
+    public String getName(int id) {
         try {
             lock.readLock().lock();
-            return idToBlock.getOrDefault(id, "minecraft:stone");
+            return fromId.getOrDefault(id, defaultLookup);
         } finally {
             lock.readLock().unlock();
         }
     }
 
-    public Int2ObjectMap<String> getBlockNames() {
-        return idToBlock;
+    public Int2ObjectMap<String> getNames() {
+        return fromId;
     }
 }

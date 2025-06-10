@@ -35,10 +35,12 @@ public class RegionData {
     private final int[] data = new int[512 * 512];
     private byte[] ylevels;
     private short[] light;
-    private final BlockLookup blockLookup;
+    private final IdLookup blockLookup;
+    private final IdLookup biomeLookup;
 
-    public RegionData(BlockLookup blockLookup) {
+    public RegionData(IdLookup blockLookup, IdLookup biomeLookup) {
         this.blockLookup = blockLookup;
+        this.biomeLookup = biomeLookup;
     }
 
     private int getHeight(RegistryAccess registryAccess, ChunkAccess chunk, int x, int z) {
@@ -114,7 +116,7 @@ public class RegionData {
                     }
                 } while (pos.getY() > chunk.getMinY());
 
-                int blockId = blockLookup.getOrCreateBlockId(registryAccess.lookupOrThrow(Registries.BLOCK).getKey(block).toString()) + 1;
+                int blockId = blockLookup.getOrCreateId(registryAccess.lookupOrThrow(Registries.BLOCK).getKey(block).toString()) + 1;
                 if (blockId > 0xFFFE) {
                     AbstractCivModernMod.LOGGER.warn("block " + blockId + " at pos " + pos);
                     blockId = 0;
@@ -149,7 +151,7 @@ public class RegionData {
                 northY[x - rx] = pos.getY() - depth;
 
 
-                int biomeId = registry.getId(chunk.getNoiseBiome(pos.getX() >> 2, pos.getY() >> 2, pos.getZ() >> 2).value());
+                int biomeId = biomeLookup.getOrCreateId(registry.getKey(chunk.getNoiseBiome(pos.getX() >> 2, pos.getY() >> 2, pos.getZ() >> 2).value()).toString());
                 if (biomeId > 0xFF) {
                     AbstractCivModernMod.LOGGER.warn("biome " + biomeId + " at pos " + pos);
                     biomeId = 0;
@@ -199,7 +201,7 @@ public class RegionData {
                     if (blockId == 0) {
                         color = 0;
                     } else {
-                        Optional<Holder.Reference<Block>> holder = registryAccess.lookupOrThrow(Registries.BLOCK).get(ResourceLocation.parse(blockLookup.getBlockName(blockId - 1)));
+                        Optional<Holder.Reference<Block>> holder = registryAccess.lookupOrThrow(Registries.BLOCK).get(ResourceLocation.parse(blockLookup.getName(blockId - 1)));
                         if (holder.isEmpty()) {
                             color = 0;
                         } else {
@@ -208,10 +210,10 @@ public class RegionData {
                             color = ColoursConfig.BLOCK_COLOURS.getOrDefault(key, blockHolder.value().defaultMapColor().col);
 
                             if (ColoursConfig.BLOCKS_GRASS.contains(key)) {
-                                Biome biome = registry.byId(biomeId);
+                                Biome biome = registry.getValue(ResourceLocation.parse(biomeLookup.getName(biomeId)));
                                 color = mix(biome.getGrassColor(0, 0), color);
                             } else if (ColoursConfig.BLOCKS_FOLIAGE.contains(key)) {
-                                Biome biome = registry.byId(biomeId);
+                                Biome biome = registry.getValue(ResourceLocation.parse(biomeLookup.getName(biomeId)));
                                 color = mix(biome.getFoliageColor(), color);
                             }
                             blockCache.put(blockBiomeId, color);
@@ -222,7 +224,8 @@ public class RegionData {
                 }
 
                 if (waterDepth > 0) {
-                    Biome biome = registry.byId(biomeId);
+                    // todo cache biome?
+                    Biome biome = registry.getValue(ResourceLocation.parse(biomeLookup.getName(biomeId)));
                     int fluidColor = fancyFluids(biome, 0.05F);
                     color = blend(fluidColor, color | 0xFF000000) & 0xFFFFFF;
                 }

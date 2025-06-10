@@ -56,7 +56,7 @@ public class WorldListener {
         this.file = new MapFolder(mapFile);
         this.waypoints = new Waypoints(this.file.getConnection());
         VoxelMapConverter voxelMapConverter = new VoxelMapConverter(this.file, name, dimension, level.registryAccess());
-        if (!voxelMapConverter.hasAlreadyConverted() && voxelMapConverter.voxelmapFilesAvailable() && false) {
+        if (!voxelMapConverter.hasAlreadyConverted() && voxelMapConverter.voxelmapFilesAvailable()) {
             converter = new Thread(() -> {
                 try {
                     voxelMapConverter.convert();

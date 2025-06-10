@@ -937,7 +937,7 @@ public class ColoursConfig {
 
   public static Set<String> BLOCKS_GRASS = new HashSet<>() {{
     add("minecraft:fern");
-    add("minecraft:grass");
+    add("minecraft:short_grass");
     add("minecraft:grass_block");
     add("minecraft:large_fern");
     add("minecraft:potted_fern");

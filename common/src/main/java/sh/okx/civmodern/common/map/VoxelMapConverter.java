@@ -66,7 +66,8 @@ public class VoxelMapConverter {
             return;
         }
 
-        BlockLookup blockLookup = new BlockLookup(mapFile.blockIds());
+        IdLookup blockLookup = new IdLookup(mapFile.blockIds(), "minecraft:air");
+        IdLookup biomeLookup = new IdLookup(mapFile.biomeIds(), "minecraft:void");
 
         // 2859 regions
         // multithreaded processing - 1 minutes 16 seconds
@@ -75,6 +76,9 @@ public class VoxelMapConverter {
         while (regionIndex < files.length && !terminated) {
             for (int regionStart = regionIndex; regionIndex < Math.min(files.length, regionStart + 128); regionIndex++) {
                 File subRegionFile = files[regionIndex];
+                if (!subRegionFile.isFile()) {
+                    continue;
+                }
                 if (Thread.interrupted()) {
                     terminated = true;
                     AbstractCivModernMod.LOGGER.info("Terminated VoxelMap conversion at region " + regionIndex + "/" + files.length);
@@ -87,13 +91,9 @@ public class VoxelMapConverter {
                         continue;
                     }
                     ZipFile zFile = new ZipFile(subRegionFile);
-                    int total = 0;
-                    byte[] data = new byte[256 * 256 * 18];
                     ZipEntry ze = zFile.getEntry("data");
                     InputStream is = zFile.getInputStream(ze);
-                    int count;
-                    for (byte[] byteData = new byte[2048]; (count = is.read(byteData, 0, 2048)) != -1 && count + total <= 256 * 256 * 18; total += count)
-                        System.arraycopy(byteData, 0, data, total, count);
+                    byte[] data = is.readAllBytes(); // 256 * 256 * 22
                     is.close();
                     ze = zFile.getEntry("key");
                     is = zFile.getInputStream(ze);
@@ -101,6 +101,14 @@ public class VoxelMapConverter {
                     Int2ObjectMap<String> map = new Int2ObjectOpenHashMap<>();
                     while (sc.hasNextLine())
                         parseLine(sc.nextLine(), map);
+                    sc.close();
+                    is.close();
+                    ze = zFile.getEntry("biomes");
+                    is = zFile.getInputStream(ze);
+                    sc = new Scanner(is);
+                    Int2ObjectMap<String> biomeMap = new Int2ObjectOpenHashMap<>();
+                    while (sc.hasNextLine())
+                        parseLine(sc.nextLine(), biomeMap);
                     sc.close();
                     is.close();
                     int version = 1;
@@ -114,18 +122,17 @@ public class VoxelMapConverter {
                             try {
                                 version = Integer.parseInt(versionString);
                             } catch (NumberFormatException var16) {
-                                version = 1;
                             }
                             is.close();
                         }
                     }
-                    if (version != 2) {
+                    if (version != 4) {
                         continue;
                     }
                     zFile.close();
-                    if (total == 256 * 256 * 18) {
+                    if (data.length == 256 * 256 * 22) {
                         String[] name = subRegion.split(",");
-                        loadData(Integer.parseInt(name[0]), Integer.parseInt(name[1]), data, map, regionMap, blockLookup);
+                        loadData(Integer.parseInt(name[0]), Integer.parseInt(name[1]), data, map, biomeMap, regionMap, blockLookup, biomeLookup);
                         modified = true;
                     }
                 } catch (Exception ex) {
@@ -164,7 +171,8 @@ public class VoxelMapConverter {
 
         service.close();
 
-        mapFile.saveBlockIds(blockLookup.getBlockNames());
+        mapFile.saveBlockIds(blockLookup.getNames());
+        mapFile.saveBiomeIds(biomeLookup.getNames());
 
         if (modified) {
             StringBuilder toWrite = new StringBuilder();
@@ -226,40 +234,54 @@ public class VoxelMapConverter {
         return new RegionKey(Integer.parseInt(parts[0]), Integer.parseInt(parts[1]));
     }
 
-    private void loadData(int subRegionX, int subRegionZ, byte[] data, Int2ObjectMap<String> blockIdToName, Map<RegionKey, RegionData> regionMap, BlockLookup blockLookup) {
+    private void loadData(int subRegionX, int subRegionZ, byte[] data, Int2ObjectMap<String> blockIdToName, Int2ObjectMap<String> biomeIdToName, Map<RegionKey, RegionData> regionMap, IdLookup blockLookup, IdLookup biomeLookup) {
         int[] region = new int[256 * 256];
 
         int[] westY = new int[256];
         Arrays.fill(westY, Integer.MIN_VALUE);
         int northY = Integer.MIN_VALUE;
-        ResourceLocation water = registryAccess.lookupOrThrow(Registries.BLOCK).getKey(Blocks.WATER);
         for (int x = 0; x < 256; x++) {
             for (int z = 0; z < 256; z++) {
                 int y = getHeight(data, x, z);
+                int realBlockId = getBlockstate(data, x, z);
 
+                int fy = getFoliageHeight(data, x, z);
+                if (fy > y) {
+                    y = fy - 1;
+                    int foliageBlockstate = getFoliageBlockstate(data, x, z);
+                    if (!ColoursConfig.BLOCKS_GRASS.contains(blockIdToName.get(foliageBlockstate))) {
+                        realBlockId = foliageBlockstate;
+                    }
+                }
 
                 int dataValue = 0;
 
-                int realBlockId = getBlockstate(data, x, z);
-
                 int floorBlockstate = getOceanFloorBlockstate(data, x, z);
                 int height = getOceanFloorheight(data, x, z);
-                if (!blockIdToName.containsKey(floorBlockstate)) {
-                    floorBlockstate = getTransparentBlockstate(data, x, z);
-                    height = getTransparentHeight(data, x, z);
-                } else {
-                    // wtf voxelmap?
+                if (!"minecraft:air".equals(blockIdToName.get(floorBlockstate))) {
+                    realBlockId = floorBlockstate;
                     int tmp = y;
                     y = height;
                     height = tmp;
-
-                    tmp = realBlockId;
-                    realBlockId = floorBlockstate;
-                    floorBlockstate = tmp;
                 }
+//                if (!blockIdToName.containsKey(floorBlockstate)) {
+//                    floorBlockstate = getTransparentBlockstate(data, x, z);
+//                } else {
+//                    // wtf voxelmap?
+//                    int tmp = y;
+//                    y = height;
+//                    height = tmp;
+//
+//                    tmp = realBlockId;
+//                    realBlockId = floorBlockstate;
+//                    floorBlockstate = tmp;
+//                }
 
                 String blockName = blockIdToName.get(realBlockId);
-                int blockId = blockLookup.getOrCreateBlockId(blockName) + 1;
+                if (blockName == null) {
+                    blockName = "minecraft:air";
+                }
+                int blockId = blockLookup.getOrCreateId(blockName) + 1;
 
                 if (blockId > 0xFFFF) {
                     AbstractCivModernMod.LOGGER.warn("convert block " + blockId + " at pos (" + x + ", " + z + ") in (" + subRegionX + ", " + subRegionZ + ")");
@@ -267,12 +289,16 @@ public class VoxelMapConverter {
                 }
 
                 dataValue |= blockId << 16;
-                if (blockIdToName.get(floorBlockstate).equals(water.toString())) {
+                if (!"minecraft:air".equals(blockIdToName.get(floorBlockstate))) {
                     int depth = height - y;
                     dataValue |= Mth.clamp(depth, 0, 0xF) << 12;
                 }
 
-                int biomeId = getBiomeID(data, x, z);
+                String biomeName = biomeIdToName.get(getBiomeID(data, x, z));
+                if (biomeName == null) {
+                    biomeName = "minecraft:void";
+                }
+                int biomeId = biomeLookup.getOrCreateId(biomeName);
                 if (biomeId > 0xFF) {
                     AbstractCivModernMod.LOGGER.warn("biome " + biomeId + " at pos (" + x + ", " + z + ") in (" + subRegionX + ", " + subRegionZ + ")");
                     biomeId = 0;
@@ -314,9 +340,9 @@ public class VoxelMapConverter {
 
         RegionKey key = new RegionKey(regionX, regionZ);
         RegionData regionData = regionMap.computeIfAbsent(key, k -> {
-            RegionData fileData = mapFile.getRegion(blockLookup, k);
+            RegionData fileData = mapFile.getRegion(blockLookup, biomeLookup, k);
             if (fileData == null) {
-                return new RegionData(blockLookup);
+                return new RegionData(blockLookup, biomeLookup);
             }
             return fileData;
         });
@@ -334,32 +360,40 @@ public class VoxelMapConverter {
     }
 
     public int getHeight(byte[] data, int x, int z) {
-        return getData(data, x, z, 0) & 0xFF;
+        return (getData(data, x, z, 0) << 8) | getData(data, x, z, 1) & 0xFF;
     }
 
 
+    public int getFoliageHeight(byte[] data, int x, int z) {
+        return (getData(data, x, z, 15) << 8) | getData(data, x, z, 16) & 0xFF;
+    }
+
+    public int getFoliageBlockstate(byte[] data, int x, int z) {
+        return (getData(data, x, z, 17) & 0xFF) << 8 | getData(data, x, z, 18) & 0xFF;
+    }
+
     public int getTransparentHeight(byte[] data, int x, int z) {
-        return getData(data, x, z, 8) & 0xFF;
+        return (getData(data, x, z, 10) << 8) | getData(data, x, z, 11) & 0xFF;
     }
 
     public int getTransparentBlockstate(byte[] data, int x, int z) {
-        return (getData(data, x, z, 9) & 0xFF) << 8 | getData(data, x, z, 10) & 0xFF;
+        return (getData(data, x, z, 12) & 0xFF) << 8 | getData(data, x, z, 13) & 0xFF;
     }
 
     public int getBlockstate(byte[] data, int x, int z) {
-        return (getData(data, x, z, 1) & 0xFF) << 8 | getData(data, x, z, 2) & 0xFF;
+        return (getData(data, x, z, 2) & 0xFF) << 8 | getData(data, x, z, 3) & 0xFF;
     }
 
     public int getOceanFloorBlockstate(byte[] data, int x, int z) {
-        return (getData(data, x, z, 5) & 0xFF) << 8 | getData(data, x, z, 6) & 0xFF;
+        return (getData(data, x, z, 7) & 0xFF) << 8 | getData(data, x, z, 8) & 0xFF;
     }
 
     public int getOceanFloorheight(byte[] data, int x, int z) {
-        return getData(data, x, z, 4) & 0xFF;
+        return getData(data, x, z, 5) << 8 | getData(data, x, z, 6) & 0xFF;
     }
 
     public int getBiomeID(byte[] data, int x, int z) {
-        return (getData(data, x, z, 16) & 0xFF) << 8 | getData(data, x, z, 17) & 0xFF;
+        return (getData(data, x, z, 20) & 0xFF) << 8 | getData(data, x, z, 21) & 0xFF;
     }
 
     private void parseLine(String line, Int2ObjectMap<String> map) {
