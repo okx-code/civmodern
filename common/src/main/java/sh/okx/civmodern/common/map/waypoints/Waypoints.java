@@ -204,7 +204,7 @@ public class Waypoints {
             int k = (int) (getTransparency(distance, 0.11f) * 255.0F) << 24;
             waypoint.render(buffer, matrices.last().pose(), 8, k);
             matrices.popPose();
-            RenderType.guiTextured(waypoint.resourceLocation()).draw(buffer.buildOrThrow());
+            RenderType.guiTexturedOverlay(waypoint.resourceLocation()).draw(buffer.buildOrThrow());
 //            BufferUploader.drawWithShader(buffer.buildOrThrow());
         }
         RenderSystem.disableBlend();
