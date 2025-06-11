@@ -5,9 +5,10 @@ import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.util.Mth;
-import org.jetbrains.annotations.Nullable;
 import sh.okx.civmodern.common.AbstractCivModernMod;
 import sh.okx.civmodern.common.map.*;
+import sh.okx.civmodern.common.map.data.RegionLoader;
+import sh.okx.civmodern.common.map.data.RegionMapUpdater;
 
 import java.io.*;
 import java.util.*;
@@ -55,7 +56,7 @@ public class VoxelMapConverter {
 
         AtomicInteger saved = new AtomicInteger();
 
-        Map<RegionKey, RegionData> regionMap = new ConcurrentHashMap<>();
+        Map<RegionKey, RegionLoader> regionMap = new ConcurrentHashMap<>();
 
         Set<String> converted = Collections.newSetFromMap(new ConcurrentHashMap<>());
         boolean modified = false;
@@ -74,7 +75,6 @@ public class VoxelMapConverter {
         // 2859 regions
         // multithreaded processing - 1 minutes 16 seconds
         // sorting - 26 seconds
-        ExecutorService service = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
         while (regionIndex < files.length && !terminated) {
             for (int regionStart = regionIndex; regionIndex < Math.min(files.length, regionStart + 128); regionIndex++) {
                 File subRegionFile = files[regionIndex];
@@ -147,7 +147,7 @@ public class VoxelMapConverter {
 
                         loadData(2, Integer.parseInt(name[0]), Integer.parseInt(name[1]), data, blockMap, biomeMap, regionMap, blockLookup, biomeLookup);
                         modified = true;
-                    } else if (version == 4 ) {
+                    } else if (version == 4) {
                         // load in data
                         ze = zFile.getEntry("data");
                         is = zFile.getInputStream(ze);
@@ -183,36 +183,19 @@ public class VoxelMapConverter {
                 }
             }
 
-            List<Future<?>> futures = new ArrayList<>(regionMap.size());
-            for (Map.Entry<RegionKey, RegionData> entry : regionMap.entrySet()) {
-                futures.add(service.submit(() -> {
-                    mapFile.save(entry.getKey(), entry.getValue());
-                    converted.add(entry.getKey().x() + "," + entry.getKey().z() + ".zip");
+            mapFile.saveBulk(regionMap);
+            for (Map.Entry<RegionKey, RegionLoader> entry : regionMap.entrySet()) {
+                converted.add(entry.getKey().x() + "," + entry.getKey().z() + ".zip");
 
-                    int savedCount = saved.incrementAndGet();
-                    if (savedCount == files.length || savedCount % 128 == 0) {
-                        AbstractCivModernMod.LOGGER.info("Saved " + savedCount + " regions...");
-                    }
-                }));
-            }
-
-            for (Future<?> future : futures) {
-                try {
-                    future.get();
-                } catch (InterruptedException e) {
-                    terminated = true;
-                    AbstractCivModernMod.LOGGER.info("Terminated saving VoxelMap conversion at region " + regionIndex + "/" + files.length);
-                    break;
-                } catch (ExecutionException e) {
-                    throw new RuntimeException(e);
+                int savedCount = saved.incrementAndGet();
+                if (savedCount == files.length || savedCount % 128 == 0) {
+                    AbstractCivModernMod.LOGGER.info("Saved " + savedCount + " regions...");
                 }
             }
 
             AbstractCivModernMod.LOGGER.info("Processed " + regionIndex + "/" + files.length + " regions...");
             regionMap.clear();
         }
-
-        service.close();
 
         mapFile.saveBlockIds(blockLookup.getNames());
         mapFile.saveBiomeIds(biomeLookup.getNames());
@@ -277,7 +260,7 @@ public class VoxelMapConverter {
         return new RegionKey(Integer.parseInt(parts[0]), Integer.parseInt(parts[1]));
     }
 
-    private void loadData(int version, int subRegionX, int subRegionZ, byte[] data, Int2ObjectMap<String> blockIdToName, Int2ObjectMap<String> biomeIdToName, Map<RegionKey, RegionData> regionMap, IdLookup blockLookup, IdLookup biomeLookup) {
+    private void loadData(int version, int subRegionX, int subRegionZ, byte[] data, Int2ObjectMap<String> blockIdToName, Int2ObjectMap<String> biomeIdToName, Map<RegionKey, RegionLoader> regionMap, IdLookup blockLookup, IdLookup biomeLookup) {
         VersionedDataHelper helper;
         if (version == 4) {
             helper = new v4DataHelper(blockIdToName, biomeIdToName, regionMap, blockLookup, biomeLookup);
@@ -288,6 +271,7 @@ public class VoxelMapConverter {
         }
 
         int[] region = new int[256 * 256];
+        short[] ylevels = new short[256 * 256];
 
         int[] westY = new int[256];
         Arrays.fill(westY, Integer.MIN_VALUE);
@@ -341,9 +325,15 @@ public class VoxelMapConverter {
                 }
 
                 dataValue |= blockId << 16;
+
+                int actualY;
+
                 if (!"minecraft:air".equals(blockIdToName.get(floorBlockstate))) {
                     int depth = height - y;
                     dataValue |= Mth.clamp(depth, 0, 0xF) << 12;
+                    actualY = height;
+                } else {
+                    actualY = y;
                 }
 
                 String biomeName = helper.getBiomeID(data, x, z);
@@ -377,6 +367,8 @@ public class VoxelMapConverter {
                 northY = y;
 
                 region[z + x * 256] = dataValue;
+                ylevels[z + x * 256] = (short) actualY;
+
             }
             northY = Integer.MIN_VALUE;
         }
@@ -388,17 +380,13 @@ public class VoxelMapConverter {
         int offsetZ = Math.floorMod(subRegionZ, 2);
 
         RegionKey key = new RegionKey(regionX, regionZ);
-        RegionData regionData = regionMap.computeIfAbsent(key, k -> {
-            RegionData fileData = mapFile.getRegion(blockLookup, biomeLookup, k);
-            if (fileData == null) {
-                return new RegionData(blockLookup, biomeLookup);
-            }
-            return fileData;
-        });
-        int[] saved = regionData.getData();
+        RegionLoader regionData = regionMap.computeIfAbsent(key, k -> new RegionLoader(k, mapFile));
+        int[] saved = regionData.getOrLoadMapData();
+        short[] savedY = regionData.getOrLoadYLevels();
         for (int x = offsetX * 256; x < offsetX * 256 + 256; x++) {
             for (int z = offsetZ * 256; z < offsetZ * 256 + 256; z++) {
                 saved[z + x * 512] = region[(z - offsetZ * 256) + (x - offsetX * 256) * 256];
+                savedY[z + x * 512] = ylevels[(z - offsetZ * 256) + (x - offsetX * 256) * 256];
             }
         }
     }
@@ -411,11 +399,11 @@ public class VoxelMapConverter {
     abstract class VersionedDataHelper {
         protected final Int2ObjectMap<String> blockIdToName;
         protected final Int2ObjectMap<String> biomeIdToName;
-        protected final Map<RegionKey, RegionData> regionMap;
+        protected final Map<RegionKey, RegionLoader> regionMap;
         protected final IdLookup blockLookup;
         protected final IdLookup biomeLookup;
 
-        VersionedDataHelper(Int2ObjectMap<String> blockIdToName, Int2ObjectMap<String> biomeIdToName, Map<RegionKey, RegionData> regionMap, IdLookup blockLookup, IdLookup biomeLookup) {
+        VersionedDataHelper(Int2ObjectMap<String> blockIdToName, Int2ObjectMap<String> biomeIdToName, Map<RegionKey, RegionLoader> regionMap, IdLookup blockLookup, IdLookup biomeLookup) {
             this.blockIdToName = blockIdToName;
             this.biomeIdToName = biomeIdToName;
             this.regionMap = regionMap;
@@ -424,18 +412,26 @@ public class VoxelMapConverter {
         }
 
         abstract int getHeight(byte[] data, int x, int z);
+
         abstract int getFoliageHeight(byte[] data, int x, int z);
+
         abstract int getFoliageBlockstate(byte[] data, int x, int z);
+
         abstract int getTransparentHeight(byte[] data, int x, int z);
+
         abstract int getTransparentBlockstate(byte[] data, int x, int z);
+
         abstract int getBlockstate(byte[] data, int x, int z);
+
         abstract int getOceanFloorBlockstate(byte[] data, int x, int z);
+
         abstract int getOceanFloorheight(byte[] data, int x, int z);
+
         abstract String getBiomeID(byte[] data, int x, int z);
     }
 
     class v4DataHelper extends VersionedDataHelper {
-        v4DataHelper(Int2ObjectMap<String> blockIdToName, Int2ObjectMap<String> biomeIdToName, Map<RegionKey, RegionData> regionMap, IdLookup blockLookup, IdLookup biomeLookup) {
+        v4DataHelper(Int2ObjectMap<String> blockIdToName, Int2ObjectMap<String> biomeIdToName, Map<RegionKey, RegionLoader> regionMap, IdLookup blockLookup, IdLookup biomeLookup) {
             super(blockIdToName, biomeIdToName, regionMap, blockLookup, biomeLookup);
         }
 
@@ -482,7 +478,7 @@ public class VoxelMapConverter {
     }
 
     class v2DataHelper extends VersionedDataHelper {
-        v2DataHelper(Int2ObjectMap<String> blockIdToName, Int2ObjectMap<String> biomeIdToName, Map<RegionKey, RegionData> regionMap, IdLookup blockLookup, IdLookup biomeLookup) {
+        v2DataHelper(Int2ObjectMap<String> blockIdToName, Int2ObjectMap<String> biomeIdToName, Map<RegionKey, RegionLoader> regionMap, IdLookup blockLookup, IdLookup biomeLookup) {
             super(blockIdToName, biomeIdToName, regionMap, blockLookup, biomeLookup);
         }
 

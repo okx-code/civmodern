@@ -37,6 +37,11 @@ public class WorldListener {
 
     @Subscribe
     public void onLoad(JoinEvent event) {
+        onUnload(null);
+        load();
+    }
+
+    public void load() {
         String type;
         String name;
         if (Minecraft.getInstance().isLocalServer()) {
@@ -96,14 +101,16 @@ public class WorldListener {
             this.waypoints.save();
         }
         this.waypoints = null;
-        this.file.close();
+        if (this.file != null) {
+            this.file.close();
+        }
         this.file = null;
     }
 
     @Subscribe
     public void onRespawn(RespawnEvent event) {
         this.onUnload(null);
-        this.onLoad(null);
+        this.load();
     }
 
     public MapCache getCache() {
