@@ -3,6 +3,7 @@ package sh.okx.civmodern.common.map;
 import com.google.common.eventbus.Subscribe;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
+import sh.okx.civmodern.common.AbstractCivModernMod;
 import sh.okx.civmodern.common.CivMapConfig;
 import sh.okx.civmodern.common.ColourProvider;
 import sh.okx.civmodern.common.events.BlockStateChangeEvent;
@@ -30,6 +31,8 @@ public class WorldListener {
     private Waypoints waypoints;
     private Thread converter;
 
+    private long seed = -1;
+
     public WorldListener(CivMapConfig config, ColourProvider colourProvider) {
         this.config = config;
         this.provider = colourProvider;
@@ -37,22 +40,25 @@ public class WorldListener {
 
     @Subscribe
     public void onLoad(JoinEvent event) {
+        AbstractCivModernMod.LOGGER.info("Server Seed??: {}", seed);
+
         String type;
         String name;
         if (Minecraft.getInstance().isLocalServer()) {
-            type = "c";
+            type = "sp";
             name = ((StorageSourceAccessor) Minecraft.getInstance().getSingleplayerServer()).getStorageSource().getLevelId();
         } else {
-            type = "s";
+            type = "mp";
             name = Minecraft.getInstance().getCurrentServer().ip;
         }
 
         ClientLevel level = Minecraft.getInstance().level;
         String dimension = level.dimension().location().getPath();
+        String dimensionMultiverse = dimension + " (" + seed + ")";
 
         Path config = Minecraft.getInstance().gameDirectory.toPath().resolve("civmap");
 
-        File mapFile = config.resolve(type).resolve(name.replace(":", "_")).resolve(dimension).toFile();
+        File mapFile = config.resolve(type).resolve(name.replace(":", "_")).resolve(dimensionMultiverse).toFile();
         mapFile.mkdirs();
         this.file = new MapFolder(mapFile);
         this.waypoints = new Waypoints(this.file.getConnection());
@@ -98,6 +104,8 @@ public class WorldListener {
         this.waypoints = null;
         this.file.close();
         this.file = null;
+
+        setSeed(-1);
     }
 
     @Subscribe
@@ -146,5 +154,9 @@ public class WorldListener {
 
     public Waypoints getWaypoints() {
         return this.waypoints;
+    }
+
+    public void setSeed(long seed) {
+        this.seed = seed;
     }
 }
