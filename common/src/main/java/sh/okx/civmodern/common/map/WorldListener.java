@@ -40,7 +40,14 @@ public class WorldListener {
 
     @Subscribe
     public void onLoad(JoinEvent event) {
-        AbstractCivModernMod.LOGGER.info("Server Seed??: {}", seed);
+        var tempSeed = seed;
+        this.onUnload(null);
+        setSeed(tempSeed);
+
+        if (seed == -1) {
+            AbstractCivModernMod.LOGGER.warn("World seed is not set");
+            return;
+        }
 
         String type;
         String name;
@@ -54,11 +61,9 @@ public class WorldListener {
 
         ClientLevel level = Minecraft.getInstance().level;
         String dimension = level.dimension().location().getPath();
-        String dimensionMultiverse = dimension + " (" + seed + ")";
 
         Path config = Minecraft.getInstance().gameDirectory.toPath().resolve("civmap");
-
-        File mapFile = config.resolve(type).resolve(name.replace(":", "_")).resolve(dimensionMultiverse).toFile();
+        File mapFile = config.resolve(type).resolve(name.replace(":", "_")).resolve(dimension).resolve(String.valueOf(seed)).toFile();
         mapFile.mkdirs();
         this.file = new MapFolder(mapFile);
         this.waypoints = new Waypoints(this.file.getConnection());
@@ -102,15 +107,15 @@ public class WorldListener {
             this.waypoints.save();
         }
         this.waypoints = null;
-        this.file.close();
-        this.file = null;
-
+        if (this.file != null) {
+            this.file.close();
+            this.file = null;
+        }
         setSeed(-1);
     }
 
     @Subscribe
     public void onRespawn(RespawnEvent event) {
-        this.onUnload(null);
         this.onLoad(null);
     }
 
