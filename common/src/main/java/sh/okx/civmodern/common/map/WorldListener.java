@@ -2,23 +2,21 @@ package sh.okx.civmodern.common.map;
 
 import com.google.common.eventbus.Subscribe;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.components.toasts.SystemToast;
 import net.minecraft.client.multiplayer.ClientLevel;
+import net.minecraft.network.chat.Component;
 import sh.okx.civmodern.common.AbstractCivModernMod;
 import sh.okx.civmodern.common.CivMapConfig;
 import sh.okx.civmodern.common.ColourProvider;
-import sh.okx.civmodern.common.events.BlockStateChangeEvent;
-import sh.okx.civmodern.common.events.ChunkLoadEvent;
-import sh.okx.civmodern.common.events.JoinEvent;
-import sh.okx.civmodern.common.events.LeaveEvent;
-import sh.okx.civmodern.common.events.PostRenderGameOverlayEvent;
-import sh.okx.civmodern.common.events.RespawnEvent;
-import sh.okx.civmodern.common.events.WorldRenderLastEvent;
+import sh.okx.civmodern.common.events.*;
 import sh.okx.civmodern.common.map.converters.VoxelMapConverter;
+import sh.okx.civmodern.common.map.screen.ImportAvailable;
 import sh.okx.civmodern.common.map.waypoints.Waypoints;
 import sh.okx.civmodern.common.mixins.StorageSourceAccessor;
 
 import java.io.File;
 import java.nio.file.Path;
+import java.util.ArrayList;
 
 public class WorldListener {
 
@@ -29,7 +27,7 @@ public class WorldListener {
     private MapFolder file;
     private Minimap minimap;
     private Waypoints waypoints;
-    private Thread converter;
+    private Thread converter = null;
 
     private long seed = -1;
 
@@ -65,24 +63,47 @@ public class WorldListener {
         Path config = Minecraft.getInstance().gameDirectory.toPath().resolve("civmap");
         File mapFile = config.resolve(type).resolve(name.replace(":", "_")).resolve(dimension).resolve(String.valueOf(seed)).toFile();
         mapFile.mkdirs();
+
         this.file = new MapFolder(mapFile);
         this.waypoints = new Waypoints(this.file.getConnection());
+
         VoxelMapConverter voxelMapConverter = new VoxelMapConverter(this.file, name, dimension, level.registryAccess());
+
+        ArrayList<String> importableMapMods = new ArrayList<>();
         if (!voxelMapConverter.hasAlreadyConverted() && voxelMapConverter.voxelmapFilesAvailable()) {
-            converter = new Thread(() -> {
-                try {
-                    voxelMapConverter.convert();
-                    this.cache = new MapCache(this.file);
-                    this.minimap = new Minimap(this.waypoints, this.cache, this.config, this.provider);
-                } catch (RuntimeException ex) {
-                    ex.printStackTrace();
-                }
-            }, "VoxelMap converter");
-            converter.start();
-        } else {
-            converter = null;
+            importableMapMods.add("VoxelMap");
+        }
+
+        if (importableMapMods.isEmpty()) {
+            AbstractCivModernMod.LOGGER.info("No mods available for import, using existing map data");
             this.cache = new MapCache(this.file);
             this.minimap = new Minimap(this.waypoints, this.cache, this.config, this.provider);
+        } else {
+            Minecraft.getInstance().setScreen(new ImportAvailable(importableMapMods.toArray(new String[0]), mod -> {
+                converter = new Thread(() -> {
+                    try {
+                        if (mod.equals("VoxelMap")) {
+                            voxelMapConverter.convert();
+                        } else if (mod.equals("close")) {
+                            return;
+                        } else {
+                            AbstractCivModernMod.LOGGER.warn("Unknown mod for import: " + mod);
+                            return;
+                        }
+
+                        Minecraft.getInstance().getToastManager().addToast(new SystemToast(SystemToast.SystemToastId.PERIODIC_NOTIFICATION,
+                                Component.literal("Import Done"),
+                                Component.literal("CivMap has finished importing!!!")
+                        ));
+                    } catch (RuntimeException ex) {
+                        ex.printStackTrace();
+                    } finally {
+                        this.cache = new MapCache(this.file);
+                        this.minimap = new Minimap(this.waypoints, this.cache, this.config, this.provider);
+                    }
+                }, "Map converter");
+                converter.start();
+            }));
         }
     }
 
