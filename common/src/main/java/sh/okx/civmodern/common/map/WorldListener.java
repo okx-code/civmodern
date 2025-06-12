@@ -9,6 +9,7 @@ import sh.okx.civmodern.common.AbstractCivModernMod;
 import sh.okx.civmodern.common.CivMapConfig;
 import sh.okx.civmodern.common.ColourProvider;
 import sh.okx.civmodern.common.events.*;
+import sh.okx.civmodern.common.map.converters.JourneymapConverter;
 import sh.okx.civmodern.common.map.converters.VoxelMapConverter;
 import sh.okx.civmodern.common.map.screen.ImportAvailable;
 import sh.okx.civmodern.common.map.waypoints.Waypoints;
@@ -65,13 +66,17 @@ public class WorldListener {
         mapFile.mkdirs();
 
         this.file = new MapFolder(mapFile);
-        this.waypoints = new Waypoints(this.file.getConnection());
+        this.waypoints = new Waypoints(this.file.getConnection()); // TODO: import waypoints
 
         VoxelMapConverter voxelMapConverter = new VoxelMapConverter(this.file, name, dimension, level.registryAccess());
+        JourneymapConverter journeymapConverter = new JourneymapConverter(this.file, name, dimension, level.registryAccess());
 
         ArrayList<String> importableMapMods = new ArrayList<>();
-        if (!voxelMapConverter.hasAlreadyConverted() && voxelMapConverter.voxelmapFilesAvailable()) {
+        if (!voxelMapConverter.hasAlreadyConverted() && voxelMapConverter.filesAvailable()) {
             importableMapMods.add("VoxelMap");
+        }
+        if (!journeymapConverter.hasAlreadyConverted() && journeymapConverter.filesAvailable()) {
+            importableMapMods.add("Journeymap");
         }
 
         if (importableMapMods.isEmpty()) {
@@ -82,18 +87,21 @@ public class WorldListener {
             Minecraft.getInstance().setScreen(new ImportAvailable(importableMapMods.toArray(new String[0]), mod -> {
                 converter = new Thread(() -> {
                     try {
-                        if (mod.equals("VoxelMap")) {
-                            voxelMapConverter.convert();
-                        } else if (mod.equals("close")) {
-                            return;
-                        } else {
-                            AbstractCivModernMod.LOGGER.warn("Unknown mod for import: " + mod);
-                            return;
+                        switch (mod) {
+                            case "VoxelMap" -> voxelMapConverter.convert();
+                            case "Journeymap" -> journeymapConverter.convert();
+                            case "close" -> {
+                                return;
+                            }
+                            default -> {
+                                AbstractCivModernMod.LOGGER.warn("Unknown mod for import: " + mod);
+                                return;
+                            }
                         }
 
                         Minecraft.getInstance().getToastManager().addToast(new SystemToast(SystemToast.SystemToastId.PERIODIC_NOTIFICATION,
                                 Component.literal("Import Done"),
-                                Component.literal("CivMap has finished importing!!!")
+                                Component.literal("CivMap has finished importing " + mod)
                         ));
                     } catch (RuntimeException ex) {
                         ex.printStackTrace();
@@ -184,5 +192,9 @@ public class WorldListener {
 
     public void setSeed(long seed) {
         this.seed = seed;
+    }
+
+    public long getSeed() {
+        return this.seed;
     }
 }

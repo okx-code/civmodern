@@ -8,18 +8,16 @@ import net.minecraft.util.Mth;
 import sh.okx.civmodern.common.AbstractCivModernMod;
 import sh.okx.civmodern.common.map.*;
 import sh.okx.civmodern.common.map.data.RegionLoader;
-import sh.okx.civmodern.common.map.data.RegionMapUpdater;
 
 import java.io.*;
 import java.util.*;
-import java.util.List;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
-public class VoxelMapConverter {
+public class VoxelMapConverter extends Converter {
 
     private final MapFolder mapFile;
     private final String name;
@@ -40,7 +38,7 @@ public class VoxelMapConverter {
         return this.mapFile.getFolder().toPath().resolve("voxelmap").toFile().exists();
     }
 
-    public boolean voxelmapFilesAvailable() {
+    public boolean filesAvailable() {
         return Minecraft.getInstance().gameDirectory.toPath().resolve("voxelmap").resolve("cache").resolve(name).resolve(dimension).toFile().exists();
     }
 
@@ -228,43 +226,7 @@ public class VoxelMapConverter {
         AbstractCivModernMod.LOGGER.info("Conversion complete for " + name + "/" + dimension);
     }
 
-    private File[] reorderFiles(File[] files) {
-        // Regions are processed in batches of 128 regions at a time (~128 MB memory usage)
-        // But the order that the regions are processed in is important, as VoxelMap regions are 256x256
-        // and CivModern regions are 512x512. If two VoxelMap regions that would map to the same CivModern region
-        // are processed in two different batches, then this causes the CivModern region to be written and read twice.
-        // This function attempts to order the VoxelMap regions so that they will be processed in the same batch.
-        // This improves performance by about two thirds, even though this algorithm is O(n^2) (lame)
-        File[] newFiles = new File[files.length];
-        int count = 0;
-        for (int i = 0; i < files.length; i++) {
-            if (files[i] == null) {
-                continue;
-            }
-            newFiles[count++] = files[i];
-            RegionKey iRegion = getRegionKey(files[i].getName());
-            if (iRegion == null) {
-                continue;
-            }
-            for (int j = i + 1; j < files.length; j++) {
-                if (files[j] == null) {
-                    continue;
-                }
-                RegionKey jRegion = getRegionKey(files[j].getName());
-                if (jRegion == null) {
-                    continue;
-                }
-
-                if ((iRegion.x() & ~0x1) == (jRegion.x() & ~0x1) && ((iRegion.z() & ~0x1) == (jRegion.z() & ~0x1))) {
-                    newFiles[count++] = files[j];
-                    files[j] = null;
-                }
-            }
-        }
-        return newFiles;
-    }
-
-    private RegionKey getRegionKey(String fileName) {
+    protected RegionKey getRegionKey(String fileName) {
         String name = fileName.split("\\.")[0];
         String[] parts = name.split(",");
         if (parts.length != 2) {
