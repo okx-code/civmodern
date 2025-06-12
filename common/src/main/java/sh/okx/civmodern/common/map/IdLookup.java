@@ -2,9 +2,11 @@ package sh.okx.civmodern.common.map;
 
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
+import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
@@ -20,7 +22,7 @@ public class IdLookup {
         this.fromId = new Int2ObjectOpenHashMap<>(names);
         this.defaultLookup = defaultLookup;
 
-        this.toId = new Object2IntOpenHashMap<>();
+        this.toId = new ConcurrentHashMap<>();
         for (Int2ObjectMap.Entry<String> entry : names.int2ObjectEntrySet()) {
             this.toId.put(entry.getValue(), entry.getIntKey());
             if (entry.getIntKey() > highest) {
@@ -30,9 +32,13 @@ public class IdLookup {
     }
 
     public int getOrCreateId(String name) {
+        int id = toId.getOrDefault(name, -1);
+        if (id != -1) {
+            return id;
+        }
         try {
             lock.writeLock().lock();
-            return toId.computeIfAbsent(name, k -> {
+            return toId.computeIfAbsent(name, (String k) -> {
                 highest++;
                 fromId.put(highest, k);
                 return highest;

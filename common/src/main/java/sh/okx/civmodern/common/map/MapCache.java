@@ -20,6 +20,7 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.ScheduledExecutorService;
@@ -219,7 +220,7 @@ public class MapCache {
             }
             this.mapFile.saveBlockIds(this.blockLookup.getNames());
             this.mapFile.saveBiomeIds(this.biomeLookup.getNames());
-            this.mapFile.saveBulk(toSave);
+            this.mapFile.saveBulk(toSave, executor);
         } finally {
             this.evictionLock.writeLock().unlock();
         }
@@ -276,20 +277,30 @@ public class MapCache {
 
     public void save() {
         // todo save not just on gui close but on world unload or 60 second interval
+        CountDownLatch latch = new CountDownLatch(1);
         executor.submit(() -> {
-            Map<RegionKey, RegionLoader> toSave = new HashMap<>();
-            for (Iterator<RegionKey> iterator = dirtySaveRegions.iterator(); iterator.hasNext(); ) {
-                RegionKey dirtySave = iterator.next();
-                RegionLoader cached = this.cache.get(dirtySave);
-                if (cached != null) {
-                    toSave.put(dirtySave, cached);
-                    iterator.remove();
+            try {
+                Map<RegionKey, RegionLoader> toSave = new HashMap<>();
+                for (Iterator<RegionKey> iterator = dirtySaveRegions.iterator(); iterator.hasNext(); ) {
+                    RegionKey dirtySave = iterator.next();
+                    RegionLoader cached = this.cache.get(dirtySave);
+                    if (cached != null) {
+                        toSave.put(dirtySave, cached);
+                        iterator.remove();
+                    }
                 }
+                this.mapFile.saveBlockIds(this.blockLookup.getNames());
+                this.mapFile.saveBiomeIds(this.biomeLookup.getNames());
+                this.mapFile.saveBulk(toSave, executor);
+            } finally {
+                latch.countDown();
             }
-            this.mapFile.saveBlockIds(this.blockLookup.getNames());
-            this.mapFile.saveBiomeIds(this.biomeLookup.getNames());
-            this.mapFile.saveBulk(toSave);
         });
+        try {
+            latch.await();
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
         executor.close();
     }
 
