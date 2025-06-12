@@ -205,8 +205,9 @@ public class NewWaypointModal extends Modal<FlowLayout> {
         return targeting;
     }
 
-    public void setTargetResult(int x, int z) {
+    public void setTargetResult(int x, int y, int z) {
         this.xBox.setValue(Integer.toString(x));
+        this.yBox.setValue(Integer.toString(y));
         this.zBox.setValue(Integer.toString(z));
         this.targeting = false;
         this.visible = true;
@@ -218,6 +219,10 @@ public class NewWaypointModal extends Modal<FlowLayout> {
 
     public int getZ() {
         return Integer.parseInt(this.zBox.getValue());
+    }
+
+    public int getY() {
+        return Integer.parseInt(this.yBox.getValue());
     }
 
     public int getPreviewColour() {

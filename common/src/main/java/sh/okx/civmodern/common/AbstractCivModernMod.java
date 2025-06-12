@@ -165,8 +165,7 @@ public abstract class AbstractCivModernMod {
                 "target",
                 0xFF0000
             );
-            boolean control = InputConstants.isKeyDown(Minecraft.getInstance().getWindow().getWindow(), InputConstants.KEY_LCONTROL);
-            if (!control) {
+            if (!Screen.hasControlDown()) {
                 this.worlds.getWaypoints().setTarget(waypoint);
             } else {
                 MapScreen screen = new MapScreen(this, worlds.getCache(), boatNavigation, worlds.getWaypoints());

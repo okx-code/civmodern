@@ -7,6 +7,9 @@ import net.minecraft.world.level.chunk.ChunkAccess;
 import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.level.chunk.status.ChunkStatus;
 import net.minecraft.world.level.levelgen.Heightmap;
+import sh.okx.civmodern.common.map.data.RegionLoader;
+import sh.okx.civmodern.common.map.data.RegionMapUpdater;
+import sh.okx.civmodern.common.map.data.RegionRenderer;
 
 import java.util.Collections;
 import java.util.EnumSet;
@@ -14,31 +17,25 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 public class MapCache {
-    private static final int ATLAS_LENGTH = RegionAtlasTexture.SIZE / RegionData.SIZE;
-    private static final int ATLAS_BITS = Integer.numberOfTrailingZeros(RegionAtlasTexture.SIZE / RegionData.SIZE);
+    private static final int ATLAS_LENGTH = RegionAtlasTexture.SIZE / RegionMapUpdater.SIZE;
+    private static final int ATLAS_BITS = Integer.numberOfTrailingZeros(RegionAtlasTexture.SIZE / RegionMapUpdater.SIZE);
 
     private final Set<RegionKey> gettingAtlas = new HashSet<>();
 
     // maybe downsample texture atlases? rendering a full civmc map is >1GB of VRAM
     private final Map<RegionKey, RegionAtlasTexture> textureCache = new ConcurrentHashMap<>();
-    // todo fix memory leak here if someone just goes to every region in one session
-    // not technically a leak but it only gets cleared on world unload so it can get big
-    private final Map<RegionKey, RegionData> cache = new ConcurrentHashMap<>();
+    private final Map<RegionKey, RegionLoader> cache = new ConcurrentHashMap<>();
 
     private final Set<RegionKey> dirtySaveRegions = Collections.newSetFromMap(new ConcurrentHashMap<>());
 
@@ -59,6 +56,8 @@ public class MapCache {
     private final IdLookup blockLookup;
     private final IdLookup biomeLookup;
 
+    private final ReadWriteLock evictionLock = new ReentrantReadWriteLock();
+
     public MapCache(MapFolder mapFile) {
         this.mapFile = mapFile;
         this.availableRegions = mapFile.listRegions();
@@ -74,6 +73,55 @@ public class MapCache {
             if (!chunk.hasPrimedHeightmap(Heightmap.Types.OCEAN_FLOOR_WG)) {
                 Heightmap.primeHeightmaps(chunk, EnumSet.of(Heightmap.Types.OCEAN_FLOOR_WG));
             }
+        }
+    }
+
+    public RegionKey getRegionKey(int x, int z) {
+        return new RegionKey(x >> 9, z >> 9);
+    }
+
+    public void addInterest(RegionKey key, RegionDataType type) {
+        try {
+            this.evictionLock.readLock().lock();
+            RegionLoader loader = cache.computeIfAbsent(key, k -> new RegionLoader(k, mapFile));
+            loader.addInterest(type);
+        } finally {
+            this.evictionLock.readLock().lock();
+        }
+    }
+
+    public void removeInterest(RegionKey key, RegionDataType type) {
+        try {
+            this.evictionLock.readLock().lock();
+            RegionLoader loader = cache.computeIfAbsent(key, k -> new RegionLoader(k, mapFile));
+            loader.removeInterest(type);
+        } finally {
+            this.evictionLock.readLock().lock();
+        }
+    }
+
+    public Short getYLevel(int x, int z) {
+        RegionKey key = getRegionKey(x, z);
+        RegionLoader loader;
+        try {
+            this.evictionLock.readLock().lock();
+            loader = cache.computeIfAbsent(key, k -> new RegionLoader(k, mapFile));
+        } finally {
+            this.evictionLock.readLock().lock();
+        }
+        // TODO make async
+        short[] ylevels = loader.getOrLoadYLevels();
+        if (ylevels == null) {
+            return null;
+        }
+        short ylevel = ylevels[Math.floorMod(z, 512) + Math.floorMod(x, 512) * 512];
+
+        if (ylevel > 0) {
+            return (short) (ylevel - 1);
+        } else if (ylevel == 0) {
+            return null;
+        } else {
+            return ylevel;
         }
     }
 
@@ -101,47 +149,39 @@ public class MapCache {
 
         boolean addedAtlas = gettingAtlas.add(atlas);
         executor.submit(() -> {
-            boolean[] created = new boolean[]{false};
-            RegionData data = cache.computeIfAbsent(region, k -> {
-                created[0] = true;
-                RegionData region1 = mapFile.getRegion(blockLookup, biomeLookup, k);
-                return Objects.requireNonNullElseGet(region1, () -> new RegionData(this.blockLookup, this.biomeLookup));
-            });
-            // TODO fully get rid of banding, this is only a partial solution
-            boolean updated;
             try {
-                updated = data.updateChunk(chunk.getLevel().registryAccess(), chunk, north, west);
-            } catch (Exception ex) {
-                ex.printStackTrace();
-                updated = false;
-            }
-            if (created[0]) {
-                cacheEvict(cache);
-                data.render(tex, region.x() & ATLAS_LENGTH - 1, region.z() & ATLAS_LENGTH - 1);
-            }
-            if (updated) {
-                dirtySaveRegions.add(region);
-                if (!created[0]) {
+                this.evictionLock.readLock().lock();
+                RegionLoader loader = cache.computeIfAbsent(region, k -> new RegionLoader(k, mapFile));
+                loader.addInterest(RegionDataType.MAP);
+                try {
+                    // TODO fully get rid of banding, this is only a partial solution
+                    RegionMapUpdater updater = new RegionMapUpdater(loader, blockLookup, biomeLookup);
+                    boolean updated = updater.updateChunk(chunk.getLevel().registryAccess(), chunk, north, west);
 
-                    int regionLocalX = pos.getRegionLocalX();
-                    int regionLocalZ = pos.getRegionLocalZ();
-                    // Delay chunk updates, so we can capture all the changes during that time instead of just one.
-                    debounced.compute(pos, (k, scheduledFuture) -> {
-                        if (scheduledFuture == null || scheduledFuture.isDone()) {
-                            AtomicReference<ScheduledFuture<?>> ref = new AtomicReference<>();
-                            ref.set(executor.schedule(() -> {
-                                data.renderChunk(tex, region.x() & ATLAS_LENGTH - 1, region.z() & ATLAS_LENGTH - 1, regionLocalX, regionLocalZ);
-                                ScheduledFuture<?> scheduled = ref.get();
-                                if (scheduled != null) {
-                                    debounced.remove(pos, scheduled);
-                                }
-                            }, 100, TimeUnit.MILLISECONDS));
-                            return ref.get();
-                        } else {
-                            return scheduledFuture;
+                    // todo check this if the full screen map is loading y level data
+                    // todo put this on a 60 second loop
+                    // also test with while true to make sure there are no race conditions
+//            cacheEvict(cache); // todo don't cache evict if gui is open?
+
+                    boolean shouldRender = loader.render();
+                    if (shouldRender) {
+                        RegionRenderer renderer = new RegionRenderer(loader, blockLookup, biomeLookup);
+                        renderer.render(tex, region.x() & ATLAS_LENGTH - 1, region.z() & ATLAS_LENGTH - 1);
+                    }
+                    if (updated) {
+                        dirtySaveRegions.add(region);
+                        if (!shouldRender) {
+                            int regionLocalX = pos.getRegionLocalX();
+                            int regionLocalZ = pos.getRegionLocalZ();
+                            RegionRenderer renderer = new RegionRenderer(loader, blockLookup, biomeLookup);
+                            renderer.renderChunk(tex, region.x() & ATLAS_LENGTH - 1, region.z() & ATLAS_LENGTH - 1, regionLocalX, regionLocalZ);
                         }
-                    });
+                    }
+                } finally {
+                    loader.removeInterest(RegionDataType.MAP);
                 }
+            } finally {
+                this.evictionLock.readLock().unlock();
             }
             if (addedAtlas) {
                 for (int x = 0; x < ATLAS_LENGTH; x++) {
@@ -155,24 +195,34 @@ public class MapCache {
         });
     }
 
-    private void cacheEvict(Map<RegionKey, RegionData> cache) {
-        Iterator<Map.Entry<RegionKey, RegionData>> iterator = cache.entrySet().iterator();
-        Map<RegionKey, RegionData> toSave = new HashMap<>();
-        while (iterator.hasNext()) {
-            Map.Entry<RegionKey, RegionData> entry = iterator.next();
-            int px = Minecraft.getInstance().player.getBlockX();
-            int pz = Minecraft.getInstance().player.getBlockZ();
-            double dist = Mth.lengthSquared(entry.getKey().x() * 512 + 256 - px, entry.getKey().z() * 512 + 256 - pz);
-            if (dist > 96 * 16 * 96 * 16) {
-                iterator.remove();
-                if (this.dirtySaveRegions.remove(entry.getKey())) {
-                    toSave.put(entry.getKey(), entry.getValue());
+    private void cacheEvict(Map<RegionKey, RegionLoader> cache) {
+        try {
+            this.evictionLock.writeLock().lock();
+            Iterator<Map.Entry<RegionKey, RegionLoader>> iterator = cache.entrySet().iterator();
+            Map<RegionKey, RegionLoader> toSave = new HashMap<>();
+            while (iterator.hasNext()) {
+                Map.Entry<RegionKey, RegionLoader> entry = iterator.next();
+                // TODO save specific interests instead of checking for all and then cancelling
+                if (entry.getValue().hasInterests()) {
+                    continue;
+                }
+
+                int px = Minecraft.getInstance().player.getBlockX();
+                int pz = Minecraft.getInstance().player.getBlockZ();
+                double dist = Mth.lengthSquared(entry.getKey().x() * 512 + 256 - px, entry.getKey().z() * 512 + 256 - pz);
+                if (dist > 96 * 16 * 96 * 16) {
+                    iterator.remove();
+                    if (this.dirtySaveRegions.remove(entry.getKey())) {
+                        toSave.put(entry.getKey(), entry.getValue());
+                    }
                 }
             }
+            this.mapFile.saveBlockIds(this.blockLookup.getNames());
+            this.mapFile.saveBiomeIds(this.biomeLookup.getNames());
+            this.mapFile.saveBulk(toSave);
+        } finally {
+            this.evictionLock.writeLock().unlock();
         }
-        this.mapFile.saveBlockIds(this.blockLookup.getNames());
-        this.mapFile.saveBiomeIds(this.biomeLookup.getNames());
-        this.mapFile.saveBulk(toSave);
     }
 
     public RegionAtlasTexture getTexture(RegionKey atlas) {
@@ -206,9 +256,20 @@ public class MapCache {
             if (poll == null) {
                 return;
             }
-            RegionData data = mapFile.getRegion(blockLookup, biomeLookup, poll);
-            if (data != null) {
-                data.render(this.textureCache.get(new RegionKey(poll.x() >> ATLAS_BITS, poll.z() >> ATLAS_BITS)), poll.x() & ATLAS_LENGTH - 1, poll.z() & ATLAS_LENGTH - 1);
+            try {
+                this.evictionLock.readLock().lock(); // TODO make lock less coarse
+                RegionLoader loader = cache.computeIfAbsent(poll, k -> new RegionLoader(k, mapFile));
+
+                loader.addInterest(RegionDataType.MAP);
+                try {
+                    // TODO fully get rid of banding, this is only a partial solution
+                    RegionRenderer renderer = new RegionRenderer(loader, blockLookup, biomeLookup);
+                    renderer.render(this.textureCache.get(new RegionKey(poll.x() >> ATLAS_BITS, poll.z() >> ATLAS_BITS)), poll.x() & ATLAS_LENGTH - 1, poll.z() & ATLAS_LENGTH - 1);
+                } finally {
+                    loader.removeInterest(RegionDataType.MAP);
+                }
+            } finally {
+                this.evictionLock.readLock().unlock();
             }
         });
     }
@@ -216,10 +277,10 @@ public class MapCache {
     public void save() {
         // todo save not just on gui close but on world unload or 60 second interval
         executor.submit(() -> {
-            Map<RegionKey, RegionData> toSave = new HashMap<>();
+            Map<RegionKey, RegionLoader> toSave = new HashMap<>();
             for (Iterator<RegionKey> iterator = dirtySaveRegions.iterator(); iterator.hasNext(); ) {
                 RegionKey dirtySave = iterator.next();
-                RegionData cached = this.cache.get(dirtySave);
+                RegionLoader cached = this.cache.get(dirtySave);
                 if (cached != null) {
                     toSave.put(dirtySave, cached);
                     iterator.remove();

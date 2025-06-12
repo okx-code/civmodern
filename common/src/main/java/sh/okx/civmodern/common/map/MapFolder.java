@@ -2,8 +2,17 @@ package sh.okx.civmodern.common.map;
 
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
+import org.apache.commons.compress.compressors.zstandard.ZstdCompressorInputStream;
+import org.apache.commons.compress.compressors.zstandard.ZstdCompressorOutputStream;
+import org.apache.commons.compress.compressors.zstandard.ZstdUtils;
+import sh.okx.civmodern.common.AbstractCivModernMod;
+import sh.okx.civmodern.common.map.data.RegionLoader;
+import sh.okx.civmodern.common.map.data.RegionMapUpdater;
 
-import java.io.*;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -12,6 +21,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -53,32 +63,40 @@ public class MapFolder {
         return connection;
     }
 
-    public void save(RegionKey key, RegionData data) {
+    public void save(RegionKey key, RegionLoader data) {
         saveBulk(Collections.singletonMap(key, data));
     }
 
-    public void saveBulk(Map<RegionKey, RegionData> dataMap) {
+    public void saveBulk(Map<RegionKey, RegionLoader> dataMap) {
         synchronized (this.connection) {
             try (PreparedStatement statement = this.connection.prepareStatement("INSERT INTO regions (x, z, type, data) VALUES (?, ?, ?, ?) ON CONFLICT DO UPDATE SET data = ?")) {
 
-                for (Map.Entry<RegionKey, RegionData> entry : dataMap.entrySet()) {
-                    statement.setInt(1, entry.getKey().x());
-                    statement.setInt(2, entry.getKey().z());
-                    statement.setString(3, "map");
+                for (Map.Entry<RegionKey, RegionLoader> entry : dataMap.entrySet()) {
+                    for (RegionDataType data : entry.getValue().getLoaded()) {
+                        statement.setInt(1, entry.getKey().x());
+                        statement.setInt(2, entry.getKey().z());
+                        statement.setString(3, data.getDatabaseKey());
 
-                    ByteBuffer buf = ByteBuffer.allocate(512 * 512 * 4);
-                    buf.asIntBuffer().put(entry.getValue().getData());
+                        ByteBuffer buf;
+                        if (data == RegionDataType.MAP) {
+                            buf = ByteBuffer.allocate(512 * 512 * 4);
+                            buf.asIntBuffer().put(entry.getValue().getOrLoadMapData());
+                        } else if (data == RegionDataType.Y_LEVELS) {
+                            buf = ByteBuffer.allocate(512 * 512 * 2);
+                            buf.asShortBuffer().put(entry.getValue().getOrLoadYLevels());
+                        } else {
+                            throw new IllegalArgumentException();
+                        }
+                        ByteArrayOutputStream out = new ByteArrayOutputStream();
+                        ZstdCompressorOutputStream zstd = new ZstdCompressorOutputStream(out);
+                        zstd.write(buf.array());
+                        zstd.close();
+                        byte[] bytes = out.toByteArray();
 
-                    ByteArrayOutputStream out = new ByteArrayOutputStream();
-                    GZIPOutputStream gzip = new GZIPOutputStream(out);
-                    gzip.write(buf.array());
-                    gzip.close();
-
-                    byte[] bytes = out.toByteArray();
-                    statement.setBytes(4, bytes);
-                    statement.setBytes(5, bytes);
-
-                    statement.addBatch();
+                        statement.setBytes(4, bytes);
+                        statement.setBytes(5, bytes);
+                        statement.addBatch();
+                    }
                 }
 
                 statement.executeBatch();
@@ -173,33 +191,28 @@ public class MapFolder {
         }
     }
 
-    public RegionData getRegion(IdLookup blockLookup, IdLookup biomeLookup, RegionKey key) {
-        try (PreparedStatement statement = this.connection.prepareStatement("SELECT type, data FROM regions WHERE x = ? AND z = ?")) {
+    public byte[] getRegionData(RegionKey key, RegionDataType type) {
+        try (PreparedStatement statement = this.connection.prepareStatement("SELECT data FROM regions WHERE x = ? AND z = ? AND type = ?")) {
             statement.setInt(1, key.x());
             statement.setInt(2, key.z());
+            statement.setString(3, type.getDatabaseKey());
 
             ResultSet resultSet = statement.executeQuery();
 
-            byte[] mapData = null;
-            while (resultSet.next()) {
-                if (resultSet.getString("type").equals("map")) {
-                    mapData = resultSet.getBytes("data");
-                    break;
-                }
-            }
-            if (mapData == null) {
+            byte[] compressed;
+            if (resultSet.next()) {
+                compressed = resultSet.getBytes("data");
+            } else {
                 return null;
             }
 
-            RegionData region = new RegionData(blockLookup, biomeLookup);
+            byte[] data;
+            ByteArrayInputStream in = new ByteArrayInputStream(compressed);
+            try(ZstdCompressorInputStream zstd = new ZstdCompressorInputStream(in)) {
+                data = zstd.readAllBytes();
+            }
 
-            ByteArrayInputStream in = new ByteArrayInputStream(mapData);
-            GZIPInputStream gzip = new GZIPInputStream(in);
-            byte[] data = gzip.readAllBytes();
-            gzip.close();
-            ByteBuffer.wrap(data).asIntBuffer().get(region.getData());
-
-            return region;
+            return data;
         } catch (SQLException | IOException e) {
             throw new RuntimeException(e);
         }

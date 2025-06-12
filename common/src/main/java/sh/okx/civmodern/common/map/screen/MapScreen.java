@@ -13,9 +13,11 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Renderable;
+import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.CoreShaders;
+import net.minecraft.client.renderer.RenderType;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.ResourceLocation;
@@ -27,6 +29,7 @@ import sh.okx.civmodern.common.boat.BoatNavigation;
 import sh.okx.civmodern.common.gui.widget.ImageButton;
 import sh.okx.civmodern.common.map.MapCache;
 import sh.okx.civmodern.common.map.RegionAtlasTexture;
+import sh.okx.civmodern.common.map.RegionDataType;
 import sh.okx.civmodern.common.map.RegionKey;
 import sh.okx.civmodern.common.map.waypoints.Waypoint;
 import sh.okx.civmodern.common.map.waypoints.Waypoints;
@@ -34,9 +37,12 @@ import sh.okx.civmodern.common.mixins.ScreenAccessor;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
+import java.util.Set;
 
 import static org.lwjgl.opengl.GL11.*;
 import static sh.okx.civmodern.common.map.RegionAtlasTexture.SIZE;
@@ -67,6 +73,8 @@ public class MapScreen extends Screen {
 
     private Waypoint newWaypoint;
 
+    private final Set<RegionKey> yLevelInterests = new HashSet<>();
+
     public MapScreen(AbstractCivModernMod mod, MapCache mapCache, BoatNavigation navigation, Waypoints waypoints) {
         super(Component.translatable("civmodern.screen.map.title"));
 
@@ -82,13 +90,16 @@ public class MapScreen extends Screen {
 
     @Override
     protected void init() {
-        addRenderableWidget(new ImageButton(10, 10, 20, 20, ResourceLocation.fromNamespaceAndPath("civmodern", "gui/boat.png"), imbg -> {
+        ImageButton boatButton = new ImageButton(10, 10, 20, 20, ResourceLocation.fromNamespaceAndPath("civmodern", "gui/boat.png"), imbg -> {
             this.boating = !boating;
-        }));
+        });
+        boatButton.setTooltip(Tooltip.create(Component.translatable("civmodern.map.boat.tooltip")));
+        addRenderableWidget(boatButton);
         newWaypointModal = new NewWaypointModal(waypoints);
         if (newWaypoint == null) {
             LocalPlayer player = Minecraft.getInstance().player;
-            newWaypointModal.open("", player.getBlockX(), player.getBlockY(), player.getBlockZ());
+            Short yLevel = mapCache.getYLevel(player.getBlockX(), player.getBlockZ());
+            newWaypointModal.open("", player.getBlockX(), yLevel != null ? yLevel + 2 : player.getBlockY(), player.getBlockZ());
         } else {
             newWaypointModal.open(newWaypoint.name(), newWaypoint.x(), newWaypoint.y(), newWaypoint.z());
             newWaypointModal.setVisible(true);
@@ -128,13 +139,14 @@ public class MapScreen extends Screen {
         glClearColor(0, 0, 0, 1);
         glClear(GL_COLOR_BUFFER_BIT);
 
+        float renderY;
         for (int screenX = 0; screenX < (window.getWidth() * zoom) + SIZE; screenX += SIZE) {
             for (int screenY = 0; screenY < (window.getHeight() * zoom) + SIZE; screenY += SIZE) {
                 float realX = (float) this.x + screenX;
                 float realY = (float) this.y + screenY;
 
                 float renderX = realX - floatMod(realX, SIZE);
-                float renderY = realY - floatMod(realY, SIZE);
+                renderY = realY - floatMod(realY, SIZE);
 
                 RegionKey key = new RegionKey(Math.floorDiv((int) renderX, SIZE), Math.floorDiv((int) renderY, SIZE));
                 // todo if loading at low zoom, only render downsampled version to save memory
@@ -218,13 +230,13 @@ public class MapScreen extends Screen {
 
                 BufferBuilder buffer = tesselator.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX_COLOR);
                 matrices.pushPose();
-                matrices.translate((x - this.x) / scale, (z- this.y) / scale, 0);
+                matrices.translate((x - this.x) / scale, (z - this.y) / scale, 0);
 
                 Waypoint targetWaypoint = new Waypoint("", 0, 0, 0, "waypoint", newWaypointModal.getPreviewColour());
                 targetWaypoint.render(buffer, matrices.last().pose(), 7, 0x7F << 24);
 
                 matrices.popPose();
-                BufferUploader.drawWithShader(buffer.buildOrThrow());
+                RenderType.guiTextured(targetWaypoint.resourceLocation()).draw(buffer.buildOrThrow());
             } catch (NumberFormatException ignored) {
             }
         }
@@ -259,8 +271,7 @@ public class MapScreen extends Screen {
             } else {
                 targetWaypoint.render(buffer, matrices.last().pose(), 7, 0x7F << 24);
             }
-
-            BufferUploader.drawWithShader(buffer.buildOrThrow());
+            RenderType.guiTextured(targetWaypoint.resourceLocation()).draw(buffer.buildOrThrow());
 
             Font font = Minecraft.getInstance().font;
 
@@ -355,6 +366,19 @@ public class MapScreen extends Screen {
 
         matrices.popPose();
 
+        matrices.pushPose();
+        float textScale = 1.5f;
+        matrices.scale(textScale, textScale, 1);
+        int px = (int) Math.floor(mouseX * scale + (float) x);
+        int pz = (int) Math.floor(mouseY * scale + (float) y);
+        RegionKey key = mapCache.getRegionKey(px, pz);
+        mapCache.addInterest(key, RegionDataType.Y_LEVELS);
+        this.yLevelInterests.add(key);
+        Short y = mapCache.getYLevel(px, pz);
+        guiGraphics.drawCenteredString(font, "(%d, %s, %d)".formatted(px, y == null ? "?" : Short.toString(y), pz), (int) (this.width / 2 / textScale), (int) ((this.height - 16) / textScale), -1);
+
+        matrices.popPose();
+
         for (Renderable renderable : ((ScreenAccessor) this).civmodern$getRenderables()) {
             renderable.render(guiGraphics, mouseX, mouseY, delta);
         }
@@ -362,7 +386,6 @@ public class MapScreen extends Screen {
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
-//        onWaypointModal = waypointModal.overlaps(mouseX, mouseY);
         if (super.mouseClicked(mouseX, mouseY, button)) {
             return true;
         }
@@ -377,12 +400,15 @@ public class MapScreen extends Screen {
             double mouseWorldX = (mouseX * scale + x) - 0.5;
             double mouseWorldY = (mouseY * scale + y) - 0.5;
 
+            int x = (int) Math.round(mouseWorldX);
+            int z = (int) Math.round(mouseWorldY);
+            Short yLevel = mapCache.getYLevel(x, z);
             if (newWaypointModal.isTargeting()) {
-                newWaypointModal.setTargetResult((int) Math.round(mouseWorldX), (int) Math.round(mouseWorldY));
+                newWaypointModal.setTargetResult(x, yLevel == null ? newWaypointModal.getY() : yLevel + 2, z);
             } else if (editWaypointModal.isTargeting()) {
-                editWaypointModal.setTargetResult((int) Math.round(mouseWorldX), (int) Math.round(mouseWorldY));
+                editWaypointModal.setTargetResult(x, yLevel == null ? newWaypointModal.getY() : yLevel + 2, z);
             } else {
-                this.waypoints.setTarget(new Waypoint("", (int) Math.round(mouseWorldX), 64, (int) Math.round(mouseWorldY), "target", 0xFF0000));
+                this.waypoints.setTarget(new Waypoint("", x, yLevel == null ? 64 : yLevel + 2, z, "target", 0xFF0000));
                 targeting = false;
             }
             return true;
@@ -401,10 +427,11 @@ public class MapScreen extends Screen {
             double mouseWorldX = (mouseX * scale + x);
             double mouseWorldY = (mouseY * scale + y);
             if (Screen.hasShiftDown()) {
-                this.navigation.addDestination(new Vec2((float) mouseWorldX, (float) mouseWorldY));
+                this.navigation.getDestinations().pollLast();
+            } else if (Screen.hasControlDown()) {
+                this.navigation.reset();
             } else {
-                this.navigation.setDestination(new Vec2((float) mouseWorldX, (float) mouseWorldY));
-                Minecraft.getInstance().setScreen(null);
+                this.navigation.addDestination(new Vec2((float) mouseWorldX, (float) mouseWorldY));
             }
             return true;
         }
@@ -515,5 +542,19 @@ public class MapScreen extends Screen {
     private float floatMod(float x, float y) {
         // x mod y behaving the same way as Math.floorMod but with floats
         return (x - (float) Math.floor(x / y) * y);
+    }
+
+    @Override
+    public void added() {
+        this.yLevelInterests.clear();
+    }
+
+    @Override
+    public void removed() {
+        for (Iterator<RegionKey> iterator = this.yLevelInterests.iterator(); iterator.hasNext(); ) {
+            RegionKey key = iterator.next();
+            mapCache.removeInterest(key, RegionDataType.Y_LEVELS);
+            iterator.remove();
+        }
     }
 }
