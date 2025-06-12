@@ -41,7 +41,7 @@ public class RegionRenderer {
 
     private void render(RegionAtlasTexture texture, int rx, int rz, int minX, int maxX, int minZ, int maxZ) {
         try {
-            this.loader.getRenderLock().lock();
+            this.loader.getRenderLock().lock(); // TODO make lock less coarse
 
             int[] data = this.loader.getOrLoadMapData();
 

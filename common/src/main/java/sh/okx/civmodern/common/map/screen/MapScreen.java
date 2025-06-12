@@ -99,7 +99,7 @@ public class MapScreen extends Screen {
         if (newWaypoint == null) {
             LocalPlayer player = Minecraft.getInstance().player;
             Short yLevel = mapCache.getYLevel(player.getBlockX(), player.getBlockZ());
-            newWaypointModal.open("", player.getBlockX(), yLevel != null ? yLevel + 2 : player.getBlockY(), player.getBlockZ());
+            newWaypointModal.open("", player.getBlockX(), yLevel != null ? yLevel + 2 : player.getBlockY() + 1, player.getBlockZ());
         } else {
             newWaypointModal.open(newWaypoint.name(), newWaypoint.x(), newWaypoint.y(), newWaypoint.z());
             newWaypointModal.setVisible(true);
@@ -367,7 +367,7 @@ public class MapScreen extends Screen {
         matrices.popPose();
 
         matrices.pushPose();
-        float textScale = 1.5f;
+        float textScale = 1f;
         matrices.scale(textScale, textScale, 1);
         int px = (int) Math.floor(mouseX * scale + (float) x);
         int pz = (int) Math.floor(mouseY * scale + (float) y);
