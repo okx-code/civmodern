@@ -86,7 +86,7 @@ public class MapCache {
             RegionLoader loader = cache.computeIfAbsent(key, k -> new RegionLoader(k, mapFile));
             loader.addInterest(type);
         } finally {
-            this.evictionLock.readLock().lock();
+            this.evictionLock.readLock().unlock();
         }
     }
 
@@ -96,7 +96,7 @@ public class MapCache {
             RegionLoader loader = cache.computeIfAbsent(key, k -> new RegionLoader(k, mapFile));
             loader.removeInterest(type);
         } finally {
-            this.evictionLock.readLock().lock();
+            this.evictionLock.readLock().unlock();
         }
     }
 
@@ -107,7 +107,7 @@ public class MapCache {
             this.evictionLock.readLock().lock();
             loader = cache.computeIfAbsent(key, k -> new RegionLoader(k, mapFile));
         } finally {
-            this.evictionLock.readLock().lock();
+            this.evictionLock.readLock().unlock();
         }
         // TODO make async
         short[] ylevels = loader.getOrLoadYLevels();
