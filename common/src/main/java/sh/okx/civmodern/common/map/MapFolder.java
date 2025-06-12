@@ -25,6 +25,9 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
@@ -63,35 +66,56 @@ public class MapFolder {
         return connection;
     }
 
-    public void save(RegionKey key, RegionLoader data) {
-        saveBulk(Collections.singletonMap(key, data));
-    }
-
-    public void saveBulk(Map<RegionKey, RegionLoader> dataMap) {
+    public void saveBulk(Map<RegionKey, RegionLoader> dataMap, ExecutorService parallel) {
         synchronized (this.connection) {
-            try (PreparedStatement statement = this.connection.prepareStatement("INSERT INTO regions (x, z, type, data) VALUES (?, ?, ?, ?) ON CONFLICT DO UPDATE SET data = ?")) {
+            Map<RegionKey, Map<RegionDataType, byte[]>> compressed = new ConcurrentHashMap<>();
+            CountDownLatch latch = new CountDownLatch(dataMap.size());
+            for (Map.Entry<RegionKey, RegionLoader> entry : dataMap.entrySet()) {
+                compressed.put(entry.getKey(), new HashMap<>());
+                parallel.submit(() -> {
+                    try {
+                        for (RegionDataType data : entry.getValue().getLoaded()) {
+                            Map<RegionDataType, byte[]> map = compressed.get(entry.getKey());
 
+                            try {
+                                ByteBuffer buf;
+                                if (data == RegionDataType.MAP) {
+                                    buf = ByteBuffer.allocate(512 * 512 * 4);
+                                    buf.asIntBuffer().put(entry.getValue().getOrLoadMapData());
+                                } else if (data == RegionDataType.Y_LEVELS) {
+                                    buf = ByteBuffer.allocate(512 * 512 * 2);
+                                    buf.asShortBuffer().put(entry.getValue().getOrLoadYLevels());
+                                } else {
+                                    throw new IllegalArgumentException();
+                                }
+                                ByteArrayOutputStream out = new ByteArrayOutputStream();
+                                ZstdCompressorOutputStream zstd = new ZstdCompressorOutputStream(out);
+                                zstd.write(buf.array());
+                                zstd.close();
+                                byte[] bytes = out.toByteArray();
+                                map.put(data, bytes);
+                            } catch (IOException ex) {
+                                ex.printStackTrace();
+                            }
+                        }
+                    } finally {
+                        latch.countDown();
+                    }
+                });
+            }
+            try {
+                latch.await();
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+            try (PreparedStatement statement = this.connection.prepareStatement("INSERT INTO regions (x, z, type, data) VALUES (?, ?, ?, ?) ON CONFLICT DO UPDATE SET data = ?")) {
                 for (Map.Entry<RegionKey, RegionLoader> entry : dataMap.entrySet()) {
                     for (RegionDataType data : entry.getValue().getLoaded()) {
                         statement.setInt(1, entry.getKey().x());
                         statement.setInt(2, entry.getKey().z());
                         statement.setString(3, data.getDatabaseKey());
 
-                        ByteBuffer buf;
-                        if (data == RegionDataType.MAP) {
-                            buf = ByteBuffer.allocate(512 * 512 * 4);
-                            buf.asIntBuffer().put(entry.getValue().getOrLoadMapData());
-                        } else if (data == RegionDataType.Y_LEVELS) {
-                            buf = ByteBuffer.allocate(512 * 512 * 2);
-                            buf.asShortBuffer().put(entry.getValue().getOrLoadYLevels());
-                        } else {
-                            throw new IllegalArgumentException();
-                        }
-                        ByteArrayOutputStream out = new ByteArrayOutputStream();
-                        ZstdCompressorOutputStream zstd = new ZstdCompressorOutputStream(out);
-                        zstd.write(buf.array());
-                        zstd.close();
-                        byte[] bytes = out.toByteArray();
+                        byte[] bytes = compressed.get(entry.getKey()).get(data);
 
                         statement.setBytes(4, bytes);
                         statement.setBytes(5, bytes);
@@ -100,7 +124,7 @@ public class MapFolder {
                 }
 
                 statement.executeBatch();
-            } catch (SQLException | IOException e) {
+            } catch (SQLException e) {
                 e.printStackTrace();
             }
         }
@@ -208,7 +232,7 @@ public class MapFolder {
 
             byte[] data;
             ByteArrayInputStream in = new ByteArrayInputStream(compressed);
-            try(ZstdCompressorInputStream zstd = new ZstdCompressorInputStream(in)) {
+            try (ZstdCompressorInputStream zstd = new ZstdCompressorInputStream(in)) {
                 data = zstd.readAllBytes();
             }
 

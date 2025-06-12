@@ -14,6 +14,7 @@ import java.io.*;
 import java.util.*;
 import java.util.List;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
@@ -59,7 +60,7 @@ public class VoxelMapConverter {
         Map<RegionKey, RegionLoader> regionMap = new ConcurrentHashMap<>();
 
         Set<String> converted = Collections.newSetFromMap(new ConcurrentHashMap<>());
-        boolean modified = false;
+        AtomicBoolean modified = new AtomicBoolean(false);
         File voxelmap = mapFile.getFolder().toPath().resolve("voxelmap").toFile();
         try (FileInputStream fis = new FileInputStream(voxelmap)) {
             converted.addAll(Arrays.asList(new String(fis.readAllBytes()).split("\n")));
@@ -75,8 +76,11 @@ public class VoxelMapConverter {
         // 2859 regions
         // multithreaded processing - 1 minutes 16 seconds
         // sorting - 26 seconds
+        ExecutorService service = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
         while (regionIndex < files.length && !terminated) {
-            for (int regionStart = regionIndex; regionIndex < Math.min(files.length, regionStart + 128); regionIndex++) {
+            int parallelRegions = Math.min(128, files.length - regionIndex);
+            CountDownLatch latch = new CountDownLatch(parallelRegions);
+            for (int regionStart = regionIndex; regionIndex < regionStart + parallelRegions; regionIndex++) {
                 File subRegionFile = files[regionIndex];
                 if (!subRegionFile.isFile()) {
                     continue;
@@ -87,103 +91,112 @@ public class VoxelMapConverter {
                     break;
                 }
 
-                ZipFile zFile = null; // close in finally block
-                try {
-                    // load subRegion file
-                    zFile = new ZipFile(subRegionFile);
+                service.submit(() -> {
+                    ZipFile zFile = null; // close in finally block
+                    try {
+                        // load subRegion file
+                        zFile = new ZipFile(subRegionFile);
 
-                    // perform basic version check
-                    int version = 1;
-                    ZipEntry ze = zFile.getEntry("control");
-                    InputStream is;
-                    if (ze != null) {
-                        is = zFile.getInputStream(ze);
-                        if (is != null) {
-                            Properties properties = new Properties();
-                            properties.load(is);
-                            String versionString = properties.getProperty("version", "1");
-                            try {
-                                version = Integer.parseInt(versionString);
-                            } catch (NumberFormatException var16) {
+                        // perform basic version check
+                        int version = 1;
+                        ZipEntry ze = zFile.getEntry("control");
+                        InputStream is;
+                        if (ze != null) {
+                            is = zFile.getInputStream(ze);
+                            if (is != null) {
+                                Properties properties = new Properties();
+                                properties.load(is);
+                                String versionString = properties.getProperty("version", "1");
+                                try {
+                                    version = Integer.parseInt(versionString);
+                                } catch (NumberFormatException var16) {
+                                }
+                                is.close();
                             }
-                            is.close();
                         }
-                    }
-                    if (version != 4 && version != 2) {
-                        continue;
-                    }
-
-                    // load in block mappings
-                    ze = zFile.getEntry("key");
-                    is = zFile.getInputStream(ze);
-                    Scanner sc = new Scanner(is);
-                    Int2ObjectMap<String> blockMap = new Int2ObjectOpenHashMap<>();
-                    while (sc.hasNextLine())
-                        parseLine(sc.nextLine(), blockMap);
-                    sc.close();
-                    is.close();
-
-                    // parse subRegion info
-                    String subRegion = subRegionFile.getName().split("\\.")[0];
-                    if (converted.contains(subRegion)) {
-                        continue;
-                    }
-                    String[] name = subRegion.split(",");
-
-                    // version specific processing
-                    if (version == 2) {
-
-                        // load in data
-                        ze = zFile.getEntry("data");
-                        is = zFile.getInputStream(ze);
-                        byte[] data = is.readAllBytes(); // 256 * 256 * 18
-                        is.close();
-                        if (data.length != v2DataLength) {
-                            continue;
+                        if (version != 4 && version != 2) {
+                            return;
                         }
 
-                        // will be empty because biome data is not stored in v2 format
-                        Int2ObjectMap<String> biomeMap = new Int2ObjectOpenHashMap<>();
-
-                        loadData(2, Integer.parseInt(name[0]), Integer.parseInt(name[1]), data, blockMap, biomeMap, regionMap, blockLookup, biomeLookup);
-                        modified = true;
-                    } else if (version == 4) {
-                        // load in data
-                        ze = zFile.getEntry("data");
+                        // load in block mappings
+                        ze = zFile.getEntry("key");
                         is = zFile.getInputStream(ze);
-                        byte[] data = is.readAllBytes(); // 256 * 256 * 22
-                        is.close();
-                        if (data.length != v4DataLength) {
-                            continue;
-                        }
-
-                        // load biome map
-                        ze = zFile.getEntry("biomes");
-                        is = zFile.getInputStream(ze);
-                        sc = new Scanner(is);
-                        Int2ObjectMap<String> biomeMap = new Int2ObjectOpenHashMap<>();
+                        Scanner sc = new Scanner(is);
+                        Int2ObjectMap<String> blockMap = new Int2ObjectOpenHashMap<>();
                         while (sc.hasNextLine())
-                            parseLine(sc.nextLine(), biomeMap);
+                            parseLine(sc.nextLine(), blockMap);
                         sc.close();
                         is.close();
 
-                        loadData(4, Integer.parseInt(name[0]), Integer.parseInt(name[1]), data, blockMap, biomeMap, regionMap, blockLookup, biomeLookup);
-                        modified = true;
-                    }
-                } catch (Exception ex) {
-                    ex.printStackTrace();
-                } finally {
-                    if (zFile != null) {
-                        try {
-                            zFile.close();
-                        } catch (IOException e) {
-                            e.printStackTrace();
+                        // parse subRegion info
+                        String subRegion = subRegionFile.getName().split("\\.")[0];
+                        if (converted.contains(subRegion)) {
+                            return;
                         }
+                        String[] name = subRegion.split(",");
+
+                        // version specific processing
+                        if (version == 2) {
+
+                            // load in data
+                            ze = zFile.getEntry("data");
+                            is = zFile.getInputStream(ze);
+                            byte[] data = is.readAllBytes(); // 256 * 256 * 18
+                            is.close();
+                            if (data.length != v2DataLength) {
+                                return;
+                            }
+
+                            // will be empty because biome data is not stored in v2 format
+                            Int2ObjectMap<String> biomeMap = new Int2ObjectOpenHashMap<>();
+
+                            loadData(2, Integer.parseInt(name[0]), Integer.parseInt(name[1]), data, blockMap, biomeMap, regionMap, blockLookup, biomeLookup);
+                            modified.set(true);
+                        } else if (version == 4) {
+                            // load in data
+                            ze = zFile.getEntry("data");
+                            is = zFile.getInputStream(ze);
+                            byte[] data = is.readAllBytes(); // 256 * 256 * 22
+                            is.close();
+                            if (data.length != v4DataLength) {
+                                return;
+                            }
+
+                            // load biome map
+                            ze = zFile.getEntry("biomes");
+                            is = zFile.getInputStream(ze);
+                            sc = new Scanner(is);
+                            Int2ObjectMap<String> biomeMap = new Int2ObjectOpenHashMap<>();
+                            while (sc.hasNextLine())
+                                parseLine(sc.nextLine(), biomeMap);
+                            sc.close();
+                            is.close();
+
+                            loadData(4, Integer.parseInt(name[0]), Integer.parseInt(name[1]), data, blockMap, biomeMap, regionMap, blockLookup, biomeLookup);
+                            modified.set(true);
+                        }
+                    } catch (Exception ex) {
+                        ex.printStackTrace();
+                    } finally {
+                        if (zFile != null) {
+                            try {
+                                zFile.close();
+                            } catch (IOException e) {
+                                e.printStackTrace();
+                            }
+                        }
+                        latch.countDown();
                     }
-                }
+                });
             }
 
-            mapFile.saveBulk(regionMap);
+            try {
+                latch.await();
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+
+            mapFile.saveBulk(regionMap, service);
             for (Map.Entry<RegionKey, RegionLoader> entry : regionMap.entrySet()) {
                 converted.add(entry.getKey().x() + "," + entry.getKey().z() + ".zip");
 
@@ -200,7 +213,7 @@ public class VoxelMapConverter {
         mapFile.saveBlockIds(blockLookup.getNames());
         mapFile.saveBiomeIds(biomeLookup.getNames());
 
-        if (modified) {
+        if (modified.get()) {
             StringBuilder toWrite = new StringBuilder();
             for (String r : converted) {
                 toWrite.append(r).append("\n");
