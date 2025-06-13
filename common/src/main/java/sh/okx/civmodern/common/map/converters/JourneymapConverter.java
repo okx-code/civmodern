@@ -139,7 +139,7 @@ public class JourneymapConverter extends Converter {
                             }
 
                             var chunk = NbtIo.read(in);
-                            loadData(regionKey, chunk);
+                            loadData(regionKey, chunk, regionMap, blockLookup, biomeLookup);
                         }
                         modified.set(true);
                     } catch (Exception e) {
@@ -186,7 +186,7 @@ public class JourneymapConverter extends Converter {
         AbstractCivModernMod.LOGGER.info("Conversion complete for " + name + "/" + dimension);
     }
 
-    private void loadData(RegionKey regionKey, CompoundTag chunk) {
+    private void loadData(RegionKey regionKey, CompoundTag chunk, Map<RegionKey, RegionLoader> regionMap, IdLookup blockLookup, IdLookup biomeLookup) {
         int[] region = new int[256 * 256];
         short[] ylevels = new short[256 * 256];
 
@@ -197,6 +197,7 @@ public class JourneymapConverter extends Converter {
         for (var xzCords : chunk.getAllKeys()) {
             var cordData = chunk.getCompound(xzCords);
 
+            // ensure good data
             if (xzCords.equals("LastChange") || xzCords.equals("pos")) {
                 // TODO: figure out what pos represents
                 continue;
@@ -205,24 +206,64 @@ public class JourneymapConverter extends Converter {
                 continue;
             }
 
-            var biome = cordData.getString("biome_name");
-            var topY = cordData.getInt("top_y");
-            var blockstates = cordData.getCompound("blockstates");
-
-            // attempt to find the lowest block
-            int bottemY = Integer.MAX_VALUE;
-            for (var block : blockstates.getAllKeys()) {
-                int blockY;
-                try {
-                    blockY = Integer.parseInt(block);
-                } catch (NumberFormatException e) {
-                    blockY = Integer.MAX_VALUE;
-                }
-
-                if (blockY < bottemY) {
-                    bottemY = blockY;
-                }
+            var rawCords = parseBlockXZ(xzCords);
+            if (rawCords.length != 2) {
+                AbstractCivModernMod.LOGGER.warn("In Region {},{} unknown cord in format: {}", regionKey.x(),regionKey.z(), xzCords);
             }
+            int x = rawCords[0];
+            int z = rawCords[1];
+
+            int dataValue = 0;
+
+            var blockstates = cordData.getCompound("blockstates");
+            var topY = cordData.getInt("top_y");
+
+            // int y = topY;
+            // String realBlockId = blockstates.getCompound("" + topY).getString("Name");
+
+            // // attempt to find the lowest block
+            // int bottemY = Integer.MAX_VALUE;
+            // for (var block : blockstates.getAllKeys()) {
+            //     int blockY;
+            //     try {
+            //         blockY = Integer.parseInt(block);
+            //     } catch (NumberFormatException e) {
+            //         blockY = Integer.MAX_VALUE;
+            //     }
+            //
+            //     if (blockY < bottemY) {
+            //         bottemY = blockY;
+            //     }
+            // }
+            // String floorBlockState = blockstates.getCompound("" + bottemY).getString("Name");
+            // if (!"minecraft:water".equals(floorBlockState)) {
+            //     realBlockId = floorBlockState;
+            //     int tmp = y;
+            //     y = bottemY;
+            //
+            // }
+
+            String blockName = blockstates.getCompound("" + topY).getString("Name");
+            if (blockName == null) {
+                blockName = "minecraft:air";
+            }
+            int blockId = blockLookup.getOrCreateId(blockName) + 1;
+
+            if (blockId > 0xFFFF) {
+                AbstractCivModernMod.LOGGER.warn("convert block " + blockId + " at pos (" + x + ", " + z + ") in (" + regionKey.x() + ", " + regionKey.z() + ")");
+                blockId = 0;
+            }
+
+            dataValue |= blockId << 16;
+
+            var biomeName = cordData.getString("biome_name");
+            int biomeId = biomeLookup.getOrCreateId(biomeName);
+            if (biomeId > 0xFF) {
+                AbstractCivModernMod.LOGGER.warn("biome " + biomeId + " at pos (" + x + ", " + z + ") in (" + regionKey.x() + ", " + regionKey.z() + ")");
+                biomeId = 0;
+            }
+            dataValue |= biomeId;
+
         }
 
         // for (var xzCords : data.getAllKeys()) {
@@ -253,6 +294,23 @@ public class JourneymapConverter extends Converter {
         //         printedCount++;
         //     }
         // }
+    }
+
+    private int[] parseBlockXZ(String cord) {
+
+        var cordsStr = cord.split("\\,");
+        if (cordsStr.length != 2) {
+            return new int[]{};
+        }
+
+        try {
+            int x = Integer.parseInt(cordsStr[0]);
+            int z = Integer.parseInt(cordsStr[1]);
+
+            return new int[]{x, z};
+        } catch (NumberFormatException e) {
+            return new int[]{};
+        }
     }
 
     protected RegionKey getRegionKey(String fileName) {
