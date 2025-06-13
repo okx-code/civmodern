@@ -7,6 +7,7 @@ import net.minecraft.client.multiplayer.resolver.ServerNameResolver;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtIo;
+import net.minecraft.world.level.ChunkPos;
 import sh.okx.civmodern.common.AbstractCivModernMod;
 import sh.okx.civmodern.common.map.IdLookup;
 import sh.okx.civmodern.common.map.MapFolder;
@@ -127,32 +128,20 @@ public class JourneymapConverter extends Converter {
                 }
 
                 service.submit(() -> {
-                    try {
-                        var fileWrapper = new JourneymapNbtFileWrapper(regionKey, subRegionFile.toPath());
+                    try (var file = new JourneymapNbtFileWrapper(subRegionFile.toPath(), false)) {
+                        for (int i = 0; i < 1024; i++) {
+                            int x = i / 32;
+                            int z = i % 32;
 
-                        var nbt = readNbtFromFile(fileWrapper);
-                        if (nbt == null) {
-                            // AbstractCivModernMod.LOGGER.warn("Subregion nbt {},{} is null", regionKey.x(), regionKey.z());
-                            return;
+                            var in = file.getChunkDataInputStream(new ChunkPos(x, z));
+                            if (in == null) {
+                                continue;
+                            }
+
+                            var chunk = NbtIo.read(in);
+                            loadData(regionKey, chunk);
                         }
-                        AbstractCivModernMod.LOGGER.info(nbt.getAllKeys());
-
-                        // for (var chunk : ) {
-                        //     // if (chunk.equals("LastChange") || chunk.equals("pos")) {
-                        //     //     // these values shouldn't exist here but am checking anyway
-                        //     //     AbstractCivModernMod.LOGGER.warn("Found {} key where chunk cords are meant to be", chunk);
-                        //     //     return;
-                        //     // }
-                        //     //
-                        //     //
-                        //     // loadData(regionKey, nbt.getCompound(chunk), regionMap, blockLookup, biomeLookup);
-                        //     // modified = true;
-                        //
-                        //     if (!logged) {
-                        //         AbstractCivModernMod.LOGGER.info(chunk);
-                        //         logged = true;
-                        //     }
-                        // }
+                        modified.set(true);
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
@@ -197,7 +186,7 @@ public class JourneymapConverter extends Converter {
         AbstractCivModernMod.LOGGER.info("Conversion complete for " + name + "/" + dimension);
     }
 
-    private void loadData(RegionKey regionKey, CompoundTag data, Map<RegionKey, RegionLoader> regionMap, IdLookup blockLookup, IdLookup biomeLookup) {
+    private void loadData(RegionKey regionKey, CompoundTag chunk) {
         int[] region = new int[256 * 256];
         short[] ylevels = new short[256 * 256];
 
@@ -205,65 +194,65 @@ public class JourneymapConverter extends Converter {
         Arrays.fill(westY, Integer.MIN_VALUE);
         int northY = Integer.MIN_VALUE;
 
-        int printedCount = 0;
+        for (var xzCords : chunk.getAllKeys()) {
+            var cordData = chunk.getCompound(xzCords);
 
-        for (var xzCords : data.getAllKeys()) {
             if (xzCords.equals("LastChange") || xzCords.equals("pos")) {
                 // TODO: figure out what pos represents
-                return;
+                continue;
+            } else if (!cordData.contains("biome_name")) {
+                // means column is probably empty
+                continue;
             }
-
-            var cords = xzCords.split(",");
-            if (cords.length != 2) {
-                AbstractCivModernMod.LOGGER.warn("Unknown block cord format: {}", xzCords);
-                return;
-            }
-            var cordData = data.getCompound(xzCords);
 
             var biome = cordData.getString("biome_name");
             var topY = cordData.getInt("top_y");
-
             var blockstates = cordData.getCompound("blockstates");
-            if (blockstates.size() != 2 && printedCount < 1) {
-                AbstractCivModernMod.LOGGER.info("Blockstate info for {}", xzCords);
-                for (var blockstateKey : blockstates.getAllKeys()) {
-                    var blockstate = blockstates.getCompound(blockstateKey);
-                    AbstractCivModernMod.LOGGER.info(blockstateKey + " " +
-                            blockstate.getString("Name") + " level = "
-                            + blockstates.getCompound("Properties").getInt("level"));
+
+            // attempt to find the lowest block
+            int bottemY = Integer.MAX_VALUE;
+            for (var block : blockstates.getAllKeys()) {
+                int blockY;
+                try {
+                    blockY = Integer.parseInt(block);
+                } catch (NumberFormatException e) {
+                    blockY = Integer.MAX_VALUE;
                 }
-                printedCount++;
+
+                if (blockY < bottemY) {
+                    bottemY = blockY;
+                }
             }
         }
-    }
 
-    private CompoundTag readNbtFromFile(JourneymapNbtFileWrapper fileWrapper) {
-        DataInputStream input = null;
-        CompoundTag tag = null;
-        try {
-            input = fileWrapper.getInputStream();
-            if (input != null) {
-                tag = NbtIo.read(input);
-            } else {
-                // AbstractCivModernMod.LOGGER.warn("Subregion input {},{} is null", fileWrapper.regionKey.x(), fileWrapper.regionKey.z());
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-
-            // assert tag is null
-            tag = null;
-        }
-
-        // cleanup
-        try {
-            if (input != null) {
-                input.close();
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-        return tag;
+        // for (var xzCords : data.getAllKeys()) {
+        //     if (xzCords.equals("LastChange") || xzCords.equals("pos")) {
+        //         // TODO: figure out what pos represents
+        //         return;
+        //     }
+        //
+        //     var cords = xzCords.split(",");
+        //     if (cords.length != 2) {
+        //         AbstractCivModernMod.LOGGER.warn("Unknown block cord format: {}", xzCords);
+        //         return;
+        //     }
+        //     var cordData = data.getCompound(xzCords);
+        //
+        //     var biome = cordData.getString("biome_name");
+        //     var topY = cordData.getInt("top_y");
+        //
+        //     var blockstates = cordData.getCompound("blockstates");
+        //     if (blockstates.size() != 2 && printedCount < 1) {
+        //         AbstractCivModernMod.LOGGER.info("Blockstate info for {}", xzCords);
+        //         for (var blockstateKey : blockstates.getAllKeys()) {
+        //             var blockstate = blockstates.getCompound(blockstateKey);
+        //             AbstractCivModernMod.LOGGER.info(blockstateKey + " " +
+        //                     blockstate.getString("Name") + " level = "
+        //                     + blockstates.getCompound("Properties").getInt("level"));
+        //         }
+        //         printedCount++;
+        //     }
+        // }
     }
 
     protected RegionKey getRegionKey(String fileName) {
