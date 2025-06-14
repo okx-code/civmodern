@@ -8,6 +8,9 @@ import net.minecraft.core.RegistryAccess;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtIo;
 import net.minecraft.world.level.ChunkPos;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.chunk.storage.RegionFile;
+import net.minecraft.world.level.chunk.storage.RegionStorageInfo;
 import sh.okx.civmodern.common.AbstractCivModernMod;
 import sh.okx.civmodern.common.map.IdLookup;
 import sh.okx.civmodern.common.map.MapFolder;
@@ -110,6 +113,8 @@ public class JourneymapConverter extends Converter {
         IdLookup blockLookup = new IdLookup(mapFile.blockIds(), "minecraft:air");
         IdLookup biomeLookup = new IdLookup(mapFile.biomeIds(), "minecraft:void");
 
+        var regionInfo = new RegionStorageInfo("JourneyMap World", Level.OVERWORLD, "thing");
+
         ExecutorService service = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
         while (regionIndex < files.length && !terminated) {
             int parallelRegions = Math.min(128, files.length - regionIndex);
@@ -128,20 +133,24 @@ public class JourneymapConverter extends Converter {
                 }
 
                 service.submit(() -> {
-                    try (var file = new JourneymapNbtFileWrapper(subRegionFile.toPath(), false)) {
+                    try (var file = new RegionFile(regionInfo, subRegionFile.toPath(), subRegionFile.toPath().getParent(), false)) {
                         for (int i = 0; i < 1024; i++) {
                             int x = i / 32;
                             int z = i % 32;
 
+                            // RegionFile
                             var in = file.getChunkDataInputStream(new ChunkPos(x, z));
                             if (in == null) {
+                                // AbstractCivModernMod.LOGGER.warn("InputStream for Journeymap chunk at {},{} from region {} is null", x, z, regionKey);
                                 continue;
                             }
 
                             var chunk = NbtIo.read(in);
                             loadData(regionKey, chunk, regionMap, blockLookup, biomeLookup);
+                            // AbstractCivModernMod.LOGGER.info("Imported Journeymap chunk at {},{} from region {}", x, z, regionKey);
                         }
                         modified.set(true);
+                        // AbstractCivModernMod.LOGGER.info("Imported Journeymap region at {}", regionKey);
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
@@ -208,7 +217,8 @@ public class JourneymapConverter extends Converter {
 
             var rawCords = parseBlockXZ(xzCords);
             if (rawCords.length != 2) {
-                AbstractCivModernMod.LOGGER.warn("In Region {},{} unknown cord in format: {}", regionKey.x(),regionKey.z(), xzCords);
+                AbstractCivModernMod.LOGGER.warn("In Region {},{} unknown cord in format: {}", regionKey.x(), regionKey.z(), xzCords);
+                continue;
             }
             int x = rawCords[0];
             int z = rawCords[1];
