@@ -134,6 +134,7 @@ public class JourneymapConverter extends Converter {
 
                 service.submit(() -> {
                     try (var file = new RegionFile(regionInfo, subRegionFile.toPath(), subRegionFile.toPath().getParent(), false)) {
+                        var regionModified = false;
                         for (int i = 0; i < 1024; i++) {
                             int x = i / 32;
                             int z = i % 32;
@@ -141,7 +142,7 @@ public class JourneymapConverter extends Converter {
                             // RegionFile
                             var in = file.getChunkDataInputStream(new ChunkPos(x, z));
                             if (in == null) {
-                                AbstractCivModernMod.LOGGER.warn("InputStream for Journeymap chunk at {},{} from region {} is null", x, z, regionKey);
+                                // AbstractCivModernMod.LOGGER.warn("InputStream for Journeymap chunk at {},{} from region {} is null", x, z, regionKey);
                                 continue;
                             }
 
@@ -149,8 +150,9 @@ public class JourneymapConverter extends Converter {
 
                             loadData(regionKey, new RegionKey(x, z), chunk, regionMap, blockLookup, biomeLookup);
                             // AbstractCivModernMod.LOGGER.info("Imported Journeymap chunk at {},{} from region {}", x, z, regionKey);
+                            regionModified = true;
                         }
-                        modified.set(true);
+                        if (regionModified) modified.set(true);
                         // AbstractCivModernMod.LOGGER.info("Imported Journeymap region at {}", regionKey);
                     } catch (Exception e) {
                         e.printStackTrace();
@@ -280,12 +282,10 @@ public class JourneymapConverter extends Converter {
             }
             dataValue |= biomeId;
 
-
-            int index = x + z * 16 ;
+            int index = x * 16 + z;
             chunk[index] = dataValue;
             ylevels[index] = (short) topY;
         }
-
 
         int regionX = Math.floorDiv(regionKey.x(), 2);
         int regionZ = Math.floorDiv(regionKey.z(), 2);
@@ -297,34 +297,16 @@ public class JourneymapConverter extends Converter {
 
         for (int x = 0; x < 16; x++) {
             for (int z = 0; z < 16; z++) {
-                int globalBlockX = chunkCords.x() + x * 16 ;
-                int globalBlockZ = chunkCords.z() + z * 16 ;
+                int globalBlockX = chunkCords.x() * 16 + x;
+                int globalBlockZ = chunkCords.z() * 16 + z;
 
-                int index = globalBlockX + globalBlockZ * 256 ; // row-major
-                saved[index] = chunk[x + z * 16 ]; // assuming chunkData is flat 16×16
-                savedY[index] = ylevels[x + z * 16 ];
+                // int index = z + x * 512;
+                // int index = globalBlockZ + globalBlockX * 256; // bad idea, cases striping and repeating regions vertically
+                int index = globalBlockZ + globalBlockX * 512; // mostly correct, but regions seem to be overwriting eachother
+                saved[index] = chunk[x * 16 + z]; // assuming chunkData is flat 16×16
+                savedY[index] = ylevels[x * 16 + z];
             }
         }
-
-        // for (int x = offsetX * 256; x < offsetX * 256 + 256; x++) {
-        //     for (int z = offsetZ * 256; z < offsetZ * 256 + 256; z++) {
-        //         saved[z + x * 512] = region[(z - offsetZ * 256) + (x - offsetX * 256) * 256];
-        //         savedY[z + x * 512] = ylevels[(z - offsetZ * 256) + (x - offsetX * 256) * 256];
-        //     }
-        // }
-
-        // // TODO: fix this to save within a chunk, not entire region
-        // RegionKey key = new RegionKey(regionX, regionZ);
-        // RegionLoader regionData = regionMap.computeIfAbsent(key, k -> new RegionLoader(k, mapFile));
-        // int[] saved = regionData.getOrLoadMapData();
-        // short[] savedY = regionData.getOrLoadYLevels();
-        // // TODO: fix this to save within a chunk, not entire region
-        // for (int x = offsetX * 256; x < offsetX * 256 + 256; x++) {
-        //     for (int z = offsetZ * 256; z < offsetZ * 256 + 256; z++) {
-        //         saved[z + x * 512] = region[(z - offsetZ * 256) + (x - offsetX * 256) * 256];
-        //         savedY[z + x * 512] = ylevels[(z - offsetZ * 256) + (x - offsetX * 256) * 256];
-        //     }
-        // }
     }
 
     private int[] parseXZFromKey(String cord) {
