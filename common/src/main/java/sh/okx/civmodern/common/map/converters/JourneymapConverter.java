@@ -141,18 +141,21 @@ public class JourneymapConverter extends Converter {
                             // RegionFile
                             var in = file.getChunkDataInputStream(new ChunkPos(x, z));
                             if (in == null) {
-                                // AbstractCivModernMod.LOGGER.warn("InputStream for Journeymap chunk at {},{} from region {} is null", x, z, regionKey);
+                                AbstractCivModernMod.LOGGER.warn("InputStream for Journeymap chunk at {},{} from region {} is null", x, z, regionKey);
                                 continue;
                             }
 
                             var chunk = NbtIo.read(in);
-                            loadData(regionKey, chunk, regionMap, blockLookup, biomeLookup);
+
+                            loadData(regionKey, new RegionKey(x, z), chunk, regionMap, blockLookup, biomeLookup);
                             // AbstractCivModernMod.LOGGER.info("Imported Journeymap chunk at {},{} from region {}", x, z, regionKey);
                         }
                         modified.set(true);
                         // AbstractCivModernMod.LOGGER.info("Imported Journeymap region at {}", regionKey);
                     } catch (Exception e) {
                         e.printStackTrace();
+                    } finally {
+                        latch.countDown();
                     }
                 });
             }
@@ -195,16 +198,19 @@ public class JourneymapConverter extends Converter {
         AbstractCivModernMod.LOGGER.info("Conversion complete for " + name + "/" + dimension);
     }
 
-    private void loadData(RegionKey regionKey, CompoundTag chunk, Map<RegionKey, RegionLoader> regionMap, IdLookup blockLookup, IdLookup biomeLookup) {
-        int[] region = new int[256 * 256];
-        short[] ylevels = new short[256 * 256];
+    private void loadData(RegionKey regionKey, RegionKey chunkCords, CompoundTag chunkData, Map<RegionKey, RegionLoader> regionMap, IdLookup blockLookup, IdLookup biomeLookup) {
+        // int[] region = new int[256 * 256];
+        // short[] ylevels = new short[256 * 256];
+        //
+        // int[] westY = new int[256];
+        // Arrays.fill(westY, Integer.MIN_VALUE);
+        // int northY = Integer.MIN_VALUE;
 
-        int[] westY = new int[256];
-        Arrays.fill(westY, Integer.MIN_VALUE);
-        int northY = Integer.MIN_VALUE;
+        int[] chunk = new int[16 * 16];
+        short[] ylevels = new short[16 * 16];
 
-        for (var xzCords : chunk.getAllKeys()) {
-            var cordData = chunk.getCompound(xzCords);
+        for (var xzCords : chunkData.getAllKeys()) {
+            var cordData = chunkData.getCompound(xzCords);
 
             // ensure good data
             if (xzCords.equals("LastChange") || xzCords.equals("pos")) {
@@ -215,13 +221,13 @@ public class JourneymapConverter extends Converter {
                 continue;
             }
 
-            var rawCords = parseBlockXZ(xzCords);
-            if (rawCords.length != 2) {
+            var blockXZ = parseXZFromKey(xzCords);
+            if (blockXZ.length != 2) {
                 AbstractCivModernMod.LOGGER.warn("In Region {},{} unknown cord in format: {}", regionKey.x(), regionKey.z(), xzCords);
                 continue;
             }
-            int x = rawCords[0];
-            int z = rawCords[1];
+            int x = blockXZ[0] & 15; // or blockX % 16
+            int z = blockXZ[1] & 15; // or blockX % 16
 
             int dataValue = 0;
 
@@ -274,39 +280,54 @@ public class JourneymapConverter extends Converter {
             }
             dataValue |= biomeId;
 
+
+            int index = x + z * 16 ;
+            chunk[index] = dataValue;
+            ylevels[index] = (short) topY;
         }
 
-        // for (var xzCords : data.getAllKeys()) {
-        //     if (xzCords.equals("LastChange") || xzCords.equals("pos")) {
-        //         // TODO: figure out what pos represents
-        //         return;
+
+        int regionX = Math.floorDiv(regionKey.x(), 2);
+        int regionZ = Math.floorDiv(regionKey.z(), 2);
+
+        RegionKey key = new RegionKey(regionX, regionZ);
+        RegionLoader regionData = regionMap.computeIfAbsent(key, k -> new RegionLoader(k, mapFile));
+        int[] saved = regionData.getOrLoadMapData();
+        short[] savedY = regionData.getOrLoadYLevels();
+
+        for (int x = 0; x < 16; x++) {
+            for (int z = 0; z < 16; z++) {
+                int globalBlockX = chunkCords.x() + x * 16 ;
+                int globalBlockZ = chunkCords.z() + z * 16 ;
+
+                int index = globalBlockX + globalBlockZ * 256 ; // row-major
+                saved[index] = chunk[x + z * 16 ]; // assuming chunkData is flat 16×16
+                savedY[index] = ylevels[x + z * 16 ];
+            }
+        }
+
+        // for (int x = offsetX * 256; x < offsetX * 256 + 256; x++) {
+        //     for (int z = offsetZ * 256; z < offsetZ * 256 + 256; z++) {
+        //         saved[z + x * 512] = region[(z - offsetZ * 256) + (x - offsetX * 256) * 256];
+        //         savedY[z + x * 512] = ylevels[(z - offsetZ * 256) + (x - offsetX * 256) * 256];
         //     }
-        //
-        //     var cords = xzCords.split(",");
-        //     if (cords.length != 2) {
-        //         AbstractCivModernMod.LOGGER.warn("Unknown block cord format: {}", xzCords);
-        //         return;
-        //     }
-        //     var cordData = data.getCompound(xzCords);
-        //
-        //     var biome = cordData.getString("biome_name");
-        //     var topY = cordData.getInt("top_y");
-        //
-        //     var blockstates = cordData.getCompound("blockstates");
-        //     if (blockstates.size() != 2 && printedCount < 1) {
-        //         AbstractCivModernMod.LOGGER.info("Blockstate info for {}", xzCords);
-        //         for (var blockstateKey : blockstates.getAllKeys()) {
-        //             var blockstate = blockstates.getCompound(blockstateKey);
-        //             AbstractCivModernMod.LOGGER.info(blockstateKey + " " +
-        //                     blockstate.getString("Name") + " level = "
-        //                     + blockstates.getCompound("Properties").getInt("level"));
-        //         }
-        //         printedCount++;
+        // }
+
+        // // TODO: fix this to save within a chunk, not entire region
+        // RegionKey key = new RegionKey(regionX, regionZ);
+        // RegionLoader regionData = regionMap.computeIfAbsent(key, k -> new RegionLoader(k, mapFile));
+        // int[] saved = regionData.getOrLoadMapData();
+        // short[] savedY = regionData.getOrLoadYLevels();
+        // // TODO: fix this to save within a chunk, not entire region
+        // for (int x = offsetX * 256; x < offsetX * 256 + 256; x++) {
+        //     for (int z = offsetZ * 256; z < offsetZ * 256 + 256; z++) {
+        //         saved[z + x * 512] = region[(z - offsetZ * 256) + (x - offsetX * 256) * 256];
+        //         savedY[z + x * 512] = ylevels[(z - offsetZ * 256) + (x - offsetX * 256) * 256];
         //     }
         // }
     }
 
-    private int[] parseBlockXZ(String cord) {
+    private int[] parseXZFromKey(String cord) {
 
         var cordsStr = cord.split("\\,");
         if (cordsStr.length != 2) {
