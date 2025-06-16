@@ -1,35 +1,20 @@
 package sh.okx.civmodern.common.map;
 
+import com.google.gson.Gson;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import org.apache.commons.compress.compressors.zstandard.ZstdCompressorInputStream;
 import org.apache.commons.compress.compressors.zstandard.ZstdCompressorOutputStream;
-import org.apache.commons.compress.compressors.zstandard.ZstdUtils;
 import sh.okx.civmodern.common.AbstractCivModernMod;
 import sh.okx.civmodern.common.map.data.RegionLoader;
-import sh.okx.civmodern.common.map.data.RegionMapUpdater;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
 import java.nio.ByteBuffer;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.sql.*;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
-import java.util.zip.GZIPInputStream;
-import java.util.zip.GZIPOutputStream;
 
 public class MapFolder {
 
@@ -37,6 +22,10 @@ public class MapFolder {
 
     private final File folder;
     private final Connection connection;
+
+    private static final Gson GSON = new Gson();
+    private final File historyFile;
+    private final History history;
 
     public MapFolder(File folder) {
         this.folder = folder;
@@ -56,6 +45,62 @@ public class MapFolder {
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
+
+        this.historyFile = folder.toPath().resolve("history.json").toFile();
+        history = readHistory(historyFile);
+    }
+
+    public History getHistory() {
+        return history;
+    }
+
+    public void saveHistory() {
+        synchronized (historyFile) {
+            try (FileWriter writer = new FileWriter(historyFile)) {
+                GSON.toJson(history, writer);
+            } catch (IOException e) {
+                AbstractCivModernMod.LOGGER.error(e);
+            }
+        }
+    }
+
+    private History readHistory(File file) {
+        if (!file.exists()) {
+            return defaultHisoty();
+        }
+
+        try (var reader = new FileReader(file)) {
+            return GSON.fromJson(reader, History.class);
+        } catch (IOException e) {
+            AbstractCivModernMod.LOGGER.warn(e);
+            return defaultHisoty();
+        }
+    }
+
+    /**
+     * Gets default map config
+     *
+     * @return
+     */
+    private static History defaultHisoty() {
+        var config = new History();
+        config.mods = new HashMap<>();
+        config.settings = new Settings();
+        config.settings.enableImportPrompt = true;
+        return config;
+    }
+
+    public static class History {
+        public Map<String, ModData> mods;
+        public Settings settings;
+    }
+
+    public static class ModData {
+        public List<String> regions;
+    }
+
+    public static class Settings {
+        public boolean enableImportPrompt;
     }
 
     public File getFolder() {

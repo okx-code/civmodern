@@ -44,7 +44,6 @@ public class ImportAvailable extends BaseOwoScreen<FlowLayout> {
 
         for (var mod : mods) {
             buttons.child(Components.button(Component.literal(mod), button -> {
-                AbstractCivModernMod.LOGGER.info(mod + " import clicked");
                 callback.accept(mod);
                 Minecraft.getInstance().setScreen(null);
             }));

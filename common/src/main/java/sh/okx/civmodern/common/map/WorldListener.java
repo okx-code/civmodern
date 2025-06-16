@@ -61,58 +61,63 @@ public class WorldListener {
         ClientLevel level = Minecraft.getInstance().level;
         String dimension = level.dimension().location().getPath();
 
-        Path config = Minecraft.getInstance().gameDirectory.toPath().resolve("civmap");
-        File mapFile = config.resolve(type).resolve(name.replace(":", "_")).resolve(dimension).resolve(String.valueOf(seed)).toFile();
+        Path civmapFolder = Minecraft.getInstance().gameDirectory.toPath().resolve("civmap");
+        File mapFile = civmapFolder.resolve(type).resolve(name.replace(":", "_")).resolve(dimension).resolve(String.valueOf(seed)).toFile();
         mapFile.mkdirs();
 
         this.file = new MapFolder(mapFile);
         this.waypoints = new Waypoints(this.file.getConnection()); // TODO: import waypoints
 
-        VoxelMapConverter voxelMapConverter = new VoxelMapConverter(this.file, name, dimension, level.registryAccess());
-        JourneymapConverter journeymapConverter = new JourneymapConverter(this.file, name, dimension, level.registryAccess());
-
         ArrayList<String> importableMapMods = new ArrayList<>();
-        if (!voxelMapConverter.hasAlreadyConverted() && voxelMapConverter.filesAvailable()) {
-            importableMapMods.add("VoxelMap");
-        }
-        if (!journeymapConverter.hasAlreadyConverted() && journeymapConverter.filesAvailable()) {
-            importableMapMods.add("Journeymap");
-        }
 
-        if (importableMapMods.isEmpty()) {
-            AbstractCivModernMod.LOGGER.info("No mods available for import, using existing map data");
-            this.cache = new MapCache(this.file);
-            this.minimap = new Minimap(this.waypoints, this.cache, this.config, this.provider);
-        } else {
-            Minecraft.getInstance().setScreen(new ImportAvailable(importableMapMods.toArray(new String[0]), mod -> {
-                converter = new Thread(() -> {
-                    try {
-                        switch (mod) {
-                            case "VoxelMap" -> voxelMapConverter.convert();
-                            case "Journeymap" -> journeymapConverter.convert();
-                            case "close" -> {
-                                return;
+        if (file.getHistory().settings.enableImportPrompt) {
+            VoxelMapConverter voxelMapConverter = new VoxelMapConverter(this.file, name, dimension, level.registryAccess());
+            JourneymapConverter journeymapConverter = new JourneymapConverter(this.file, name, dimension, level.registryAccess());
+
+            if (!voxelMapConverter.hasAlreadyConverted() && voxelMapConverter.filesAvailable()) {
+                importableMapMods.add("VoxelMap");
+            }
+            if (!journeymapConverter.hasAlreadyConverted() && journeymapConverter.filesAvailable()) {
+                importableMapMods.add("Journeymap");
+            }
+
+            // if there is something to import
+            if (!importableMapMods.isEmpty()) {
+                Minecraft.getInstance().setScreen(new ImportAvailable(importableMapMods.toArray(new String[0]), mod -> {
+                    converter = new Thread(() -> {
+                        try {
+                            switch (mod) {
+                                case "VoxelMap" -> voxelMapConverter.convert();
+                                case "Journeymap" -> journeymapConverter.convert();
+                                case "close" -> {
+                                    return;
+                                }
+                                default -> {
+                                    AbstractCivModernMod.LOGGER.warn("Unknown mod for import: " + mod);
+                                    return;
+                                }
                             }
-                            default -> {
-                                AbstractCivModernMod.LOGGER.warn("Unknown mod for import: " + mod);
-                                return;
-                            }
+
+                            Minecraft.getInstance().getToastManager().addToast(new SystemToast(SystemToast.SystemToastId.PERIODIC_NOTIFICATION,
+                                    Component.literal("Import Done"),
+                                    Component.literal("CivMap has finished importing " + mod)
+                            ));
+                        } catch (RuntimeException ex) {
+                            ex.printStackTrace();
+                        } finally {
+                            this.cache = new MapCache(this.file);
+                            this.minimap = new Minimap(this.waypoints, this.cache, this.config, this.provider);
                         }
-
-                        Minecraft.getInstance().getToastManager().addToast(new SystemToast(SystemToast.SystemToastId.PERIODIC_NOTIFICATION,
-                                Component.literal("Import Done"),
-                                Component.literal("CivMap has finished importing " + mod)
-                        ));
-                    } catch (RuntimeException ex) {
-                        ex.printStackTrace();
-                    } finally {
-                        this.cache = new MapCache(this.file);
-                        this.minimap = new Minimap(this.waypoints, this.cache, this.config, this.provider);
-                    }
-                }, "Map converter");
-                converter.start();
-            }));
+                    }, "Map converter");
+                    converter.start();
+                }));
+            }
         }
+
+
+        AbstractCivModernMod.LOGGER.info("No mods available for import, using existing map data");
+        this.cache = new MapCache(this.file);
+        this.minimap = new Minimap(this.waypoints, this.cache, this.config, this.provider);
     }
 
     @Subscribe

@@ -19,10 +19,7 @@ import sh.okx.civmodern.common.map.data.RegionLoader;
 
 import java.io.*;
 import java.nio.file.Path;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -45,8 +42,7 @@ public class JourneymapConverter extends Converter {
     }
 
     public boolean hasAlreadyConverted() {
-        // TODO: switch this to json file
-        return this.mapFile.getFolder().toPath().resolve("journeymap").toFile().exists();
+        return this.mapFile.getHistory().mods.containsKey("journeymap");
     }
 
     /**
@@ -186,15 +182,14 @@ public class JourneymapConverter extends Converter {
         mapFile.saveBiomeIds(biomeLookup.getNames());
 
         if (modified.get()) {
-            StringBuilder toWrite = new StringBuilder();
+            var regionHistory = new ArrayList<String>();
             for (String r : converted) {
-                toWrite.append(r).append("\n");
+                regionHistory.add(r);
             }
-            try (FileOutputStream fos = new FileOutputStream(journeymap)) {
-                fos.write(toWrite.toString().getBytes());
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+            var modData = new MapFolder.ModData();
+            modData.regions = regionHistory;
+            mapFile.getHistory().mods.put("journeymap", modData);
+            mapFile.saveHistory();
         }
 
         AbstractCivModernMod.LOGGER.info("Conversion complete for " + name + "/" + dimension);

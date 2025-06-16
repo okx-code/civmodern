@@ -35,7 +35,7 @@ public class VoxelMapConverter extends Converter {
     }
 
     public boolean hasAlreadyConverted() {
-        return this.mapFile.getFolder().toPath().resolve("voxelmap").toFile().exists();
+        return this.mapFile.getHistory().mods.containsKey("voxelmap");
     }
 
     public boolean filesAvailable() {
@@ -212,15 +212,14 @@ public class VoxelMapConverter extends Converter {
         mapFile.saveBiomeIds(biomeLookup.getNames());
 
         if (modified.get()) {
-            StringBuilder toWrite = new StringBuilder();
+            var regionHistory = new ArrayList<String>();
             for (String r : converted) {
-                toWrite.append(r).append("\n");
+                regionHistory.add(r);
             }
-            try (FileOutputStream fos = new FileOutputStream(voxelmap)) {
-                fos.write(toWrite.toString().getBytes());
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+            var modData = new MapFolder.ModData();
+            modData.regions = regionHistory;
+            mapFile.getHistory().mods.put("voxelmap", modData);
+            mapFile.saveHistory();
         }
 
         AbstractCivModernMod.LOGGER.info("Conversion complete for " + name + "/" + dimension);
