@@ -39,7 +39,6 @@ public class ImportAvailable extends BaseOwoScreen<FlowLayout> {
             layout.margins(Insets.of(5));
         });
         buttons.gap(6);
-        buttons.surface(Surface.PANEL);
         buttons.horizontalAlignment(HorizontalAlignment.CENTER);
 
         for (var mod : mods) {
@@ -50,12 +49,16 @@ public class ImportAvailable extends BaseOwoScreen<FlowLayout> {
         }
         root.child(buttons);
 
-        // TODO: add button to say I don't want to ever import, and remember that setting
-
-        root.child(Components.button(Component.literal("Close"), button -> {
+        var closeButtons = Containers.horizontalFlow(Sizing.content(), Sizing.content());
+        closeButtons.child(Components.button(Component.literal("Close"), button -> {
             callback.accept("close");
             Minecraft.getInstance().setScreen(null);
         }).margins(Insets.of(5)));
+        closeButtons.child(Components.button(Component.literal("Don't Show Again"), button -> {
+            callback.accept("neverShowAgain");
+            Minecraft.getInstance().setScreen(null);
+        }).margins(Insets.of(5)));
+        root.child(closeButtons);
     }
 
     @Override

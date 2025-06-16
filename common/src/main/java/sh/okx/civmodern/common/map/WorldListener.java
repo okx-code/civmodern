@@ -92,6 +92,11 @@ public class WorldListener {
                                 case "close" -> {
                                     return;
                                 }
+                                case "neverShowAgain" -> {
+                                    file.getHistory().settings.enableImportPrompt = false;
+                                    file.saveHistory();
+                                    return;
+                                }
                                 default -> {
                                     AbstractCivModernMod.LOGGER.warn("Unknown mod for import: " + mod);
                                     return;
