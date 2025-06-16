@@ -119,7 +119,6 @@ public class WorldListener {
             }
         }
 
-
         AbstractCivModernMod.LOGGER.info("No mods available for import, using existing map data");
         this.cache = new MapCache(this.file);
         this.minimap = new Minimap(this.waypoints, this.cache, this.config, this.provider);

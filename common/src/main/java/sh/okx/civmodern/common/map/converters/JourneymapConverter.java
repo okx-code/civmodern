@@ -182,12 +182,8 @@ public class JourneymapConverter extends Converter {
         mapFile.saveBiomeIds(biomeLookup.getNames());
 
         if (modified.get()) {
-            var regionHistory = new ArrayList<String>();
-            for (String r : converted) {
-                regionHistory.add(r);
-            }
             var modData = new MapFolder.ModData();
-            modData.regions = regionHistory;
+            modData.regions = new ArrayList<>(converted);
             mapFile.getHistory().mods.put("journeymap", modData);
             mapFile.saveHistory();
         }
@@ -282,10 +278,7 @@ public class JourneymapConverter extends Converter {
             ylevels[index] = (short) topY;
         }
 
-        int regionX = Math.floorDiv(regionKey.x(), 2);
-        int regionZ = Math.floorDiv(regionKey.z(), 2);
-
-        RegionKey key = new RegionKey(regionX, regionZ);
+        RegionKey key = new RegionKey(regionKey.x(), regionKey.z());
         RegionLoader regionData = regionMap.computeIfAbsent(key, k -> new RegionLoader(k, mapFile));
         int[] saved = regionData.getOrLoadMapData();
         short[] savedY = regionData.getOrLoadYLevels();
@@ -295,10 +288,8 @@ public class JourneymapConverter extends Converter {
                 int globalBlockX = chunkCords.x() * 16 + x;
                 int globalBlockZ = chunkCords.z() * 16 + z;
 
-                // int index = z + x * 512;
-                // int index = globalBlockZ + globalBlockX * 256; // bad idea, cases striping and repeating regions vertically
-                int index = globalBlockZ + globalBlockX * 512; // mostly correct, but regions seem to be overwriting eachother
-                saved[index] = chunk[x * 16 + z]; // assuming chunkData is flat 16×16
+                int index = globalBlockZ + globalBlockX * 512;
+                saved[index] = chunk[x * 16 + z];
                 savedY[index] = ylevels[x * 16 + z];
             }
         }

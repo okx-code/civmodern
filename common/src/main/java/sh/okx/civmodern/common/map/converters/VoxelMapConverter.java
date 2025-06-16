@@ -212,12 +212,8 @@ public class VoxelMapConverter extends Converter {
         mapFile.saveBiomeIds(biomeLookup.getNames());
 
         if (modified.get()) {
-            var regionHistory = new ArrayList<String>();
-            for (String r : converted) {
-                regionHistory.add(r);
-            }
             var modData = new MapFolder.ModData();
-            modData.regions = regionHistory;
+            modData.regions = new ArrayList<>(converted);
             mapFile.getHistory().mods.put("voxelmap", modData);
             mapFile.saveHistory();
         }
