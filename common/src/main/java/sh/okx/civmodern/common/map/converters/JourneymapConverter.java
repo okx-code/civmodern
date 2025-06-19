@@ -17,7 +17,10 @@ import sh.okx.civmodern.common.map.MapFolder;
 import sh.okx.civmodern.common.map.RegionKey;
 import sh.okx.civmodern.common.map.data.RegionLoader;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -192,15 +195,13 @@ public class JourneymapConverter extends Converter {
     }
 
     private void loadData(RegionKey regionKey, RegionKey chunkCords, CompoundTag chunkData, Map<RegionKey, RegionLoader> regionMap, IdLookup blockLookup, IdLookup biomeLookup) {
-        // int[] region = new int[256 * 256];
-        // short[] ylevels = new short[256 * 256];
-        //
-        // int[] westY = new int[256];
-        // Arrays.fill(westY, Integer.MIN_VALUE);
-        // int northY = Integer.MIN_VALUE;
-
         int[] chunk = new int[16 * 16];
         short[] ylevels = new short[16 * 16];
+
+        int[] westY = new int[16];
+        int[] northY = new int[16];
+        Arrays.fill(westY, Integer.MIN_VALUE);
+        Arrays.fill(northY, Integer.MIN_VALUE);
 
         for (var xzCords : chunkData.getAllKeys()) {
             var cordData = chunkData.getCompound(xzCords);
@@ -219,13 +220,16 @@ public class JourneymapConverter extends Converter {
                 AbstractCivModernMod.LOGGER.warn("In Region {},{} unknown cord in format: {}", regionKey.x(), regionKey.z(), xzCords);
                 continue;
             }
-            int x = blockXZ[0] & 15; // or blockX % 16
-            int z = blockXZ[1] & 15; // or blockX % 16
+            int rawX = blockXZ[0];
+            int rawZ = blockXZ[1];
+
+            int x = rawX & 15; // or blockX % 16
+            int z = rawZ & 15; // or blockX % 16
 
             int dataValue = 0;
 
             var blockstates = cordData.getCompound("blockstates");
-            var topY = cordData.getInt("top_y");
+            var y = cordData.getInt("top_y");
 
             // int y = topY;
             // String realBlockId = blockstates.getCompound("" + topY).getString("Name");
@@ -252,7 +256,7 @@ public class JourneymapConverter extends Converter {
             //
             // }
 
-            String blockName = blockstates.getCompound("" + topY).getString("Name");
+            String blockName = blockstates.getCompound("" + y).getString("Name");
             if (blockName == null) {
                 blockName = "minecraft:air";
             }
@@ -273,9 +277,65 @@ public class JourneymapConverter extends Converter {
             }
             dataValue |= biomeId;
 
+            // attempt to compute block west of cords, and get Y value for shadowing
+            var westYCord = (rawX - 1) + "," + rawZ;
+            if (chunkData.contains(westYCord)) {
+                var westYTag = chunkData.getCompound(westYCord);
+                if (westYTag.contains("top_y")) {
+                    var westYValue = westYTag.getInt("top_y");
+
+                    if (westYValue > y) {
+                        dataValue |= 0b11 << 10;
+                    } else if (westYValue == y) {
+                        dataValue |= 0b01 << 10;
+                    }
+                }
+            } else {
+                dataValue |= 0b10 << 10;
+            }
+
+            // attempt to compute block north of cords, and get Y value for shadowing
+            var northYCord = rawX + "," + (rawZ - 1);
+            if (chunkData.contains(northYCord)) {
+                var northYTag = chunkData.getCompound(northYCord);
+                if (northYTag.contains("top_y")) {
+                    var northYValue = northYTag.getInt("top_y");
+
+                    if (northYValue > y) {
+                        dataValue |= 0b11 << 8;
+                    } else if (northYValue == y) {
+                        dataValue |= 0b01 << 8;
+                    }
+                }
+            } else {
+                dataValue |= 0b10 << 8;
+            }
+
+            // if (westY[x] != Integer.MIN_VALUE) {
+            //     if (westY[x] > y) {
+            //         dataValue |= 0b11 << 10;
+            //     } else if (westY[x] == y) {
+            //         dataValue |= 0b01 << 10;
+            //     }
+            // } else {
+            //     dataValue |= 0b10 << 10;
+            // }
+            // westY[x] = y;
+            //
+            // if (northY[z] != Integer.MIN_VALUE) {
+            //     if (northY[z] > y) {
+            //         dataValue |= 0b11 << 8;
+            //     } else if (northY[z] == y) {
+            //         dataValue |= 0b01 << 8;
+            //     }
+            // } else {
+            //     dataValue |= 0b10 << 8;
+            // }
+            // northY[z] = y;
+
             int index = x * 16 + z;
             chunk[index] = dataValue;
-            ylevels[index] = (short) topY;
+            ylevels[index] = (short) y;
         }
 
         RegionKey key = new RegionKey(regionKey.x(), regionKey.z());
