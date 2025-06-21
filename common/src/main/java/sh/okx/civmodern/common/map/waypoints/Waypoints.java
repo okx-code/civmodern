@@ -19,6 +19,8 @@ import net.minecraft.client.renderer.FogRenderer;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderStateShard;
 import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.texture.AbstractTexture;
+import net.minecraft.client.renderer.texture.TextureManager;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.util.TriState;
@@ -213,6 +215,9 @@ public class Waypoints {
             int k = (int) (getTransparency(distance, 0.11f) * 255.0F) << 24;
             waypoint.render(buffer, matrices.last().pose(), 8, k);
             RenderType.guiTextured(waypoint.resourceLocation()).draw(buffer.buildOrThrow());
+            TextureManager textureManager = Minecraft.getInstance().getTextureManager();
+            AbstractTexture abstractTexture = textureManager.getTexture(waypoint.resourceLocation());
+            abstractTexture.setFilter(true, true);
             waypoint.render(buffer2, matrices.last().pose(), 8, k);
             BufferUploader.drawWithShader(buffer2.buildOrThrow());
             matrices.popPose();

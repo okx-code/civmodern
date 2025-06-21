@@ -18,6 +18,8 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.CoreShaders;
 import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.texture.AbstractTexture;
+import net.minecraft.client.renderer.texture.TextureManager;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.ResourceLocation;
@@ -25,16 +27,21 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.phys.Vec2;
 import org.joml.Matrix4f;
 import sh.okx.civmodern.common.AbstractCivModernMod;
+import sh.okx.civmodern.common.CivMapConfig;
 import sh.okx.civmodern.common.boat.BoatNavigation;
 import sh.okx.civmodern.common.gui.widget.ImageButton;
 import sh.okx.civmodern.common.map.MapCache;
 import sh.okx.civmodern.common.map.RegionAtlasTexture;
 import sh.okx.civmodern.common.map.RegionDataType;
 import sh.okx.civmodern.common.map.RegionKey;
+import sh.okx.civmodern.common.map.waypoints.PlayerWaypoint;
+import sh.okx.civmodern.common.map.waypoints.PlayerWaypoints;
 import sh.okx.civmodern.common.map.waypoints.Waypoint;
 import sh.okx.civmodern.common.map.waypoints.Waypoints;
 import sh.okx.civmodern.common.mixins.ScreenAccessor;
 
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -56,7 +63,9 @@ public class MapScreen extends Screen {
     private final MapCache mapCache;
     private final BoatNavigation navigation;
     private final Waypoints waypoints;
+    private final PlayerWaypoints playerWaypoints;
 
+    private final CivMapConfig config;
 
     private NewWaypointModal newWaypointModal;
     private EditWaypointModal editWaypointModal;
@@ -75,12 +84,16 @@ public class MapScreen extends Screen {
 
     private final Set<RegionKey> yLevelInterests = new HashSet<>();
 
-    public MapScreen(AbstractCivModernMod mod, MapCache mapCache, BoatNavigation navigation, Waypoints waypoints) {
+    private boolean changedConfig = false;
+
+    public MapScreen(AbstractCivModernMod mod, CivMapConfig config, MapCache mapCache, BoatNavigation navigation, Waypoints waypoints, PlayerWaypoints playerWaypoints) {
         super(Component.translatable("civmodern.screen.map.title"));
 
         this.mod = mod;
+        this.config = config;
         this.mapCache = mapCache;
         this.waypoints = waypoints;
+        this.playerWaypoints = playerWaypoints;
         Window window = Minecraft.getInstance().getWindow();
 
         x = Minecraft.getInstance().player.getX() - (window.getWidth() * zoom) / 2;
@@ -113,16 +126,37 @@ public class MapScreen extends Screen {
                 editWaypointModal.setWaypoint(null);
             }
         });
+        openWaypointButton.setTooltip(Tooltip.create(Component.translatable("civmodern.map.newwaypoint.tooltip")));
         addRenderableWidget(openWaypointButton);
 
         ImageButton targetButton = new ImageButton(this.width / 2 + 2, 10, 20, 20, ResourceLocation.fromNamespaceAndPath("civmodern", "gui/target.png"), imbg -> {
             this.waypoints.setTarget(null);
             targeting = !targeting;
         });
+        targetButton.setTooltip(Tooltip.create(Component.translatable("civmodern.map.highlight.tooltip")));
         addRenderableWidget(targetButton);
 
         addRenderableWidget(newWaypointModal);
         addRenderableWidget(editWaypointModal);
+
+        ResourceLocation togglePlayersImage;
+        if (config.isPlayerWaypointsEnabled()) {
+            togglePlayersImage = ResourceLocation.fromNamespaceAndPath("civmodern", "gui/toggleplayersoff.png");
+        } else {
+            togglePlayersImage = ResourceLocation.fromNamespaceAndPath("civmodern", "gui/toggleplayers.png");
+        }
+        ImageButton togglePlayers = new ImageButton(this.width - 30, 10, 20, 20, togglePlayersImage, imbg -> {
+            // TODO use world config
+            config.setPlayerWaypointsEnabled(!config.isPlayerWaypointsEnabled());
+            changedConfig = true;
+            if (config.isPlayerWaypointsEnabled()) {
+                imbg.setImage(ResourceLocation.fromNamespaceAndPath("civmodern", "gui/toggleplayersoff.png"));
+            } else {
+                imbg.setImage(ResourceLocation.fromNamespaceAndPath("civmodern", "gui/toggleplayers.png"));
+            }
+        });
+        togglePlayers.setTooltip(Tooltip.create(Component.translatable("civmodern.map.players.tooltip")));
+        addRenderableWidget(togglePlayers);
     }
 
     public void setNewWaypoint(Waypoint waypoint) {
@@ -180,6 +214,9 @@ public class MapScreen extends Screen {
 
                 waypoint.render(buffer, matrices.last().pose(), 7, 0xFF << 24);
                 matrices.popPose();
+                TextureManager textureManager = Minecraft.getInstance().getTextureManager();
+                AbstractTexture abstractTexture = textureManager.getTexture(waypoint.resourceLocation());
+                abstractTexture.setFilter(true, true);
             }
             BufferUploader.drawWithShader(buffer.buildOrThrow());
 
@@ -208,6 +245,40 @@ public class MapScreen extends Screen {
             }
         }
 
+        if (config.isPlayerWaypointsEnabled()) {
+            for (PlayerWaypoint waypoint : this.playerWaypoints.getWaypoints()) {
+                boolean old = waypoint.timestamp().until(Instant.now(), ChronoUnit.MINUTES) >= 10;
+                int colour = (old ? 0x77 : 0xFF) << 24 | 0xFFFFFF;
+                int bgcolour = (old ? 0x66 : 0xCC) << 24 | 0xCCCCCC;
+
+                // TODO cycle between players on the same snitch
+                matrices.pushPose();
+                double x = waypoint.x() + 0.5;
+                double z = waypoint.z() + 0.5;
+                matrices.translate((x - this.x) / scale, (z - this.y) / scale, 0);
+                waypoint.render(guiGraphics, colour);
+
+                Font font = Minecraft.getInstance().font;
+
+                String str = waypoint.playerName();
+
+                matrices.translate(0, -15, -10);
+                Matrix4f last = matrices.last().pose();
+                RenderSystem.enableBlend();
+                guiGraphics.drawSpecial(source -> {
+                    MutableComponent comp = Component.literal(str);
+                    font.drawInBatch(comp, -font.width(comp) / 2f, (float) 0, colour, false, last, source, Font.DisplayMode.SEE_THROUGH, 1056964608, 15728640, false);
+                    font.drawInBatch(comp, -font.width(comp) / 2f, (float) 0, bgcolour, false, last, source, Font.DisplayMode.NORMAL, 0, 15728880, true);
+                });
+                guiGraphics.drawSpecial(source -> {
+                    MutableComponent comp = Component.literal("(" + getAgo(waypoint.timestamp()) + ")");
+                    font.drawInBatch(comp, -font.width(comp) / 2f, 23, colour, false, last, source, Font.DisplayMode.SEE_THROUGH, 1056964608, 15728640, false);
+                    font.drawInBatch(comp, -font.width(comp) / 2f, 23, bgcolour, false, last, source, Font.DisplayMode.NORMAL, 0, 15728880, true);
+                });
+                matrices.popPose();
+            }
+        }
+
         RenderSystem.depthFunc(GL_LEQUAL);
 
         if (targeting || newWaypointModal.isTargeting()) {
@@ -217,6 +288,8 @@ public class MapScreen extends Screen {
 
             Waypoint targetWaypoint = new Waypoint("", 0, 0, 0, targeting ? "target" : "waypoint", 0xFF0000);
             int transparency = newWaypointModal.isTargeting() ? 0x7F : 0xFF;
+            AbstractTexture abstractTexture = Minecraft.getInstance().getTextureManager().getTexture(targetWaypoint.resourceLocation());
+            abstractTexture.setFilter(true, true);
             targetWaypoint.render(buffer, matrices.last().pose(), 7, transparency << 24);
 
             matrices.popPose();
@@ -236,7 +309,9 @@ public class MapScreen extends Screen {
                 targetWaypoint.render(buffer, matrices.last().pose(), 7, 0x7F << 24);
 
                 matrices.popPose();
-                RenderType.guiTextured(targetWaypoint.resourceLocation()).draw(buffer.buildOrThrow());
+                AbstractTexture abstractTexture = Minecraft.getInstance().getTextureManager().getTexture(targetWaypoint.resourceLocation());
+                abstractTexture.setFilter(true, true);
+                BufferUploader.drawWithShader(buffer.buildOrThrow());
             } catch (NumberFormatException ignored) {
             }
         }
@@ -248,6 +323,8 @@ public class MapScreen extends Screen {
             double z = highlightedWaypoint.z() + 0.5;
             matrices.translate((x - this.x) / scale, (z - this.y) / scale, 0);
 
+            AbstractTexture abstractTexture = Minecraft.getInstance().getTextureManager().getTexture(highlightedWaypoint.resourceLocation());
+            abstractTexture.setFilter(true, true);
             highlightedWaypoint.renderFocus(buffer, matrices.last().pose(), 7);
 
             matrices.popPose();
@@ -266,12 +343,14 @@ public class MapScreen extends Screen {
             }
 
             Waypoint targetWaypoint = new Waypoint("", 0, 0, 0, editWaypointModal.getWaypoint().icon(), editWaypointModal.getPreviewColour());
+            AbstractTexture abstractTexture = Minecraft.getInstance().getTextureManager().getTexture(targetWaypoint.resourceLocation());
+            abstractTexture.setFilter(true, true);
             if (editWaypointModal.getPreviewColour() != editWaypointModal.getColour()) {
                 targetWaypoint.render(buffer, matrices.last().pose(), 7, 0xFF << 24);
             } else {
                 targetWaypoint.render(buffer, matrices.last().pose(), 7, 0x7F << 24);
             }
-            RenderType.guiTextured(targetWaypoint.resourceLocation()).draw(buffer.buildOrThrow());
+            BufferUploader.drawWithShader(buffer.buildOrThrow());
 
             Font font = Minecraft.getInstance().font;
 
@@ -556,5 +635,23 @@ public class MapScreen extends Screen {
             mapCache.removeInterest(key, RegionDataType.Y_LEVELS);
             iterator.remove();
         }
+        if (changedConfig) {
+            config.save();
+        }
+    }
+
+    public static String getAgo(Instant timestamp) {
+        Instant now = Instant.now();
+        long minutesDiff = timestamp.until(now, ChronoUnit.MINUTES);
+        if (minutesDiff > 0) {
+            return minutesDiff + "m ago";
+        }
+        long secondsDiff = timestamp.until(now, ChronoUnit.SECONDS);
+        long lastDigit = secondsDiff % 10;
+        secondsDiff -= lastDigit;
+        if (secondsDiff < 10) {
+            return "now";
+        }
+        return secondsDiff + "s ago";
     }
 }

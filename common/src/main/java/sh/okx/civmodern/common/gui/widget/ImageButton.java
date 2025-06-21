@@ -13,13 +13,17 @@ import net.minecraft.resources.ResourceLocation;
 
 public class ImageButton extends AbstractWidget {
 
-    private final ResourceLocation image;
+    private ResourceLocation image;
     private final OnPress onPress;
 
     public ImageButton(int x, int y, int width, int height, ResourceLocation image, OnPress onPress) {
         super(x, y, width, height, Component.empty());
         this.image = image;
         this.onPress = onPress;
+    }
+
+    public void setImage(ResourceLocation image) {
+        this.image = image;
     }
 
     @Override

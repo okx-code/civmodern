@@ -168,7 +168,7 @@ public abstract class AbstractCivModernMod {
             if (!Screen.hasControlDown()) {
                 this.worlds.getWaypoints().setTarget(waypoint);
             } else {
-                MapScreen screen = new MapScreen(this, worlds.getCache(), boatNavigation, worlds.getWaypoints());
+                MapScreen screen = new MapScreen(this, config, worlds.getCache(), boatNavigation, worlds.getWaypoints(), worlds.getPlayerWaypoints());
                 screen.setNewWaypoint(waypoint);
                 Minecraft.getInstance().setScreen(screen);
             }
@@ -185,7 +185,7 @@ public abstract class AbstractCivModernMod {
         }
         while (mapBinding.consumeClick()) {
             if (worlds.getCache() != null) {
-                Minecraft.getInstance().setScreen(new MapScreen(this, worlds.getCache(), boatNavigation, worlds.getWaypoints()));
+                Minecraft.getInstance().setScreen(new MapScreen(this, config, worlds.getCache(), boatNavigation, worlds.getWaypoints(), worlds.getPlayerWaypoints()));
             }
         }
         while (minimapZoomBinding.consumeClick()) {
