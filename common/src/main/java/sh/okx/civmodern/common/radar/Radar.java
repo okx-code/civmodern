@@ -126,8 +126,8 @@ public class Radar {
                     if (config.isPingEnabled()) {
                         BlockPos pos = player.blockPosition();
                         String lastWaypointCommand =
-                            "/newWaypoint x:" + pos.getX() + ",y:" + (hideY() ? Minecraft.getInstance().player.getBlockY() : pos.getY()) + ",z:" + pos.getZ() + ",name:"
-                                + player.getScoreboardName();
+                            "/civmodern_openwaypoint [x:" + pos.getX() + ",y:" + (hideY() ? Minecraft.getInstance().player.getBlockY() : pos.getY()) + ",z:" + pos.getZ() + ",name:"
+                                + player.getScoreboardName() + "]";
 
                         Minecraft.getInstance().player.displayClientMessage(
                             Component.translatable("civmodern.radar.enter",

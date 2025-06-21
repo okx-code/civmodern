@@ -79,13 +79,14 @@ public class EditWaypointModal extends Modal<FlowLayout> {
             setVisible(false);
         });
         ImageButton copyButton = new ImageButton(0, 0, 20, 20, ResourceLocation.fromNamespaceAndPath("civmodern", "gui/copy.png"), imbg -> {
-            setVisible(false);
             StringBuilder builder = new StringBuilder("[");
             if (!this.waypoint.name().isBlank()) {
                 builder.append("name:%s,".formatted(this.waypoint.name()));
             }
             builder.append("x:%s,y:%s,z:%s]".formatted(this.waypoint.x(), this.waypoint.y(), this.waypoint.z()));
             Minecraft.getInstance().keyboardHandler.setClipboard(builder.toString());
+            setVisible(false);
+            this.waypoint = null;
         });
         colourPicker = new HsbColourPicker(
             0,
