@@ -119,6 +119,8 @@ public class EditWaypointModal extends Modal<FlowLayout> {
         zBox = Components.textBox(Sizing.fixed(44), Integer.toString(waypoint.z()));
         zBox.setFilter(numFilter);
         zBox.onChanged().subscribe(value -> this.updateDone());
+
+        this.layout.rootComponent.clearChildren();
         this.layout.rootComponent
             .child(
                 Containers.horizontalFlow(Sizing.fill(), Sizing.fixed(24))

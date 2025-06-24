@@ -45,12 +45,6 @@ import static org.lwjgl.opengl.GL11.*;
 
 public class Waypoints {
 
-    static {
-        new WaypointTexture(ResourceLocation.fromNamespaceAndPath("civmodern", "map/waypoint.png")).register();
-        new WaypointTexture(ResourceLocation.fromNamespaceAndPath("civmodern", "map/target.png")).register();
-        new WaypointTexture(ResourceLocation.fromNamespaceAndPath("civmodern", "map/focus.png")).register();
-    }
-
     private final Int2ObjectMap<Int2ObjectMap<Int2ObjectMap<Waypoint>>> waypoints = new Int2ObjectOpenHashMap<>();
     private Waypoint target;
     private final Connection connection;

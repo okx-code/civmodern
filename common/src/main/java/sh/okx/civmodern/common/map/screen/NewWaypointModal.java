@@ -91,6 +91,7 @@ public class NewWaypointModal extends Modal<FlowLayout> {
         colourPicker.setRVisible(false);
 
         nameBox = Components.textBox(Sizing.expand(), name);
+        this.layout.rootComponent.clearChildren();
         this.layout.rootComponent
             .child(
                 Containers.horizontalFlow(Sizing.fill(), Sizing.fixed(24))

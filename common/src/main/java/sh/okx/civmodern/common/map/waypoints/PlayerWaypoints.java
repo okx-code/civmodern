@@ -17,7 +17,7 @@ public class PlayerWaypoints {
 
     private final Map<UUID, PlayerWaypoint> waypoints = new HashMap<>();
 
-    private static final Pattern SNITCH_PATTERN = Pattern.compile("^(Enter|Login|Logout) +(\\w+) +(\\w+) +\\[(-?\\d+) (-?\\d+) (-?\\d+)] +(\\[.+])?$");
+    private static final Pattern SNITCH_PATTERN = Pattern.compile("^(Enter|Login|Logout) +(\\w+) +(.+) +\\[(-?\\d+) (-?\\d+) (-?\\d+)] +(\\[.+])?$");
 
     public Collection<PlayerWaypoint> getWaypoints() {
         return waypoints.values();
