@@ -49,7 +49,7 @@
     "civmodern.map.players.tooltip": "Display players that trigger snitches on the map",
     "civmodern.map.newwaypoint.tooltip": "Create new waypoint",
     "civmodern.map.highlight.tooltip": "Set highlighted waypoint",
-    "civmodern.map.copy": "§6Copied §b%s §6to clipboard",
+    "civmodern.map.copy": "Copied %s to clipboard",
     "civmodern.radar.enter" : "§r%s §eappeared at §b[%s§b]",
     "civmodern.radar.hover" : "Click to highlight position\nControl click to add waypoint",
     "civmodern.radar.leave" : "§r%s §edisappeared at §b[%s§b]",

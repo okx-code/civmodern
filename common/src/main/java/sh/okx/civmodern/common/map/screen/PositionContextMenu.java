@@ -8,12 +8,8 @@ import io.wispforest.owo.ui.core.Insets;
 import io.wispforest.owo.ui.core.OwoUIAdapter;
 import io.wispforest.owo.ui.core.Sizing;
 import io.wispforest.owo.ui.core.Surface;
-import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
-import net.minecraft.network.chat.ClickEvent;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.HoverEvent;
-import net.minecraft.network.chat.Style;
 import sh.okx.civmodern.common.map.waypoints.Waypoint;
 import sh.okx.civmodern.common.map.waypoints.Waypoints;
 
@@ -56,7 +52,7 @@ public class PositionContextMenu extends Modal<FlowLayout> {
             if (targetY != null) {
                 Minecraft.getInstance().setScreen(null);
                 String copied = "[x:%s,y:%s,z:%s]".formatted(targetX, targetY, targetZ);
-                Minecraft.getInstance().player.displayClientMessage(Component.translatable("civmodern.map.copy", Component.literal(copied)), false);
+                Minecraft.getInstance().player.displayClientMessage(Component.translatable("civmodern.map.copy", Component.literal(copied)).withColor(0x379FA3), false);
                 Minecraft.getInstance().keyboardHandler.setClipboard(copied);
             }
         });

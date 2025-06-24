@@ -85,7 +85,9 @@ public class EditWaypointModal extends Modal<FlowLayout> {
             }
             builder.append("x:%s,y:%s,z:%s]".formatted(this.waypoint.x(), this.waypoint.y(), this.waypoint.z()));
             Minecraft.getInstance().keyboardHandler.setClipboard(builder.toString());
-            setVisible(false);
+            Minecraft.getInstance().setScreen(null);
+            Minecraft.getInstance().player.displayClientMessage(Component.translatable("civmodern.map.copy", Component.literal(builder.toString())).withColor(0x379FA3), false);
+            Minecraft.getInstance().keyboardHandler.setClipboard(builder.toString());
             this.waypoint = null;
         });
         colourPicker = new HsbColourPicker(
