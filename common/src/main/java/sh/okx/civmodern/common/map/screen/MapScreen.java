@@ -9,6 +9,7 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.Tesselator;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import com.mojang.math.Axis;
+import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
@@ -17,7 +18,8 @@ import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.CoreShaders;
-import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.texture.AbstractTexture;
+import net.minecraft.client.renderer.texture.TextureManager;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.ResourceLocation;
@@ -25,16 +27,21 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.phys.Vec2;
 import org.joml.Matrix4f;
 import sh.okx.civmodern.common.AbstractCivModernMod;
+import sh.okx.civmodern.common.CivMapConfig;
 import sh.okx.civmodern.common.boat.BoatNavigation;
 import sh.okx.civmodern.common.gui.widget.ImageButton;
 import sh.okx.civmodern.common.map.MapCache;
 import sh.okx.civmodern.common.map.RegionAtlasTexture;
 import sh.okx.civmodern.common.map.RegionDataType;
 import sh.okx.civmodern.common.map.RegionKey;
+import sh.okx.civmodern.common.map.waypoints.PlayerWaypoint;
+import sh.okx.civmodern.common.map.waypoints.PlayerWaypoints;
 import sh.okx.civmodern.common.map.waypoints.Waypoint;
 import sh.okx.civmodern.common.map.waypoints.Waypoints;
 import sh.okx.civmodern.common.mixins.ScreenAccessor;
 
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -53,19 +60,27 @@ public class MapScreen extends Screen {
     private static float zoom = 1; // blocks per pixel
 
     private final AbstractCivModernMod mod;
+    private final KeyMapping key;
     private final MapCache mapCache;
     private final BoatNavigation navigation;
     private final Waypoints waypoints;
+    private final PlayerWaypoints playerWaypoints;
 
+    private final CivMapConfig config;
 
     private NewWaypointModal newWaypointModal;
     private EditWaypointModal editWaypointModal;
     private ImageButton openWaypointButton;
 
+    private PositionContextMenu positionContextMenu;
+
     private double x;
     private double y;
 
-    private Waypoint highlightedWaypoint;
+    private Waypoint hoveredWaypoint;
+
+    private int mouseBlockX;
+    private int mouseBlockY;
 
     private boolean targeting = false;
 
@@ -75,12 +90,17 @@ public class MapScreen extends Screen {
 
     private final Set<RegionKey> yLevelInterests = new HashSet<>();
 
-    public MapScreen(AbstractCivModernMod mod, MapCache mapCache, BoatNavigation navigation, Waypoints waypoints) {
+    private boolean changedConfig = false;
+
+    public MapScreen(AbstractCivModernMod mod, KeyMapping key, CivMapConfig config, MapCache mapCache, BoatNavigation navigation, Waypoints waypoints, PlayerWaypoints playerWaypoints) {
         super(Component.translatable("civmodern.screen.map.title"));
 
         this.mod = mod;
+        this.key = key;
+        this.config = config;
         this.mapCache = mapCache;
         this.waypoints = waypoints;
+        this.playerWaypoints = playerWaypoints;
         Window window = Minecraft.getInstance().getWindow();
 
         x = Minecraft.getInstance().player.getX() - (window.getWidth() * zoom) / 2;
@@ -106,6 +126,9 @@ public class MapScreen extends Screen {
         }
         editWaypointModal = new EditWaypointModal(waypoints);
 
+        positionContextMenu = new PositionContextMenu(this.waypoints, newWaypointModal);
+        addRenderableWidget(positionContextMenu);
+
         openWaypointButton = new ImageButton(this.width / 2 - 22, 10, 20, 20, ResourceLocation.fromNamespaceAndPath("civmodern", "gui/new.png"), imbg -> {
             newWaypointModal.setVisible(!newWaypointModal.isVisible());
             if (newWaypointModal.isVisible()) {
@@ -113,16 +136,37 @@ public class MapScreen extends Screen {
                 editWaypointModal.setWaypoint(null);
             }
         });
+        openWaypointButton.setTooltip(Tooltip.create(Component.translatable("civmodern.map.newwaypoint.tooltip")));
         addRenderableWidget(openWaypointButton);
 
         ImageButton targetButton = new ImageButton(this.width / 2 + 2, 10, 20, 20, ResourceLocation.fromNamespaceAndPath("civmodern", "gui/target.png"), imbg -> {
             this.waypoints.setTarget(null);
             targeting = !targeting;
         });
+        targetButton.setTooltip(Tooltip.create(Component.translatable("civmodern.map.highlight.tooltip")));
         addRenderableWidget(targetButton);
 
         addRenderableWidget(newWaypointModal);
         addRenderableWidget(editWaypointModal);
+
+        ResourceLocation togglePlayersImage;
+        if (config.isPlayerWaypointsEnabled()) {
+            togglePlayersImage = ResourceLocation.fromNamespaceAndPath("civmodern", "gui/toggleplayersoff.png");
+        } else {
+            togglePlayersImage = ResourceLocation.fromNamespaceAndPath("civmodern", "gui/toggleplayers.png");
+        }
+        ImageButton togglePlayers = new ImageButton(this.width - 30, 10, 20, 20, togglePlayersImage, imbg -> {
+            // TODO use world config
+            config.setPlayerWaypointsEnabled(!config.isPlayerWaypointsEnabled());
+            changedConfig = true;
+            if (config.isPlayerWaypointsEnabled()) {
+                imbg.setImage(ResourceLocation.fromNamespaceAndPath("civmodern", "gui/toggleplayersoff.png"));
+            } else {
+                imbg.setImage(ResourceLocation.fromNamespaceAndPath("civmodern", "gui/toggleplayers.png"));
+            }
+        });
+        togglePlayers.setTooltip(Tooltip.create(Component.translatable("civmodern.map.players.tooltip")));
+        addRenderableWidget(togglePlayers);
     }
 
     public void setNewWaypoint(Waypoint waypoint) {
@@ -135,6 +179,11 @@ public class MapScreen extends Screen {
 
         float scale = (float) Minecraft.getInstance().getWindow().getGuiScale() * zoom;
         Window window = Minecraft.getInstance().getWindow();
+
+        if (!positionContextMenu.isVisible()) {
+            this.mouseBlockX = (int) Math.floor(mouseX * scale + x);
+            this.mouseBlockY = (int) Math.floor(mouseY * scale + y);
+        }
 
         glClearColor(0, 0, 0, 1);
         glClear(GL_COLOR_BUFFER_BIT);
@@ -180,6 +229,9 @@ public class MapScreen extends Screen {
 
                 waypoint.render(buffer, matrices.last().pose(), 7, 0xFF << 24);
                 matrices.popPose();
+                TextureManager textureManager = Minecraft.getInstance().getTextureManager();
+                AbstractTexture abstractTexture = textureManager.getTexture(waypoint.resourceLocation());
+                abstractTexture.setFilter(true, true);
             }
             BufferUploader.drawWithShader(buffer.buildOrThrow());
 
@@ -208,6 +260,40 @@ public class MapScreen extends Screen {
             }
         }
 
+        if (config.isPlayerWaypointsEnabled()) {
+            for (PlayerWaypoint waypoint : this.playerWaypoints.getWaypoints()) {
+                boolean old = waypoint.timestamp().until(Instant.now(), ChronoUnit.MINUTES) >= 10;
+                int colour = (old ? 0x77 : 0xFF) << 24 | 0xFFFFFF;
+                int bgcolour = (old ? 0x66 : 0xCC) << 24 | 0xCCCCCC;
+
+                // TODO cycle between players on the same snitch
+                matrices.pushPose();
+                double x = waypoint.x() + 0.5;
+                double z = waypoint.z() + 0.5;
+                matrices.translate((x - this.x) / scale, (z - this.y) / scale, 0);
+                waypoint.render(guiGraphics, colour);
+
+                Font font = Minecraft.getInstance().font;
+
+                String str = waypoint.playerName();
+
+                matrices.translate(0, -15, -10);
+                Matrix4f last = matrices.last().pose();
+                RenderSystem.enableBlend();
+                guiGraphics.drawSpecial(source -> {
+                    MutableComponent comp = Component.literal(str);
+                    font.drawInBatch(comp, -font.width(comp) / 2f, (float) 0, colour, false, last, source, Font.DisplayMode.SEE_THROUGH, 1056964608, 15728640, false);
+                    font.drawInBatch(comp, -font.width(comp) / 2f, (float) 0, bgcolour, false, last, source, Font.DisplayMode.NORMAL, 0, 15728880, true);
+                });
+                guiGraphics.drawSpecial(source -> {
+                    MutableComponent comp = Component.literal("(" + getAgo(waypoint.timestamp()) + ")");
+                    font.drawInBatch(comp, -font.width(comp) / 2f, 23, colour, false, last, source, Font.DisplayMode.SEE_THROUGH, 1056964608, 15728640, false);
+                    font.drawInBatch(comp, -font.width(comp) / 2f, 23, bgcolour, false, last, source, Font.DisplayMode.NORMAL, 0, 15728880, true);
+                });
+                matrices.popPose();
+            }
+        }
+
         RenderSystem.depthFunc(GL_LEQUAL);
 
         if (targeting || newWaypointModal.isTargeting()) {
@@ -217,6 +303,8 @@ public class MapScreen extends Screen {
 
             Waypoint targetWaypoint = new Waypoint("", 0, 0, 0, targeting ? "target" : "waypoint", 0xFF0000);
             int transparency = newWaypointModal.isTargeting() ? 0x7F : 0xFF;
+            AbstractTexture abstractTexture = Minecraft.getInstance().getTextureManager().getTexture(targetWaypoint.resourceLocation());
+            abstractTexture.setFilter(true, true);
             targetWaypoint.render(buffer, matrices.last().pose(), 7, transparency << 24);
 
             matrices.popPose();
@@ -236,19 +324,45 @@ public class MapScreen extends Screen {
                 targetWaypoint.render(buffer, matrices.last().pose(), 7, 0x7F << 24);
 
                 matrices.popPose();
-                RenderType.guiTextured(targetWaypoint.resourceLocation()).draw(buffer.buildOrThrow());
+                AbstractTexture abstractTexture = Minecraft.getInstance().getTextureManager().getTexture(targetWaypoint.resourceLocation());
+                abstractTexture.setFilter(true, true);
+                BufferUploader.drawWithShader(buffer.buildOrThrow());
             } catch (NumberFormatException ignored) {
             }
         }
 
-        if (highlightedWaypoint != null) {
+        if (hoveredWaypoint != null) {
             BufferBuilder buffer = tesselator.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX_COLOR);
             matrices.pushPose();
-            double x = highlightedWaypoint.x() + 0.5;
-            double z = highlightedWaypoint.z() + 0.5;
+            double x = hoveredWaypoint.x() + 0.5;
+            double z = hoveredWaypoint.z() + 0.5;
             matrices.translate((x - this.x) / scale, (z - this.y) / scale, 0);
 
-            highlightedWaypoint.renderFocus(buffer, matrices.last().pose(), 7);
+            AbstractTexture abstractTexture = Minecraft.getInstance().getTextureManager().getTexture(hoveredWaypoint.resourceLocation());
+            abstractTexture.setFilter(true, true);
+            hoveredWaypoint.renderFocus(buffer, matrices.last().pose(), 7);
+
+            matrices.popPose();
+            BufferUploader.drawWithShader(buffer.buildOrThrow());
+        } else {
+            BufferBuilder buffer = tesselator.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX_COLOR);
+            matrices.pushPose();
+
+            matrices.translate((mouseBlockX - this.x) / scale, (mouseBlockY - this.y) / scale + 1, 0);
+
+            RenderSystem.setShaderTexture(0, ResourceLocation.fromNamespaceAndPath("civmodern", "map/focus.png"));
+            RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
+            RenderSystem.enableBlend();
+            RenderSystem.defaultBlendFunc();
+            RenderSystem.setShader(CoreShaders.POSITION_TEX_COLOR);
+            int colour = 0xFFFFFF00;
+            Matrix4f pose = matrices.last().pose();
+            int size = 1;
+            matrices.scale(1 / scale, 1 / scale, 1);
+            buffer.addVertex(pose, 0, size, 0).setUv(0, 1).setColor(colour);
+            buffer.addVertex(pose, size, size, 0).setUv(1, 1).setColor(colour);
+            buffer.addVertex(pose, size, 0, 0).setUv(1, 0).setColor(colour);
+            buffer.addVertex(pose, 0, 0, 0).setUv(0, 0).setColor(colour);
 
             matrices.popPose();
             BufferUploader.drawWithShader(buffer.buildOrThrow());
@@ -266,12 +380,14 @@ public class MapScreen extends Screen {
             }
 
             Waypoint targetWaypoint = new Waypoint("", 0, 0, 0, editWaypointModal.getWaypoint().icon(), editWaypointModal.getPreviewColour());
+            AbstractTexture abstractTexture = Minecraft.getInstance().getTextureManager().getTexture(targetWaypoint.resourceLocation());
+            abstractTexture.setFilter(true, true);
             if (editWaypointModal.getPreviewColour() != editWaypointModal.getColour()) {
                 targetWaypoint.render(buffer, matrices.last().pose(), 7, 0xFF << 24);
             } else {
                 targetWaypoint.render(buffer, matrices.last().pose(), 7, 0x7F << 24);
             }
-            RenderType.guiTextured(targetWaypoint.resourceLocation()).draw(buffer.buildOrThrow());
+            BufferUploader.drawWithShader(buffer.buildOrThrow());
 
             Font font = Minecraft.getInstance().font;
 
@@ -436,11 +552,35 @@ public class MapScreen extends Screen {
             return true;
         }
 
-        if (highlightedWaypoint != null && button == 0) {
-            if (editWaypointModal.getWaypoint() != highlightedWaypoint) {
-                editWaypointModal.setWaypoint(highlightedWaypoint);
+        if (hoveredWaypoint != null && button == 0) {
+            if (editWaypointModal.getWaypoint() != hoveredWaypoint) {
+                editWaypointModal.setWaypoint(hoveredWaypoint);
                 editWaypointModal.setVisible(true);
                 newWaypointModal.setVisible(false);
+            }
+        }
+
+        return false;
+    }
+
+    @Override
+    public boolean mouseReleased(double x, double y, int button) {
+        if (super.mouseReleased(x, y, button)) {
+            return true;
+        }
+
+        Window window = Minecraft.getInstance().getWindow();
+        float scale = (float) window.getGuiScale() * zoom;
+
+        if (!boating) {
+            if (hoveredWaypoint == null && button == 1 && !positionContextMenu.isVisible()) {
+                Short yLevel = mapCache.getYLevel(this.mouseBlockX, this.mouseBlockY);
+                positionContextMenu.open(this.mouseBlockX, yLevel, this.mouseBlockY, (int) ((this.mouseBlockX - this.x) / scale), (int) ((this.mouseBlockY - this.y + 1) / scale + 1));
+                positionContextMenu.setVisible(true);
+                return true;
+            } else if (positionContextMenu.isVisible() && !positionContextMenu.isMouseOver(x, y)) {
+                positionContextMenu.setVisible(false);
+                return true;
             }
         }
 
@@ -456,7 +596,7 @@ public class MapScreen extends Screen {
         Waypoint closest = null;
         double mouseWorldX = (mouseX * scale + x);
         double mouseWorldY = (mouseY * scale + y);
-        highlightedWaypoint = null;
+        hoveredWaypoint = null;
         for (Waypoint waypoint : waypointList) {
             if (waypoint.equals(waypoints.getTarget())) {
                 continue;
@@ -471,7 +611,7 @@ public class MapScreen extends Screen {
             double offsetX = (closest.x() + 0.5 - mouseWorldX) / scale;
             double offsetY = (closest.z() + 0.5 - mouseWorldY) / scale;
             if (Math.abs(offsetX) < 8 && Math.abs(offsetY) < 8) {
-                highlightedWaypoint = closest;
+                hoveredWaypoint = closest;
             }
         }
 
@@ -527,6 +667,11 @@ public class MapScreen extends Screen {
             return true;
         }
 
+        if (positionContextMenu.isVisible() && !positionContextMenu.isMouseOver(x, y)) {
+            positionContextMenu.setVisible(false);
+            return true;
+        }
+
         if (button == 0 || button == 1) {
             double scale = Minecraft.getInstance().getWindow().getGuiScale() * zoom;
             this.x -= changeX * scale;
@@ -556,5 +701,32 @@ public class MapScreen extends Screen {
             mapCache.removeInterest(key, RegionDataType.Y_LEVELS);
             iterator.remove();
         }
+        if (changedConfig) {
+            config.save();
+        }
+    }
+
+    public static String getAgo(Instant timestamp) {
+        Instant now = Instant.now();
+        long minutesDiff = timestamp.until(now, ChronoUnit.MINUTES);
+        if (minutesDiff > 0) {
+            return minutesDiff + "m ago";
+        }
+        long secondsDiff = timestamp.until(now, ChronoUnit.SECONDS);
+        long lastDigit = secondsDiff % 10;
+        secondsDiff -= lastDigit;
+        if (secondsDiff < 10) {
+            return "now";
+        }
+        return secondsDiff + "s ago";
+    }
+
+    @Override
+    public boolean keyPressed(int i, int j, int k) {
+        if (this.key.matches(i, j)) {
+            Minecraft.getInstance().setScreen(null);
+            return true;
+        }
+        return super.keyPressed(i, j, k);
     }
 }

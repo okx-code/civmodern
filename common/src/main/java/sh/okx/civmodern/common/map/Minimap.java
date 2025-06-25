@@ -15,9 +15,14 @@ import org.joml.Matrix4f;
 import sh.okx.civmodern.common.CivMapConfig;
 import sh.okx.civmodern.common.ColourProvider;
 import sh.okx.civmodern.common.events.PostRenderGameOverlayEvent;
+import sh.okx.civmodern.common.map.screen.MapScreen;
+import sh.okx.civmodern.common.map.waypoints.PlayerWaypoint;
+import sh.okx.civmodern.common.map.waypoints.PlayerWaypoints;
 import sh.okx.civmodern.common.map.waypoints.Waypoint;
 import sh.okx.civmodern.common.map.waypoints.Waypoints;
 
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -29,6 +34,7 @@ import static sh.okx.civmodern.common.map.RegionAtlasTexture.SIZE;
 public class Minimap {
 
     private final Waypoints waypoints;
+    private final PlayerWaypoints playerWaypoints;
     private final MapCache cache;
     private final CivMapConfig config;
     private final ColourProvider provider;
@@ -41,8 +47,9 @@ public class Minimap {
     }
 
 
-    public Minimap(Waypoints waypoints, MapCache cache, CivMapConfig config, ColourProvider provider) {
+    public Minimap(Waypoints waypoints, PlayerWaypoints playerWaypoints, MapCache cache, CivMapConfig config, ColourProvider provider) {
         this.waypoints = waypoints;
+        this.playerWaypoints = playerWaypoints;
         this.cache = cache;
         this.config = config;
         this.provider = provider;
@@ -123,6 +130,27 @@ public class Minimap {
             drawnX += screenX == 0 ? tmp / 2 : SIZE;
         }
 
+        if (config.isPlayerWaypointsEnabled()) {
+            // TODO fix the player rendering above the chevron
+            // todo fading
+            for (PlayerWaypoint waypoint : this.playerWaypoints.getWaypoints()) {
+                // TODO cycle between players on the same snitch
+                double wx = waypoint.x() + 0.5;
+                double wz = waypoint.z() + 0.5;
+                double tx = (wx - x) / zoom;
+                double ty = (wz - y) / zoom;
+                if (tx < 0 || ty < 0 || tx > size || ty > size) {
+                    continue;
+                }
+                matrices.pushPose();
+                matrices.translate(tx, ty, 200);
+
+                boolean old = waypoint.timestamp().until(Instant.now(), ChronoUnit.MINUTES) >= 10;
+                int colour = (old ? 0x77 : 0xFF) << 24 | 0xFFFFFF;
+                waypoint.render(event.guiGraphics(), colour);
+                matrices.popPose();
+            }
+        }
 
         List<Waypoint> waypointList = waypoints.getWaypoints();
         Map<String, List<Waypoint>> waypointByIcon = new HashMap<>();

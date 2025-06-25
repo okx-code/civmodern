@@ -6,12 +6,14 @@ import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallba
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientChunkEvents;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
+import net.fabricmc.fabric.api.client.message.v1.ClientReceiveMessageEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents;
 import net.minecraft.client.multiplayer.ClientSuggestionProvider;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import sh.okx.civmodern.common.events.ChatReceivedEvent;
 import sh.okx.civmodern.common.events.ChunkLoadEvent;
 import sh.okx.civmodern.common.events.ClientTickEvent;
 import sh.okx.civmodern.common.events.CommandRegistration;
@@ -49,6 +51,12 @@ public class FabricCivModernBootstrap implements ClientModInitializer {
         }); // TODO forge
 
         ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) -> mod.eventBus.post(new CommandRegistration((CommandDispatcher<ClientSuggestionProvider>) (CommandDispatcher<?>) dispatcher, registryAccess)));
+
+        ClientReceiveMessageEvents.GAME.register((message, overlay) -> {
+            if (!overlay) {
+                mod.eventBus.post(new ChatReceivedEvent(message));
+            }
+        });
     }
 
     public static FabricCivModernMod getMod() {

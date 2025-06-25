@@ -12,6 +12,7 @@ import sh.okx.civmodern.common.events.*;
 import sh.okx.civmodern.common.map.converters.JourneymapConverter;
 import sh.okx.civmodern.common.map.converters.VoxelMapConverter;
 import sh.okx.civmodern.common.map.screen.ImportAvailable;
+import sh.okx.civmodern.common.map.waypoints.PlayerWaypoints;
 import sh.okx.civmodern.common.map.waypoints.Waypoints;
 import sh.okx.civmodern.common.mixins.StorageSourceAccessor;
 
@@ -31,6 +32,7 @@ public class WorldListener {
     private Thread converter = null;
 
     private long seed = -1;
+    private PlayerWaypoints playerWaypoints;
 
     public WorldListener(CivMapConfig config, ColourProvider colourProvider) {
         this.config = config;
@@ -66,7 +68,8 @@ public class WorldListener {
         mapFile.mkdirs();
 
         this.file = new MapFolder(mapFile);
-        this.waypoints = new Waypoints(this.file.getConnection()); // TODO: import waypoints
+        this.waypoints = new Waypoints(this.file.getConnection());
+        this.playerWaypoints = new PlayerWaypoints();
 
         ArrayList<String> importableMapMods = new ArrayList<>();
 
@@ -111,7 +114,7 @@ public class WorldListener {
                             ex.printStackTrace();
                         } finally {
                             this.cache = new MapCache(this.file);
-                            this.minimap = new Minimap(this.waypoints, this.cache, this.config, this.provider);
+                            this.minimap = new Minimap(this.waypoints, this.playerWaypoints, this.cache, this.config, this.provider);
                         }
                     }, "Map converter");
                     converter.start();
@@ -120,8 +123,9 @@ public class WorldListener {
         }
 
         AbstractCivModernMod.LOGGER.info("No mods available for import, using existing map data");
+        converter = null;
         this.cache = new MapCache(this.file);
-        this.minimap = new Minimap(this.waypoints, this.cache, this.config, this.provider);
+        this.minimap = new Minimap(this.waypoints, this.playerWaypoints, this.cache, this.config, this.provider);
     }
 
     @Subscribe
@@ -144,12 +148,12 @@ public class WorldListener {
         if (this.waypoints != null) {
             this.waypoints.save();
         }
+        this.playerWaypoints = null;
         this.waypoints = null;
         if (this.file != null) {
             this.file.close();
-            this.file = null;
         }
-        setSeed(-1);
+        this.file = null;
     }
 
     @Subscribe
@@ -189,6 +193,13 @@ public class WorldListener {
         }
     }
 
+    @Subscribe
+    public void onChat(ChatReceivedEvent event) {
+        if (this.playerWaypoints != null) {
+            this.playerWaypoints.acceptSnitchHit(event.message());
+        }
+    }
+
     public void cycleMinimapZoom() {
         if (this.minimap != null) {
             this.minimap.cycleZoom();
@@ -205,5 +216,9 @@ public class WorldListener {
 
     public long getSeed() {
         return this.seed;
+    }
+
+    public PlayerWaypoints getPlayerWaypoints() {
+        return this.playerWaypoints;
     }
 }

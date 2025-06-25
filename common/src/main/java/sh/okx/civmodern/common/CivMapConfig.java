@@ -44,6 +44,7 @@ public class CivMapConfig {
     private int minimapY;
     private Alignment minimapAlignment;
     private int minimapSize;
+    private boolean playerWaypointsEnabled;
 
     public CivMapConfig(File file, Properties properties) {
         this.file = file;
@@ -76,6 +77,7 @@ public class CivMapConfig {
         this.minimapY = Integer.parseInt(properties.getProperty("minimap_y", "5"));
         this.minimapAlignment = Alignment.valueOf(properties.getProperty("minimap_alignment", "top_right").toUpperCase());
         this.minimapSize = Integer.parseInt(properties.getProperty("minimap_size", "100"));
+        this.playerWaypointsEnabled = Boolean.parseBoolean(properties.getProperty("player_waypoints_enabled", "true"));
     }
 
     public void save() {
@@ -109,6 +111,7 @@ public class CivMapConfig {
             properties.setProperty("minimap_y", Integer.toString(minimapY));
             properties.setProperty("minimap_alignment", minimapAlignment.name().toLowerCase());
             properties.setProperty("minimap_size", Integer.toString(minimapSize));
+            properties.setProperty("player_waypoints_enabled", Boolean.toString(playerWaypointsEnabled));
 
             try (FileOutputStream output = new FileOutputStream(file)) {
                 properties.store(output, null);
@@ -349,5 +352,13 @@ public class CivMapConfig {
 
     public void setTextSize(float textSize) {
         this.textSize = textSize;
+    }
+
+    public boolean isPlayerWaypointsEnabled() {
+        return playerWaypointsEnabled;
+    }
+
+    public void setPlayerWaypointsEnabled(boolean playerWaypointsEnabled) {
+        this.playerWaypointsEnabled = playerWaypointsEnabled;
     }
 }
