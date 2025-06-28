@@ -25,6 +25,7 @@ public class RegionLoader {
 
     private int[] mapData;
     private short[] yLevels;
+    private long[] chunkTimestamps;
 
     private final AtomicBoolean hasBeenRendered = new AtomicBoolean(false);
 
@@ -103,6 +104,26 @@ public class RegionLoader {
             }
         }
         return this.yLevels;
+    }
+
+    public long[] getOrLoadChunkTimestamps() {
+        if (this.chunkTimestamps == null) {
+            this.lock.lock();
+            try {
+                if (this.chunkTimestamps != null) {
+                    return this.chunkTimestamps;
+                }
+                byte[] regionData = this.mapFolder.getRegionData(key, RegionDataType.CHUNK_TIMESTAMPS);
+                this.chunkTimestamps = new long[RegionMapUpdater.SIZE / 16 * RegionMapUpdater.SIZE / 16];
+                if (regionData != null) {
+                    ByteBuffer.wrap(regionData).asLongBuffer().get(this.chunkTimestamps);
+                }
+                this.loaded.add(RegionDataType.CHUNK_TIMESTAMPS);
+            } finally {
+                this.lock.unlock();
+            }
+        }
+        return this.chunkTimestamps;
     }
 
     public boolean render() {
