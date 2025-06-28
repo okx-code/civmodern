@@ -86,8 +86,8 @@ public class MapFolder {
                                     buf = ByteBuffer.allocate(512 * 512 * 2);
                                     buf.asShortBuffer().put(entry.getValue().getOrLoadYLevels());
                                 } else if (data == RegionDataType.CHUNK_TIMESTAMPS) {
-                                    buf = ByteBuffer.allocate(512 / 16 * 512 / 16 * 4);
-                                    buf.asIntBuffer().put(entry.getValue().getOrLoadChunkTimestamps());
+                                    buf = ByteBuffer.allocate(512 / 16 * 512 / 16 * 8);
+                                    buf.asLongBuffer().put(entry.getValue().getOrLoadChunkTimestamps());
                                 } else {
                                     throw new IllegalArgumentException();
                                 }

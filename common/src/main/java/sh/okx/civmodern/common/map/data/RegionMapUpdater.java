@@ -86,10 +86,10 @@ public class RegionMapUpdater {
         }
         int[] data = loader.getOrLoadMapData();
         short[] ylevels = loader.getOrLoadYLevels();
-        int[] chunkTimestamps = loader.getOrLoadChunkTimestamps();
+        long[] chunkTimestamps = loader.getOrLoadChunkTimestamps();
 
         int chunkIndex = rz / 16 + rx / 16 * 512 / 16;
-        chunkTimestamps[chunkIndex] = System.currentTimeMillis() / 1000;
+        chunkTimestamps[chunkIndex] = System.currentTimeMillis();
 
         for (int x = rx; x < rx + 16; x++) {
             BlockPos.MutableBlockPos pos;
