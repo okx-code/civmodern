@@ -8,7 +8,14 @@ import net.minecraft.network.chat.Component;
 import sh.okx.civmodern.common.AbstractCivModernMod;
 import sh.okx.civmodern.common.CivMapConfig;
 import sh.okx.civmodern.common.ColourProvider;
-import sh.okx.civmodern.common.events.*;
+import sh.okx.civmodern.common.events.BlockStateChangeEvent;
+import sh.okx.civmodern.common.events.ChatReceivedEvent;
+import sh.okx.civmodern.common.events.ChunkLoadEvent;
+import sh.okx.civmodern.common.events.JoinEvent;
+import sh.okx.civmodern.common.events.LeaveEvent;
+import sh.okx.civmodern.common.events.PostRenderGameOverlayEvent;
+import sh.okx.civmodern.common.events.RespawnEvent;
+import sh.okx.civmodern.common.events.WorldRenderLastEvent;
 import sh.okx.civmodern.common.map.converters.JourneymapConverter;
 import sh.okx.civmodern.common.map.converters.VoxelMapConverter;
 import sh.okx.civmodern.common.map.screen.ImportAvailable;
@@ -18,7 +25,7 @@ import sh.okx.civmodern.common.mixins.StorageSourceAccessor;
 
 import java.io.File;
 import java.nio.file.Path;
-import java.util.ArrayList;
+import java.util.*;
 
 public class WorldListener {
 
@@ -64,10 +71,34 @@ public class WorldListener {
         String dimension = level.dimension().location().getPath();
 
         Path civmapFolder = Minecraft.getInstance().gameDirectory.toPath().resolve("civmap");
-        File mapFile = civmapFolder.resolve(type).resolve(name.replace(":", "_")).resolve(dimension).resolve(String.valueOf(seed)).toFile();
-        mapFile.mkdirs();
+        File mapDirectory = civmapFolder.resolve(type).resolve(name.replace(":", "_")).resolve(dimension).resolve(String.valueOf(seed)).toFile();
 
-        this.file = new MapFolder(mapFile);
+        // attempt to migrate from old map folder structure
+        String oldType = type.equals("sp") ? "c" : "s";
+        File oldMapDirectory = civmapFolder.resolve(oldType).resolve(name.replace(":", "_")).resolve(dimension).toFile();
+        if (!mapDirectory.exists() && oldMapDirectory.exists()) {
+            AbstractCivModernMod.LOGGER.info("Migrating map folder from old structure: " + oldMapDirectory.getAbsolutePath() + " to " + mapDirectory.getAbsolutePath());
+
+            // create root folder so files can be moved
+            mapDirectory.mkdirs();
+
+            // move sqlite file
+            File oldSqliteFile = oldMapDirectory.toPath().resolve("map.sqlite").toFile();
+            File newSqliteFile = mapDirectory.toPath().resolve("map.sqlite").toFile();
+            boolean sqliteResult = oldSqliteFile.renameTo(newSqliteFile);
+            if (!sqliteResult) {
+                AbstractCivModernMod.LOGGER.warn("Failed to move sqlite file from " + oldSqliteFile.getAbsolutePath() + " to " + newSqliteFile.getAbsolutePath());
+            } else {
+                AbstractCivModernMod.LOGGER.info("Moved sqlite file from " + oldSqliteFile.getAbsolutePath() + " to " + newSqliteFile.getAbsolutePath());
+            }
+
+            AbstractCivModernMod.LOGGER.info("Finished migrating map folder from old structure");
+        } else {
+            // attempt to create root since migration would have created it otherwise
+            mapDirectory.mkdirs();
+        }
+
+        this.file = new MapFolder(mapDirectory);
         this.waypoints = new Waypoints(this.file.getConnection());
         this.playerWaypoints = new PlayerWaypoints();
 
