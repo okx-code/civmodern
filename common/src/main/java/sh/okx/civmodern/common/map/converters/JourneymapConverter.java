@@ -30,7 +30,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class JourneymapConverter extends Converter {
+public class JourneymapConverter implements Converter {
 
     private final MapFolder mapFile;
     private final String name;
@@ -85,11 +85,10 @@ public class JourneymapConverter extends Converter {
     }
 
     public void convert() {
-        var listed = getJourmeymapDimensionDir().resolve("cache").toFile().listFiles();
-        if (listed == null) {
+        File[] files = getJourmeymapDimensionDir().resolve("cache").toFile().listFiles();
+        if (files == null) {
             return;
         }
-        var files = reorderFiles(listed);
         AbstractCivModernMod.LOGGER.info("Converting {} Journeymap regions to CivModern regions, this may take a few minutes...", files.length);
         int regionIndex = 0;
         boolean terminated = false;
@@ -112,7 +111,7 @@ public class JourneymapConverter extends Converter {
         IdLookup blockLookup = new IdLookup(mapFile.blockIds(), "minecraft:air");
         IdLookup biomeLookup = new IdLookup(mapFile.biomeIds(), "minecraft:void");
 
-        var regionInfo = new RegionStorageInfo("JourneyMap World", Level.OVERWORLD, "thing");
+        RegionStorageInfo regionInfo = new RegionStorageInfo("JourneyMap World", Level.OVERWORLD, "thing");
 
         ExecutorService service = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
         while (regionIndex < files.length && !terminated) {
@@ -123,7 +122,7 @@ public class JourneymapConverter extends Converter {
                 if (!subRegionFile.isFile()) {
                     continue;
                 }
-                var regionKey = getRegionKey(subRegionFile.getName());
+                RegionKey regionKey = getRegionKey(subRegionFile.getName());
 
                 if (Thread.interrupted()) {
                     terminated = true;
@@ -185,7 +184,7 @@ public class JourneymapConverter extends Converter {
         mapFile.saveBiomeIds(biomeLookup.getNames());
 
         if (modified.get()) {
-            var modData = new MapFolder.ModData();
+            MapFolder.ModData modData = new MapFolder.ModData();
             modData.regions = new ArrayList<>(converted);
             mapFile.getHistory().mods.put("journeymap", modData);
             mapFile.saveHistory();
@@ -203,8 +202,8 @@ public class JourneymapConverter extends Converter {
         Arrays.fill(westY, Integer.MIN_VALUE);
         Arrays.fill(northY, Integer.MIN_VALUE);
 
-        for (var xzCords : chunkData.getAllKeys()) {
-            var cordData = chunkData.getCompound(xzCords);
+        for (String xzCords : chunkData.getAllKeys()) {
+            CompoundTag cordData = chunkData.getCompound(xzCords);
 
             // ensure good data
             if (xzCords.equals("LastChange") || xzCords.equals("pos")) {
@@ -338,8 +337,7 @@ public class JourneymapConverter extends Converter {
             ylevels[index] = (short) y;
         }
 
-        RegionKey key = new RegionKey(regionKey.x(), regionKey.z());
-        RegionLoader regionData = regionMap.computeIfAbsent(key, k -> new RegionLoader(k, mapFile));
+        RegionLoader regionData = regionMap.computeIfAbsent(regionKey, k -> new RegionLoader(k, mapFile));
         int[] saved = regionData.getOrLoadMapData();
         short[] savedY = regionData.getOrLoadYLevels();
 
@@ -372,7 +370,7 @@ public class JourneymapConverter extends Converter {
         }
     }
 
-    protected RegionKey getRegionKey(String fileName) {
+    public RegionKey getRegionKey(String fileName) {
         // r.0.-2.mca
         var name = fileName.substring(2); // remove r.
         String[] parts = name.split("\\.");

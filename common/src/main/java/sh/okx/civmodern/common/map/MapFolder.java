@@ -8,9 +8,19 @@ import org.apache.commons.compress.compressors.zstandard.ZstdCompressorOutputStr
 import sh.okx.civmodern.common.AbstractCivModernMod;
 import sh.okx.civmodern.common.map.data.RegionLoader;
 
-import java.io.*;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
@@ -66,14 +76,14 @@ public class MapFolder {
 
     private History readHistory(File file) {
         if (!file.exists()) {
-            return defaultHisoty();
+            return defaultHistory();
         }
 
-        try (var reader = new FileReader(file)) {
+        try (FileReader reader = new FileReader(file)) {
             return GSON.fromJson(reader, History.class);
         } catch (IOException e) {
             AbstractCivModernMod.LOGGER.warn(e);
-            return defaultHisoty();
+            return defaultHistory();
         }
     }
 
@@ -82,8 +92,8 @@ public class MapFolder {
      *
      * @return
      */
-    private static History defaultHisoty() {
-        var config = new History();
+    private static History defaultHistory() {
+        History config = new History();
         config.mods = new HashMap<>();
         config.settings = new Settings();
         config.settings.enableImportPrompt = true;
