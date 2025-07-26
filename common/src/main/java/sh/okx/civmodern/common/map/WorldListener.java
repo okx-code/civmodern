@@ -150,6 +150,7 @@ public class WorldListener {
                     }, "Map converter");
                     converter.start();
                 }));
+                return;
             }
         }
 
