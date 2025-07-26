@@ -84,95 +84,100 @@ public class RegionMapUpdater {
                 westY[z] = getHeight(registryAccess, west, 15, z);
             }
         }
-        int[] data = loader.getOrLoadMapData();
-        short[] ylevels = loader.getOrLoadYLevels();
-        long[] chunkTimestamps = loader.getOrLoadChunkTimestamps();
+        loader.getLock().writeLock().lock();
+        try {
+            int[] data = loader.getOrLoadMapData();
+            short[] ylevels = loader.getOrLoadYLevels();
+            long[] chunkTimestamps = loader.getOrLoadChunkTimestamps();
 
-        int chunkIndex = rz / 16 + rx / 16 * 512 / 16;
-        chunkTimestamps[chunkIndex] = System.currentTimeMillis();
+            int chunkIndex = rz / 16 + rx / 16 * 512 / 16;
+            chunkTimestamps[chunkIndex] = System.currentTimeMillis();
 
-        for (int x = rx; x < rx + 16; x++) {
-            BlockPos.MutableBlockPos pos;
-            for (int z = rz; z < rz + 16; z++) {
-                pos = new BlockPos.MutableBlockPos(x + chunk.getPos().getRegionX() * 512, chunk.getHeight(Heightmap.Types.WORLD_SURFACE, x, z) + 1, z + chunk.getPos().getRegionZ() * 512);
+            for (int x = rx; x < rx + 16; x++) {
+                BlockPos.MutableBlockPos pos;
+                for (int z = rz; z < rz + 16; z++) {
+                    pos = new BlockPos.MutableBlockPos(x + chunk.getPos().getRegionX() * 512, chunk.getHeight(Heightmap.Types.WORLD_SURFACE, x, z) + 1, z + chunk.getPos().getRegionZ() * 512);
 
-                int dataValue = 0;
-                int current = data[z + x * 512];
-                int yCurrent = ylevels[z + x * 512];
+                    int dataValue = 0;
+                    int current = data[z + x * 512];
+                    int yCurrent = ylevels[z + x * 512];
 
-                Block block;
-                int depth;
+                    Block block;
+                    int depth;
 
-                do {
-                    pos.setY(pos.getY() - 1);
-                    BlockState state = chunk.getBlockState(pos);
-                    if (state.getFluidState().is(Fluids.WATER) || state.getFluidState().is(Fluids.FLOWING_WATER)) {
-                        BlockPos bottomPos = new BlockPos.MutableBlockPos(pos.getX(), chunk.getHeight(Heightmap.Types.OCEAN_FLOOR_WG, pos.getX(), pos.getZ()), pos.getZ());
-                        depth = pos.getY() - bottomPos.getY();
-                        block = chunk.getBlockState(bottomPos).getBlock();
+                    do {
+                        pos.setY(pos.getY() - 1);
+                        BlockState state = chunk.getBlockState(pos);
+                        if (state.getFluidState().is(Fluids.WATER) || state.getFluidState().is(Fluids.FLOWING_WATER)) {
+                            BlockPos bottomPos = new BlockPos.MutableBlockPos(pos.getX(), chunk.getHeight(Heightmap.Types.OCEAN_FLOOR_WG, pos.getX(), pos.getZ()), pos.getZ());
+                            depth = pos.getY() - bottomPos.getY();
+                            block = chunk.getBlockState(bottomPos).getBlock();
+                        } else {
+                            block = state.getBlock();
+                            depth = 0;
+                        }
+
+                        if (ColoursConfig.BLOCK_COLOURS.getOrDefault(registryAccess.lookupOrThrow(Registries.BLOCK).getKey(block).toString(), block.defaultMapColor().col) > 0) {
+                            break;
+                        }
+                    } while (pos.getY() > chunk.getMinY());
+
+                    int blockId = blockLookup.getOrCreateId(registryAccess.lookupOrThrow(Registries.BLOCK).getKey(block).toString()) + 1;
+                    if (blockId > 0xFFFE) {
+                        AbstractCivModernMod.LOGGER.warn("block " + blockId + " at pos " + pos);
+                        blockId = 0;
+                    }
+                    dataValue |= blockId << 16;
+                    dataValue |= Math.min(depth, 0xF) << 12;
+
+                    if (westY[z - rz] != Integer.MIN_VALUE) {
+                        if (westY[z - rz] > pos.getY() - depth) {
+                            dataValue |= 0b11 << 10;
+                        } else if (westY[z - rz] == pos.getY() - depth) {
+                            dataValue |= 0b01 << 10;
+                        }
+                    } else if ((current >> 10 & 0x3) == 0) {
+                        dataValue |= 0b10 << 10;
                     } else {
-                        block = state.getBlock();
-                        depth = 0;
+                        dataValue |= current & 0xC00;
                     }
+                    westY[z - rz] = pos.getY() - depth;
 
-                    if (ColoursConfig.BLOCK_COLOURS.getOrDefault(registryAccess.lookupOrThrow(Registries.BLOCK).getKey(block).toString(), block.defaultMapColor().col) > 0) {
-                        break;
+                    if (northY[x - rx] != Integer.MIN_VALUE) {
+                        if (northY[x - rx] > pos.getY() - depth) {
+                            dataValue |= 0b11 << 8;
+                        } else if (northY[x - rx] == pos.getY() - depth) {
+                            dataValue |= 0b01 << 8;
+                        }
+                    } else if ((current >> 8 & 0x3) == 0) {
+                        dataValue |= 0b10 << 8;
+                    } else {
+                        dataValue |= current & 0x300;
                     }
-                } while (pos.getY() > chunk.getMinY());
+                    northY[x - rx] = pos.getY() - depth;
 
-                int blockId = blockLookup.getOrCreateId(registryAccess.lookupOrThrow(Registries.BLOCK).getKey(block).toString()) + 1;
-                if (blockId > 0xFFFE) {
-                    AbstractCivModernMod.LOGGER.warn("block " + blockId + " at pos " + pos);
-                    blockId = 0;
-                }
-                dataValue |= blockId << 16;
-                dataValue |= Math.min(depth, 0xF) << 12;
 
-                if (westY[z - rz] != Integer.MIN_VALUE) {
-                    if (westY[z - rz] > pos.getY() - depth) {
-                        dataValue |= 0b11 << 10;
-                    } else if (westY[z - rz] == pos.getY() - depth) {
-                        dataValue |= 0b01 << 10;
+                    int biomeId = biomeLookup.getOrCreateId(registry.getKey(chunk.getNoiseBiome(pos.getX() >> 2, pos.getY() >> 2, pos.getZ() >> 2).value()).toString());
+                    if (biomeId > 0xFF) {
+                        AbstractCivModernMod.LOGGER.warn("biome " + biomeId + " at pos " + pos);
+                        biomeId = 0;
                     }
-                } else if ((current >> 10 & 0x3) == 0) {
-                    dataValue |= 0b10 << 10;
-                } else {
-                    dataValue |= current & 0xC00;
-                }
-                westY[z - rz] = pos.getY() - depth;
+                    dataValue |= biomeId;
 
-                if (northY[x - rx] != Integer.MIN_VALUE) {
-                    if (northY[x - rx] > pos.getY() - depth) {
-                        dataValue |= 0b11 << 8;
-                    } else if (northY[x - rx] == pos.getY() - depth) {
-                        dataValue |= 0b01 << 8;
+                    data[z + x * 512] = dataValue;
+                    short ylevel = (short) pos.getY();
+                    if (ylevel >= 0) {
+                        ylevel++; // zero has a special significance as the null value
                     }
-                } else if ((current >> 8 & 0x3) == 0) {
-                    dataValue |= 0b10 << 8;
-                } else {
-                    dataValue |= current & 0x300;
-                }
-                northY[x - rx] = pos.getY() - depth;
+                    ylevels[z + x * 512] = ylevel;
 
-
-                int biomeId = biomeLookup.getOrCreateId(registry.getKey(chunk.getNoiseBiome(pos.getX() >> 2, pos.getY() >> 2, pos.getZ() >> 2).value()).toString());
-                if (biomeId > 0xFF) {
-                    AbstractCivModernMod.LOGGER.warn("biome " + biomeId + " at pos " + pos);
-                    biomeId = 0;
-                }
-                dataValue |= biomeId;
-
-                data[z + x * 512] = dataValue;
-                short ylevel = (short) pos.getY();
-                if (ylevel >= 0) {
-                    ylevel++; // zero has a special significance as the null value
-                }
-                ylevels[z + x * 512] = ylevel;
-
-                if (current != dataValue || ylevel != yCurrent) {
-                    updated = true;
+                    if (current != dataValue || ylevel != yCurrent) {
+                        updated = true;
+                    }
                 }
             }
+        } finally {
+            loader.getLock().writeLock().unlock();
         }
 
         return updated;

@@ -10,16 +10,19 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 public class RegionLoader {
 
     private final Set<RegionDataType> loaded = EnumSet.noneOf(RegionDataType.class);
 
-    private final Lock lock = new ReentrantLock();
+    private final ReadWriteLock lock = new ReentrantReadWriteLock();
 
     private final Lock renderLock = new ReentrantLock();
 
@@ -28,8 +31,7 @@ public class RegionLoader {
     private long[] chunkTimestamps;
 
     private final AtomicBoolean hasBeenRendered = new AtomicBoolean(false);
-
-    private final Map<RegionDataType, AtomicInteger> interests = new ConcurrentHashMap<>();
+    private final AtomicInteger refCount = new AtomicInteger(0);
 
     private final RegionKey key;
     private final MapFolder mapFolder;
@@ -39,36 +41,24 @@ public class RegionLoader {
         this.mapFolder = mapFolder;
     }
 
-    public void addInterest(RegionDataType type) {
-        this.interests.compute(type, (k, v) -> {
-            if (v == null) {
-                return new AtomicInteger(1);
-            } else {
-                v.incrementAndGet();
-                return v;
-            }
-        });
+    public void addReference() {
+        this.refCount.incrementAndGet();
     }
 
-    public void removeInterest(RegionDataType type) {
-        this.interests.compute(type, (k, v) -> {
-            if (v == null) {
-                return null;
-            } else if (v.decrementAndGet() == 0) {
-                return null;
-            } else {
-                return v;
-            }
-        });
+    public void removeReference() {
+        int i = this.refCount.decrementAndGet();
+        if (i < 0) {
+            throw new IllegalStateException("ref count is negative");
+        }
     }
 
-    public boolean hasInterests() {
-        return !this.interests.isEmpty();
+    public boolean isReferenced() {
+        return this.refCount.get() > 0;
     }
 
     public int[] getOrLoadMapData() {
         if (this.mapData == null) {
-            this.lock.lock();
+            this.lock.writeLock().lock();
             try {
                 if (this.mapData != null) {
                     return this.mapData;
@@ -80,7 +70,7 @@ public class RegionLoader {
                 }
                 this.loaded.add(RegionDataType.MAP);
             } finally {
-                this.lock.unlock();
+                this.lock.writeLock().unlock();
             }
         }
         return this.mapData;
@@ -88,7 +78,7 @@ public class RegionLoader {
 
     public short[] getOrLoadYLevels() {
         if (this.yLevels == null) {
-            this.lock.lock();
+            this.lock.writeLock().lock();
             try {
                 if (this.yLevels != null) {
                     return this.yLevels;
@@ -100,7 +90,7 @@ public class RegionLoader {
                 }
                 this.loaded.add(RegionDataType.Y_LEVELS);
             } finally {
-                this.lock.unlock();
+                this.lock.writeLock().unlock();
             }
         }
         return this.yLevels;
@@ -108,7 +98,7 @@ public class RegionLoader {
 
     public long[] getOrLoadChunkTimestamps() {
         if (this.chunkTimestamps == null) {
-            this.lock.lock();
+            this.lock.writeLock().lock();
             try {
                 if (this.chunkTimestamps != null) {
                     return this.chunkTimestamps;
@@ -120,7 +110,7 @@ public class RegionLoader {
                 }
                 this.loaded.add(RegionDataType.CHUNK_TIMESTAMPS);
             } finally {
-                this.lock.unlock();
+                this.lock.writeLock().unlock();
             }
         }
         return this.chunkTimestamps;
@@ -131,12 +121,16 @@ public class RegionLoader {
     }
 
     public Set<RegionDataType> getLoaded() {
-        this.lock.lock();
+        this.lock.readLock().lock();
         try {
             return new HashSet<>(this.loaded);
         } finally {
-            this.lock.unlock();
+            this.lock.readLock().unlock();
         }
+    }
+
+    public ReadWriteLock getLock() {
+        return lock;
     }
 
     public Lock getRenderLock() {

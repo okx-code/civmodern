@@ -488,8 +488,9 @@ public class MapScreen extends Screen {
         int px = (int) Math.floor(mouseX * scale + (float) x);
         int pz = (int) Math.floor(mouseY * scale + (float) y);
         RegionKey key = mapCache.getRegionKey(px, pz);
-        mapCache.addInterest(key, RegionDataType.Y_LEVELS);
-        this.yLevelInterests.add(key);
+        if (this.yLevelInterests.add(key)) {
+            mapCache.addReference(key);
+        }
         Short y = mapCache.getYLevel(px, pz);
         guiGraphics.drawCenteredString(font, "(%d, %s, %d)".formatted(px, y == null ? "?" : Short.toString(y), pz), (int) (this.width / 2 / textScale), (int) ((this.height - 16) / textScale), -1);
 
@@ -696,11 +697,10 @@ public class MapScreen extends Screen {
 
     @Override
     public void removed() {
-        for (Iterator<RegionKey> iterator = this.yLevelInterests.iterator(); iterator.hasNext(); ) {
-            RegionKey key = iterator.next();
-            mapCache.removeInterest(key, RegionDataType.Y_LEVELS);
-            iterator.remove();
+        for (RegionKey key : this.yLevelInterests) {
+            mapCache.removeReference(key);
         }
+        this.yLevelInterests.clear();
         if (changedConfig) {
             config.save();
         }

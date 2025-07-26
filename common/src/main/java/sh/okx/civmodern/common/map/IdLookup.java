@@ -58,6 +58,11 @@ public class IdLookup {
     }
 
     public Int2ObjectMap<String> getNames() {
-        return fromId;
+        try {
+            lock.readLock().lock();
+            return new Int2ObjectOpenHashMap<>(fromId);
+        } finally {
+            lock.readLock().unlock();
+        }
     }
 }

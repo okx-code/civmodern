@@ -4,10 +4,7 @@ import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import org.apache.commons.compress.compressors.zstandard.ZstdCompressorInputStream;
 import org.apache.commons.compress.compressors.zstandard.ZstdCompressorOutputStream;
-import org.apache.commons.compress.compressors.zstandard.ZstdUtils;
-import sh.okx.civmodern.common.AbstractCivModernMod;
 import sh.okx.civmodern.common.map.data.RegionLoader;
-import sh.okx.civmodern.common.map.data.RegionMapUpdater;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -20,7 +17,6 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -28,8 +24,6 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
-import java.util.zip.GZIPInputStream;
-import java.util.zip.GZIPOutputStream;
 
 public class MapFolder {
 
@@ -111,7 +105,7 @@ public class MapFolder {
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);
             }
-            try (PreparedStatement statement = this.connection.prepareStatement("INSERT INTO regions (x, z, type, data) VALUES (?, ?, ?, ?) ON CONFLICT DO UPDATE SET data = ?")) {
+            try (PreparedStatement statement = this.connection.prepareStatement("INSERT INTO regions (x, z, type, data) VALUES (?, ?, ?, ?) ON CONFLICT DO UPDATE SET data = excluded.data")) {
                 for (Map.Entry<RegionKey, RegionLoader> entry : dataMap.entrySet()) {
                     for (RegionDataType data : entry.getValue().getLoaded()) {
                         statement.setInt(1, entry.getKey().x());
@@ -121,7 +115,6 @@ public class MapFolder {
                         byte[] bytes = compressed.get(entry.getKey()).get(data);
 
                         statement.setBytes(4, bytes);
-                        statement.setBytes(5, bytes);
                         statement.addBatch();
                     }
                 }

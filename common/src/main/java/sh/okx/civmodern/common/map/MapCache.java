@@ -7,6 +7,7 @@ import net.minecraft.world.level.chunk.ChunkAccess;
 import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.level.chunk.status.ChunkStatus;
 import net.minecraft.world.level.levelgen.Heightmap;
+import sh.okx.civmodern.common.AbstractCivModernMod;
 import sh.okx.civmodern.common.map.data.RegionLoader;
 import sh.okx.civmodern.common.map.data.RegionMapUpdater;
 import sh.okx.civmodern.common.map.data.RegionRenderer;
@@ -17,6 +18,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -25,6 +27,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
@@ -49,8 +52,6 @@ public class MapCache {
     });
     private final ScheduledExecutorService executor = Executors.newScheduledThreadPool(Math.max(2, Runtime.getRuntime().availableProcessors()) - 1);
 
-    private final Map<ChunkPos, ScheduledFuture<?>> debounced = new ConcurrentHashMap<>();
-
     private final MapFolder mapFile;
 
     private final Set<RegionKey> availableRegions;
@@ -64,6 +65,8 @@ public class MapCache {
         this.availableRegions = mapFile.listRegions();
         this.blockLookup = new IdLookup(mapFile.blockIds(), "minecraft:air");
         this.biomeLookup = new IdLookup(mapFile.biomeIds(), "minecraft:void");
+
+        this.executor.scheduleAtFixedRate(this::cacheEvict, 2, 2, TimeUnit.MINUTES);
     }
 
     private void primeHeightmaps(ChunkAccess chunk) {
@@ -81,35 +84,24 @@ public class MapCache {
         return new RegionKey(x >> 9, z >> 9);
     }
 
-    public void addInterest(RegionKey key, RegionDataType type) {
-        try {
-            this.evictionLock.readLock().lock();
-            RegionLoader loader = cache.computeIfAbsent(key, k -> new RegionLoader(k, mapFile));
-            loader.addInterest(type);
-        } finally {
-            this.evictionLock.readLock().unlock();
-        }
+    public void addReference(RegionKey key) {
+        cache.compute(key, (k, v) -> {
+            RegionLoader rg = Objects.requireNonNullElseGet(v, () -> new RegionLoader(k, mapFile));
+            rg.addReference();
+            return rg;
+        });
     }
 
-    public void removeInterest(RegionKey key, RegionDataType type) {
-        try {
-            this.evictionLock.readLock().lock();
-            RegionLoader loader = cache.computeIfAbsent(key, k -> new RegionLoader(k, mapFile));
-            loader.removeInterest(type);
-        } finally {
-            this.evictionLock.readLock().unlock();
-        }
+    public void removeReference(RegionKey key) {
+        cache.computeIfPresent(key, (k, v) -> {
+            v.removeReference();
+            return v;
+        });
     }
 
     public Short getYLevel(int x, int z) {
         RegionKey key = getRegionKey(x, z);
-        RegionLoader loader;
-        try {
-            this.evictionLock.readLock().lock();
-            loader = cache.computeIfAbsent(key, k -> new RegionLoader(k, mapFile));
-        } finally {
-            this.evictionLock.readLock().unlock();
-        }
+        RegionLoader loader = cache.computeIfAbsent(key, k -> new RegionLoader(k, mapFile));
         // TODO make async
         short[] ylevels = loader.getOrLoadYLevels();
         if (ylevels == null) {
@@ -150,39 +142,32 @@ public class MapCache {
 
         boolean addedAtlas = gettingAtlas.add(atlas);
         executor.submit(() -> {
+            RegionLoader loader = cache.compute(region, (k, v) -> {
+                RegionLoader rg = Objects.requireNonNullElseGet(v, () -> new RegionLoader(k, mapFile));
+                rg.addReference();
+                return rg;
+            });
             try {
-                this.evictionLock.readLock().lock();
-                RegionLoader loader = cache.computeIfAbsent(region, k -> new RegionLoader(k, mapFile));
-                loader.addInterest(RegionDataType.MAP);
-                try {
-                    // TODO fully get rid of banding, this is only a partial solution
-                    RegionMapUpdater updater = new RegionMapUpdater(loader, blockLookup, biomeLookup);
-                    boolean updated = updater.updateChunk(chunk.getLevel().registryAccess(), chunk, north, west);
+                // TODO fully get rid of banding, this is only a partial solution
+                RegionMapUpdater updater = new RegionMapUpdater(loader, blockLookup, biomeLookup);
+                boolean updated = updater.updateChunk(chunk.getLevel().registryAccess(), chunk, north, west);
 
-                    // todo check this if the full screen map is loading y level data
-                    // todo put this on a 60 second loop
-                    // also test with while true to make sure there are no race conditions
-//            cacheEvict(cache); // todo don't cache evict if gui is open?
-
-                    boolean shouldRender = loader.render();
-                    if (shouldRender) {
+                boolean shouldRender = loader.render();
+                if (shouldRender) {
+                    RegionRenderer renderer = new RegionRenderer(loader, blockLookup, biomeLookup);
+                    renderer.render(tex, region.x() & ATLAS_LENGTH - 1, region.z() & ATLAS_LENGTH - 1);
+                }
+                if (updated) {
+                    dirtySaveRegions.add(region);
+                    if (!shouldRender) {
+                        int regionLocalX = pos.getRegionLocalX();
+                        int regionLocalZ = pos.getRegionLocalZ();
                         RegionRenderer renderer = new RegionRenderer(loader, blockLookup, biomeLookup);
-                        renderer.render(tex, region.x() & ATLAS_LENGTH - 1, region.z() & ATLAS_LENGTH - 1);
+                        renderer.renderChunk(tex, region.x() & ATLAS_LENGTH - 1, region.z() & ATLAS_LENGTH - 1, regionLocalX, regionLocalZ);
                     }
-                    if (updated) {
-                        dirtySaveRegions.add(region);
-                        if (!shouldRender) {
-                            int regionLocalX = pos.getRegionLocalX();
-                            int regionLocalZ = pos.getRegionLocalZ();
-                            RegionRenderer renderer = new RegionRenderer(loader, blockLookup, biomeLookup);
-                            renderer.renderChunk(tex, region.x() & ATLAS_LENGTH - 1, region.z() & ATLAS_LENGTH - 1, regionLocalX, regionLocalZ);
-                        }
-                    }
-                } finally {
-                    loader.removeInterest(RegionDataType.MAP);
                 }
             } finally {
-                this.evictionLock.readLock().unlock();
+                loader.removeReference();
             }
             if (addedAtlas) {
                 for (int x = 0; x < ATLAS_LENGTH; x++) {
@@ -196,7 +181,7 @@ public class MapCache {
         });
     }
 
-    private void cacheEvict(Map<RegionKey, RegionLoader> cache) {
+    private void cacheEvict() {
         try {
             this.evictionLock.writeLock().lock();
             Iterator<Map.Entry<RegionKey, RegionLoader>> iterator = cache.entrySet().iterator();
@@ -204,7 +189,7 @@ public class MapCache {
             while (iterator.hasNext()) {
                 Map.Entry<RegionKey, RegionLoader> entry = iterator.next();
                 // TODO save specific interests instead of checking for all and then cancelling
-                if (entry.getValue().hasInterests()) {
+                if (entry.getValue().isReferenced()) {
                     continue;
                 }
 
@@ -217,6 +202,9 @@ public class MapCache {
                         toSave.put(entry.getKey(), entry.getValue());
                     }
                 }
+            }
+            if (toSave.isEmpty()) {
+                return;
             }
             this.mapFile.saveBlockIds(this.blockLookup.getNames());
             this.mapFile.saveBiomeIds(this.biomeLookup.getNames());
@@ -251,26 +239,24 @@ public class MapCache {
     }
 
     private void enqueue(RegionKey region) {
+        cache.compute(region, (k, v) -> {
+            RegionLoader rg = Objects.requireNonNullElseGet(v, () -> new RegionLoader(k, mapFile));
+            rg.addReference();
+            return rg;
+        });
         queue.add(region);
         executor.submit(() -> {
             RegionKey poll = queue.poll();
             if (poll == null) {
                 return;
             }
+            RegionLoader loader = Objects.requireNonNull(cache.get(poll));
             try {
-                this.evictionLock.readLock().lock(); // TODO make lock less coarse
-                RegionLoader loader = cache.computeIfAbsent(poll, k -> new RegionLoader(k, mapFile));
-
-                loader.addInterest(RegionDataType.MAP);
-                try {
-                    // TODO fully get rid of banding, this is only a partial solution
-                    RegionRenderer renderer = new RegionRenderer(loader, blockLookup, biomeLookup);
-                    renderer.render(this.textureCache.get(new RegionKey(poll.x() >> ATLAS_BITS, poll.z() >> ATLAS_BITS)), poll.x() & ATLAS_LENGTH - 1, poll.z() & ATLAS_LENGTH - 1);
-                } finally {
-                    loader.removeInterest(RegionDataType.MAP);
-                }
+                // TODO fully get rid of banding, this is only a partial solution
+                RegionRenderer renderer = new RegionRenderer(loader, blockLookup, biomeLookup);
+                renderer.render(this.textureCache.get(new RegionKey(poll.x() >> ATLAS_BITS, poll.z() >> ATLAS_BITS)), poll.x() & ATLAS_LENGTH - 1, poll.z() & ATLAS_LENGTH - 1);
             } finally {
-                this.evictionLock.readLock().unlock();
+                loader.removeReference();
             }
         });
     }
