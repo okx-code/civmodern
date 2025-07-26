@@ -232,6 +232,10 @@ public abstract class AbstractCivModernMod {
         return new MainConfigScreen(this.config, this.colourProvider, previousScreen);
     }
 
+    public WorldListener getWorldListener() {
+        return worlds;
+    }
+
     public static AbstractCivModernMod getInstance() {
         return INSTANCE;
     }

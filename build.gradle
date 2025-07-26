@@ -42,6 +42,8 @@ allprojects {
             }
         }
         maven { url 'https://maven.wispforest.io/releases/' }
+        maven { url 'https://jitpack.io' }
+        mavenCentral()
     }
 
     tasks.withType(JavaCompile).configureEach {
