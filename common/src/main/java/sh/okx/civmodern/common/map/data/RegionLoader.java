@@ -31,7 +31,6 @@ public class RegionLoader {
     private long[] chunkTimestamps;
 
     private final AtomicBoolean hasBeenRendered = new AtomicBoolean(false);
-    private final AtomicInteger refCount = new AtomicInteger(0);
 
     private final RegionKey key;
     private final MapFolder mapFolder;
@@ -39,21 +38,6 @@ public class RegionLoader {
     public RegionLoader(RegionKey key, MapFolder mapFolder) {
         this.key = key;
         this.mapFolder = mapFolder;
-    }
-
-    public void addReference() {
-        this.refCount.incrementAndGet();
-    }
-
-    public void removeReference() {
-        int i = this.refCount.decrementAndGet();
-        if (i < 0) {
-            throw new IllegalStateException("ref count is negative");
-        }
-    }
-
-    public boolean isReferenced() {
-        return this.refCount.get() > 0;
     }
 
     public int[] getOrLoadMapData() {

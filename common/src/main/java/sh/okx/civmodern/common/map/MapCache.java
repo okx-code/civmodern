@@ -7,12 +7,12 @@ import net.minecraft.world.level.chunk.ChunkAccess;
 import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.level.chunk.status.ChunkStatus;
 import net.minecraft.world.level.levelgen.Heightmap;
-import sh.okx.civmodern.common.AbstractCivModernMod;
 import sh.okx.civmodern.common.map.data.RegionLoader;
 import sh.okx.civmodern.common.map.data.RegionMapUpdater;
+import sh.okx.civmodern.common.map.data.RegionReference;
 import sh.okx.civmodern.common.map.data.RegionRenderer;
+import sun.misc.Unsafe;
 
-import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -26,7 +26,6 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -39,9 +38,7 @@ public class MapCache {
 
     // maybe downsample texture atlases? rendering a full civmc map is >1GB of VRAM
     private final Map<RegionKey, RegionAtlasTexture> textureCache = new ConcurrentHashMap<>();
-    private final Map<RegionKey, RegionLoader> cache = new ConcurrentHashMap<>();
-
-    private final Set<RegionKey> dirtySaveRegions = Collections.newSetFromMap(new ConcurrentHashMap<>());
+    private final Map<RegionKey, RegionReference> cache = new ConcurrentHashMap<>();
 
     private final Queue<RegionKey> queue = new PriorityBlockingQueue<>(11, (r1, r2) -> {
         int px = Minecraft.getInstance().player.getBlockX();
@@ -84,11 +81,15 @@ public class MapCache {
         return new RegionKey(x >> 9, z >> 9);
     }
 
-    public void addReference(RegionKey key) {
-        cache.compute(key, (k, v) -> {
-            RegionLoader rg = Objects.requireNonNullElseGet(v, () -> new RegionLoader(k, mapFile));
-            rg.addReference();
-            return rg;
+    public RegionReference addReference(RegionKey key) {
+        return cache.compute(key, (k, v) -> {
+            RegionLoader loader;
+            if (v == null || (loader = v.getLoader()) == null) {
+                return new RegionReference(new RegionLoader(k, mapFile), 1);
+            } else {
+                v.addReference(loader);
+                return v;
+            }
         });
     }
 
@@ -101,20 +102,24 @@ public class MapCache {
 
     public Short getYLevel(int x, int z) {
         RegionKey key = getRegionKey(x, z);
-        RegionLoader loader = cache.computeIfAbsent(key, k -> new RegionLoader(k, mapFile));
-        // TODO make async
-        short[] ylevels = loader.getOrLoadYLevels();
-        if (ylevels == null) {
-            return null;
-        }
-        short ylevel = ylevels[Math.floorMod(z, 512) + Math.floorMod(x, 512) * 512];
+        RegionReference ref = addReference(key);
+        try {
+            // TODO make async
+            short[] ylevels = ref.getLoader().getOrLoadYLevels();
+            if (ylevels == null) {
+                return null;
+            }
+            short ylevel = ylevels[Math.floorMod(z, 512) + Math.floorMod(x, 512) * 512];
 
-        if (ylevel > 0) {
-            return (short) (ylevel - 1);
-        } else if (ylevel == 0) {
-            return null;
-        } else {
-            return ylevel;
+            if (ylevel > 0) {
+                return (short) (ylevel - 1);
+            } else if (ylevel == 0) {
+                return null;
+            } else {
+                return ylevel;
+            }
+        } finally {
+            ref.removeReference();
         }
     }
 
@@ -142,12 +147,9 @@ public class MapCache {
 
         boolean addedAtlas = gettingAtlas.add(atlas);
         executor.submit(() -> {
-            RegionLoader loader = cache.compute(region, (k, v) -> {
-                RegionLoader rg = Objects.requireNonNullElseGet(v, () -> new RegionLoader(k, mapFile));
-                rg.addReference();
-                return rg;
-            });
+            RegionReference reference = addReference(region);
             try {
+                RegionLoader loader = reference.getLoader();
                 // TODO fully get rid of banding, this is only a partial solution
                 RegionMapUpdater updater = new RegionMapUpdater(loader, blockLookup, biomeLookup);
                 boolean updated = updater.updateChunk(chunk.getLevel().registryAccess(), chunk, north, west);
@@ -158,7 +160,7 @@ public class MapCache {
                     renderer.render(tex, region.x() & ATLAS_LENGTH - 1, region.z() & ATLAS_LENGTH - 1);
                 }
                 if (updated) {
-                    dirtySaveRegions.add(region);
+                    reference.markDirty();
                     if (!shouldRender) {
                         int regionLocalX = pos.getRegionLocalX();
                         int regionLocalZ = pos.getRegionLocalZ();
@@ -167,7 +169,7 @@ public class MapCache {
                     }
                 }
             } finally {
-                loader.removeReference();
+                reference.removeReference();
             }
             if (addedAtlas) {
                 for (int x = 0; x < ATLAS_LENGTH; x++) {
@@ -184,11 +186,10 @@ public class MapCache {
     private void cacheEvict() {
         try {
             this.evictionLock.writeLock().lock();
-            Iterator<Map.Entry<RegionKey, RegionLoader>> iterator = cache.entrySet().iterator();
+            Iterator<Map.Entry<RegionKey, RegionReference>> iterator = cache.entrySet().iterator();
             Map<RegionKey, RegionLoader> toSave = new HashMap<>();
             while (iterator.hasNext()) {
-                Map.Entry<RegionKey, RegionLoader> entry = iterator.next();
-                // TODO save specific interests instead of checking for all and then cancelling
+                Map.Entry<RegionKey, RegionReference> entry = iterator.next();
                 if (entry.getValue().isReferenced()) {
                     continue;
                 }
@@ -198,8 +199,9 @@ public class MapCache {
                 double dist = Mth.lengthSquared(entry.getKey().x() * 512 + 256 - px, entry.getKey().z() * 512 + 256 - pz);
                 if (dist > 96 * 16 * 96 * 16) {
                     iterator.remove();
-                    if (this.dirtySaveRegions.remove(entry.getKey())) {
-                        toSave.put(entry.getKey(), entry.getValue());
+                    RegionLoader loader = entry.getValue().getLoader();
+                    if (entry.getValue().clearDirty()) {
+                        toSave.put(entry.getKey(), loader);
                     }
                 }
             }
@@ -239,24 +241,20 @@ public class MapCache {
     }
 
     private void enqueue(RegionKey region) {
-        cache.compute(region, (k, v) -> {
-            RegionLoader rg = Objects.requireNonNullElseGet(v, () -> new RegionLoader(k, mapFile));
-            rg.addReference();
-            return rg;
-        });
+        this.addReference(region);
         queue.add(region);
         executor.submit(() -> {
             RegionKey poll = queue.poll();
             if (poll == null) {
                 return;
             }
-            RegionLoader loader = Objects.requireNonNull(cache.get(poll));
+            RegionReference reference = Objects.requireNonNull(cache.get(poll));
             try {
                 // TODO fully get rid of banding, this is only a partial solution
-                RegionRenderer renderer = new RegionRenderer(loader, blockLookup, biomeLookup);
+                RegionRenderer renderer = new RegionRenderer(reference.getLoader(), blockLookup, biomeLookup);
                 renderer.render(this.textureCache.get(new RegionKey(poll.x() >> ATLAS_BITS, poll.z() >> ATLAS_BITS)), poll.x() & ATLAS_LENGTH - 1, poll.z() & ATLAS_LENGTH - 1);
             } finally {
-                loader.removeReference();
+                reference.removeReference();
             }
         });
     }
@@ -267,12 +265,11 @@ public class MapCache {
         executor.submit(() -> {
             try {
                 Map<RegionKey, RegionLoader> toSave = new HashMap<>();
-                for (Iterator<RegionKey> iterator = dirtySaveRegions.iterator(); iterator.hasNext(); ) {
-                    RegionKey dirtySave = iterator.next();
-                    RegionLoader cached = this.cache.get(dirtySave);
-                    if (cached != null) {
-                        toSave.put(dirtySave, cached);
-                        iterator.remove();
+                for (Map.Entry<RegionKey, RegionReference> cacheEntry : this.cache.entrySet()) {
+                    RegionReference loader = cacheEntry.getValue();
+                    RegionLoader cached = loader.getLoader();
+                    if (loader.clearDirty()) {
+                        toSave.put(cacheEntry.getKey(), cached);
                     }
                 }
                 this.mapFile.saveBlockIds(this.blockLookup.getNames());

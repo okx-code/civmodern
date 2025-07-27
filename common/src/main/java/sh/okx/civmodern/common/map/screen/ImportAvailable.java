@@ -13,7 +13,7 @@ import sh.okx.civmodern.common.AbstractCivModernMod;
 import java.util.function.Consumer;
 
 public class ImportAvailable extends BaseOwoScreen<FlowLayout> {
-    private String[] mods;
+    private final String[] mods;
     private final Consumer<String> callback;
 
     public ImportAvailable(String[] mods, Consumer<String> callback) {
@@ -32,7 +32,7 @@ public class ImportAvailable extends BaseOwoScreen<FlowLayout> {
         root.alignment(HorizontalAlignment.CENTER, VerticalAlignment.CENTER);
 
         root.child(Components.label(Component.literal("Import Available")).shadow(true).margins(Insets.bottom(5)));
-        root.child(Components.label(Component.literal("CivMap can import map data from the following mods, please select one:")));
+        root.child(Components.label(Component.literal("CivModern can import map data from the following mods, please select one:")));
 
         var buttons = Containers.horizontalFlow(Sizing.content(), Sizing.content());
         buttons.configure(layout -> {
@@ -54,7 +54,7 @@ public class ImportAvailable extends BaseOwoScreen<FlowLayout> {
             callback.accept("close");
             Minecraft.getInstance().setScreen(null);
         }).margins(Insets.of(5)));
-        closeButtons.child(Components.button(Component.literal("Don't Show Again"), button -> {
+        closeButtons.child(Components.button(Component.literal("Don't show again"), button -> {
             callback.accept("neverShowAgain");
             Minecraft.getInstance().setScreen(null);
         }).margins(Insets.of(5)));
