@@ -28,6 +28,7 @@ import sh.okx.civmodern.common.mixins.StorageSourceAccessor;
 
 import java.io.File;
 import java.nio.file.Path;
+import java.text.NumberFormat;
 import java.util.*;
 
 public class WorldListener {
@@ -44,7 +45,7 @@ public class WorldListener {
     private long seed = -1;
     private PlayerWaypoints playerWaypoints;
 
-    private List<ChunkPos> loadedChunks = new ArrayList<>();
+    private final List<ChunkPos> loadedChunks = new ArrayList<>();
 
     public WorldListener(CivMapConfig config, ColourProvider colourProvider) {
         this.config = config;

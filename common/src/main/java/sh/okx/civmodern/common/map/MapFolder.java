@@ -1,5 +1,6 @@
 package sh.okx.civmodern.common.map;
 
+import com.github.luben.zstd.RecyclingBufferPool;
 import com.google.gson.Gson;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
@@ -288,7 +289,7 @@ public class MapFolder {
 
             byte[] data;
             ByteArrayInputStream in = new ByteArrayInputStream(compressed);
-            try (ZstdCompressorInputStream zstd = new ZstdCompressorInputStream(in)) {
+            try (ZstdCompressorInputStream zstd = new ZstdCompressorInputStream(in, RecyclingBufferPool.INSTANCE)) {
                 data = zstd.readAllBytes();
             }
 

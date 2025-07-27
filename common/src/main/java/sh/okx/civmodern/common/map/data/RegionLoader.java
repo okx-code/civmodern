@@ -26,9 +26,9 @@ public class RegionLoader {
 
     private final Lock renderLock = new ReentrantLock();
 
-    private int[] mapData;
-    private short[] yLevels;
-    private long[] chunkTimestamps;
+    private volatile int[] mapData;
+    private volatile short[] yLevels;
+    private volatile long[] chunkTimestamps;
 
     private final AtomicBoolean hasBeenRendered = new AtomicBoolean(false);
 
