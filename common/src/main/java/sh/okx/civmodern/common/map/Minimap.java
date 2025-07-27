@@ -196,7 +196,7 @@ public class Minimap {
         glEnable(GL_POLYGON_SMOOTH);
         RenderSystem.setShader(CoreShaders.POSITION_COLOR);
         BufferBuilder bufferBuilder = Tesselator.getInstance().begin(VertexFormat.Mode.TRIANGLE_STRIP, DefaultVertexFormat.POSITION_COLOR);
-        matrices.translate(size / 2, size / 2, 2000);
+        matrices.translate(size / 2, size / 2, 200);
         matrices.mulPose(Axis.ZP.rotationDegrees(player.getViewYRot(event.deltaTick()) % 360f));
         matrices.scale(4, 4, 1);
         int chevronColour = provider.getChevronColour() | 0xFF000000;

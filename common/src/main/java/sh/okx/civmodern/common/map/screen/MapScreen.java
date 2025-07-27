@@ -272,24 +272,27 @@ public class MapScreen extends Screen {
                 double z = waypoint.z() + 0.5;
                 matrices.translate((x - this.x) / scale, (z - this.y) / scale, 0);
                 waypoint.render(guiGraphics, colour);
+                matrices.scale(0.8f, 0.8f, 0);
 
                 Font font = Minecraft.getInstance().font;
 
                 String str = waypoint.playerName();
 
-                matrices.translate(0, -15, -10);
+                matrices.translate(0, -16, -10);
                 Matrix4f last = matrices.last().pose();
                 RenderSystem.enableBlend();
-                guiGraphics.drawSpecial(source -> {
-                    MutableComponent comp = Component.literal(str);
-                    font.drawInBatch(comp, -font.width(comp) / 2f, (float) 0, colour, false, last, source, Font.DisplayMode.SEE_THROUGH, 1056964608, 15728640, false);
-                    font.drawInBatch(comp, -font.width(comp) / 2f, (float) 0, bgcolour, false, last, source, Font.DisplayMode.NORMAL, 0, 15728880, true);
-                });
-                guiGraphics.drawSpecial(source -> {
-                    MutableComponent comp = Component.literal("(" + getAgo(waypoint.timestamp()) + ")");
-                    font.drawInBatch(comp, -font.width(comp) / 2f, 23, colour, false, last, source, Font.DisplayMode.SEE_THROUGH, 1056964608, 15728640, false);
-                    font.drawInBatch(comp, -font.width(comp) / 2f, 23, bgcolour, false, last, source, Font.DisplayMode.NORMAL, 0, 15728880, true);
-                });
+                if (zoom <= 2) {
+                    guiGraphics.drawSpecial(source -> {
+                        MutableComponent comp = Component.literal(str);
+                        font.drawInBatch(comp, -font.width(comp) / 2f, (float) 0, colour, false, last, source, Font.DisplayMode.SEE_THROUGH, 1056964608, 15728640, false);
+                        font.drawInBatch(comp, -font.width(comp) / 2f, (float) 0, bgcolour, false, last, source, Font.DisplayMode.NORMAL, 0, 15728880, true);
+                    });
+                    guiGraphics.drawSpecial(source -> {
+                        MutableComponent comp = Component.literal("(" + getAgo(waypoint.timestamp()) + ")");
+                        font.drawInBatch(comp, -font.width(comp) / 2f, 24, colour, false, last, source, Font.DisplayMode.SEE_THROUGH, 1056964608, 15728640, false);
+                        font.drawInBatch(comp, -font.width(comp) / 2f, 24, bgcolour, false, last, source, Font.DisplayMode.NORMAL, 0, 15728880, true);
+                    });
+                }
                 matrices.popPose();
             }
         }
