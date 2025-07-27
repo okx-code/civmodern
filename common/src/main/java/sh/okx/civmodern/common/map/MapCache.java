@@ -13,10 +13,12 @@ import sh.okx.civmodern.common.map.data.RegionReference;
 import sh.okx.civmodern.common.map.data.RegionRenderer;
 import sun.misc.Unsafe;
 
+import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Queue;
@@ -40,6 +42,10 @@ public class MapCache {
     private final Map<RegionKey, RegionAtlasTexture> textureCache = new ConcurrentHashMap<>();
     private final Map<RegionKey, RegionReference> cache = new ConcurrentHashMap<>();
 
+    // Prevents regions that have recently been updated from being GCed
+    @SuppressWarnings("MismatchedQueryAndUpdateOfCollection")
+    private final Map<RegionKey, RegionLoader> nearbyRegions = new ConcurrentHashMap<>();
+
     private final Queue<RegionKey> queue = new PriorityBlockingQueue<>(11, (r1, r2) -> {
         int px = Minecraft.getInstance().player.getBlockX();
         int pz = Minecraft.getInstance().player.getBlockZ();
@@ -54,8 +60,6 @@ public class MapCache {
     private final Set<RegionKey> availableRegions;
     private final IdLookup blockLookup;
     private final IdLookup biomeLookup;
-
-    private final ReadWriteLock evictionLock = new ReentrantReadWriteLock();
 
     public MapCache(MapFolder mapFile) {
         this.mapFile = mapFile;
@@ -150,6 +154,7 @@ public class MapCache {
             RegionReference reference = addReference(region);
             try {
                 RegionLoader loader = reference.getLoader();
+                this.nearbyRegions.put(region, loader);
                 // TODO fully get rid of banding, this is only a partial solution
                 RegionMapUpdater updater = new RegionMapUpdater(loader, blockLookup, biomeLookup);
                 boolean updated = updater.updateChunk(chunk.getLevel().registryAccess(), chunk, north, west);
@@ -184,36 +189,37 @@ public class MapCache {
     }
 
     private void cacheEvict() {
-        try {
-            this.evictionLock.writeLock().lock();
-            Iterator<Map.Entry<RegionKey, RegionReference>> iterator = cache.entrySet().iterator();
-            Map<RegionKey, RegionLoader> toSave = new HashMap<>();
-            while (iterator.hasNext()) {
-                Map.Entry<RegionKey, RegionReference> entry = iterator.next();
-                if (entry.getValue().isReferenced()) {
-                    continue;
-                }
+        Iterator<Map.Entry<RegionKey, RegionReference>> iterator = cache.entrySet().iterator();
+        Map<RegionKey, RegionLoader> toSave = new HashMap<>();
+        while (iterator.hasNext()) {
+            Map.Entry<RegionKey, RegionReference> entry = iterator.next();
 
-                int px = Minecraft.getInstance().player.getBlockX();
-                int pz = Minecraft.getInstance().player.getBlockZ();
-                double dist = Mth.lengthSquared(entry.getKey().x() * 512 + 256 - px, entry.getKey().z() * 512 + 256 - pz);
-                if (dist > 96 * 16 * 96 * 16) {
+            int px = Minecraft.getInstance().player.getBlockX();
+            int pz = Minecraft.getInstance().player.getBlockZ();
+            double dist = Mth.lengthSquared(entry.getKey().x() * 512 + 256 - px, entry.getKey().z() * 512 + 256 - pz);
+
+            boolean far = dist > 96 * 16 * 96 * 16;
+
+            RegionLoader loader = entry.getValue().getLoader();
+            if (!entry.getValue().isReferenced()) {
+                if (far) {
                     iterator.remove();
-                    RegionLoader loader = entry.getValue().getLoader();
-                    if (entry.getValue().clearDirty()) {
-                        toSave.put(entry.getKey(), loader);
-                    }
+                }
+                if (entry.getValue().clearDirty()) {
+                    toSave.put(entry.getKey(), loader);
                 }
             }
-            if (toSave.isEmpty()) {
-                return;
+
+            if (loader == null || far) {
+                nearbyRegions.remove(entry.getKey());
             }
-            this.mapFile.saveBlockIds(this.blockLookup.getNames());
-            this.mapFile.saveBiomeIds(this.biomeLookup.getNames());
-            this.mapFile.saveBulk(toSave, executor);
-        } finally {
-            this.evictionLock.writeLock().unlock();
         }
+        if (toSave.isEmpty()) {
+            return;
+        }
+        this.mapFile.saveBlockIds(this.blockLookup.getNames());
+        this.mapFile.saveBiomeIds(this.biomeLookup.getNames());
+        this.mapFile.saveBulk(toSave, executor);
     }
 
     public RegionAtlasTexture getTexture(RegionKey atlas) {

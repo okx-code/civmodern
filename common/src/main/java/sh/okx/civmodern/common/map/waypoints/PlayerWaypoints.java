@@ -1,13 +1,15 @@
 package sh.okx.civmodern.common.map.waypoints;
 
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.player.AbstractClientPlayer;
+import net.minecraft.client.multiplayer.PlayerInfo;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.contents.PlainTextContents;
 
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.UUID;
 import java.util.regex.Matcher;
@@ -16,6 +18,7 @@ import java.util.regex.Pattern;
 public class PlayerWaypoints {
 
     private final Map<UUID, PlayerWaypoint> waypoints = new HashMap<>();
+    private final Map<String, PlayerWaypoint> unfilledWaypoints = new HashMap<>();
 
     private static final Pattern SNITCH_PATTERN = Pattern.compile("^(Enter|Login|Logout) +(\\w+) +(.+) +\\[(-?\\d+) (-?\\d+) (-?\\d+)] +(\\[.+])?$");
 
@@ -53,6 +56,10 @@ public class PlayerWaypoints {
             return;
         }
 
+        if (playerName.equals(Minecraft.getInstance().player.getGameProfile().getName())) {
+            return;
+        }
+
         int x;
         int y;
         int z;
@@ -64,17 +71,38 @@ public class PlayerWaypoints {
             return;
         }
 
-        AbstractClientPlayer player = null;
-        for (AbstractClientPlayer iter : Minecraft.getInstance().level.players()) {
-            if (!iter.getGameProfile().getName().equals(playerName)) {
+        PlayerInfo player = null;
+        for (PlayerInfo info : Minecraft.getInstance().player.connection.getOnlinePlayers()) {
+            String name = info.getProfile().getName();
+            if (!name.equals(playerName)) {
                 continue;
             }
-            player = iter;
+            player = info;
         }
         if (player == null) {
-            return;
+            unfilledWaypoints.put(playerName, new PlayerWaypoint(playerName, null, x, y, z, null, Instant.now()));
+        } else {
+            waypoints.put(player.getProfile().getId(), new PlayerWaypoint(player.getProfile().getName(), player.getProfile().getId(), x, y, z, player.getSkin().texture(), Instant.now()));
         }
+    }
 
-        waypoints.put(player.getUUID(), new PlayerWaypoint(player.getGameProfile().getName(), player.getGameProfile().getId(), x, y, z, player.getSkin().texture(), Instant.now()));
+    public void tick() {
+        Iterator<Map.Entry<String, PlayerWaypoint>> it = unfilledWaypoints.entrySet().iterator();
+        while (it.hasNext()) {
+            Map.Entry<String, PlayerWaypoint> waypoint = it.next();
+            if (waypoint.getValue().timestamp().until(Instant.now(), ChronoUnit.SECONDS) > 30) {
+                it.remove();
+                continue;
+            }
+
+            for (PlayerInfo info : Minecraft.getInstance().player.connection.getOnlinePlayers()) {
+                String name = info.getProfile().getName();
+                if (name.equals(waypoint.getKey())) {
+                    PlayerWaypoint value = waypoint.getValue();
+                    waypoints.put(info.getProfile().getId(), new PlayerWaypoint(info.getProfile().getName(), info.getProfile().getId(), value.x(), value.y(), value.z(), info.getSkin().texture(), value.timestamp()));
+                    it.remove();
+                }
+            }
+        }
     }
 }

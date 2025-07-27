@@ -13,6 +13,7 @@ import sh.okx.civmodern.common.ColourProvider;
 import sh.okx.civmodern.common.events.BlockStateChangeEvent;
 import sh.okx.civmodern.common.events.ChatReceivedEvent;
 import sh.okx.civmodern.common.events.ChunkLoadEvent;
+import sh.okx.civmodern.common.events.ClientTickEvent;
 import sh.okx.civmodern.common.events.JoinEvent;
 import sh.okx.civmodern.common.events.LeaveEvent;
 import sh.okx.civmodern.common.events.PostRenderGameOverlayEvent;
@@ -239,6 +240,13 @@ public class WorldListener {
     public void onRender(WorldRenderLastEvent event) {
         if (this.waypoints != null) {
             this.waypoints.onRender(event);
+        }
+    }
+
+    @Subscribe
+    public void onTick(ClientTickEvent event) {
+        if (this.playerWaypoints != null) {
+            this.playerWaypoints.tick();
         }
     }
 
