@@ -87,6 +87,7 @@ public class HsbColourPicker extends AbstractWidget {
 
             guiGraphics.pose().pushPose();
             guiGraphics.pose().translate(0, 0, 1000);
+            RenderSystem.enableDepthTest();
             // Saturation and brightness selector
             RenderSystem.setShader(CoreShaders.POSITION_TEX);
             Matrix4f matrix4f = guiGraphics.pose().last().pose();

@@ -10,7 +10,7 @@
     "civmodern.screen.main.title": "Civ Modern Config",
     "civmodern.screen.main.radar": "Radar Settings",
     "civmodern.screen.main.ice": "Ice Road Macro",
-    "civmodern.screen.main.compacted": "Compacted Item Settings",
+    "civmodern.screen.main.items": "Item Settings",
     "civmodern.screen.main.map": "Map Settings",
     "civmodern.screen.radar.title": "Civ Modern Config (Radar)",
     "civmodern.screen.radar.enabled": "Radar",
@@ -35,7 +35,11 @@
     "civmodern.screen.minimap": "Minimap",
     "civmodern.screen.mapping": "Rendering",
     "civmodern.screen.radar.background_transparency": "BG Transparency: %s",
-    "civmodern.screen.compacted.title": "Civ Modern Config (Compacted Items)",
+    "civmodern.screen.items.title": "Civ Modern Config (Items)",
+    "civmodern.screen.items.crates": "Include crates",
+    "civmodern.screen.items.crates.tooltip": "If enabled, crates will have the compacted item colour",
+    "civmodern.screen.items.repair": "Show repair cost",
+    "civmodern.screen.items.repair.tooltip": "If enabled, will show the repair cost of items in their lore",
     "civmodern.screen.ice.title": "Civ Modern Config (Ice Road Macro)",
     "civmodern.screen.ice.cardinal.pitch": "Snap pitch",
     "civmodern.screen.ice.cardinal.pitch.tooltip": "Should your camera snap its pitch (up/down) when activating the iceroad macro?",
@@ -55,5 +59,6 @@
     "civmodern.radar.leave" : "§r%s §edisappeared at §b[%s§b]",
     "civmodern.button.toggle": "%s: %s",
     "civmodern.button.toggle.on": "ON",
-    "civmodern.button.toggle.off": "OFF"
+    "civmodern.button.toggle.off": "OFF",
+    "civmodern.repaircost": "%d levels to repair"
 }

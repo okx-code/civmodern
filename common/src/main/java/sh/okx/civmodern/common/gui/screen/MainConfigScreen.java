@@ -47,8 +47,8 @@ public final class MainConfigScreen extends AbstractConfigScreen {
         addRenderableWidget(
             Button
                 .builder(
-                    Component.translatable("civmodern.screen.main.compacted"),
-                    (button) -> this.minecraft.setScreen(new CompactedConfigScreen(this.config, this.colourProvider, this))
+                    Component.translatable("civmodern.screen.main.items"),
+                    (button) -> this.minecraft.setScreen(new ItemsConfigScreen(this.config, this.colourProvider, this))
                 )
                 .pos(offsetX, offsetY)
                 .build()

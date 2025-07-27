@@ -14,7 +14,8 @@
     "KeyMappingAccessor",
     "RespawnMixin",
     "ScreenAccessor",
-    "StorageSourceAccessor"
+    "StorageSourceAccessor",
+    "ItemRepairMixin"
   ],
   "server": [],
   "injectors": {

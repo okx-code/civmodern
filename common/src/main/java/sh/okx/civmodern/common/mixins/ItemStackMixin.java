@@ -9,6 +9,7 @@ import net.minecraft.world.item.component.ItemLore;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
+import sh.okx.civmodern.common.AbstractCivModernMod;
 import sh.okx.civmodern.common.features.ExtendedItemStack;
 
 @Mixin(ItemStack.class)
@@ -45,7 +46,7 @@ public abstract class ItemStackMixin implements ExtendedItemStack {
                 }
                 content.append(child.getString());
             }
-            if (ExtendedItemStack.COMPACTED_ITEM_LORE.contentEquals(content)) {
+            if (ExtendedItemStack.COMPACTED_ITEM_LORE.contentEquals(content) || (AbstractCivModernMod.getInstance().getConfig().isCratesAreCompacted() && "Crate".contentEquals(content))) {
                 return true;
             }
         }

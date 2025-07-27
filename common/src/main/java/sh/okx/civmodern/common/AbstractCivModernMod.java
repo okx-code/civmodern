@@ -236,6 +236,10 @@ public abstract class AbstractCivModernMod {
         return worlds;
     }
 
+    public CivMapConfig getConfig() {
+        return config;
+    }
+
     public static AbstractCivModernMod getInstance() {
         return INSTANCE;
     }

@@ -259,9 +259,9 @@ public class Radar {
 
         for (Entity entity : minecraft.level.entitiesForRendering()) {
             if (entity instanceof Boat boat) {
-                renderEntity(guiGraphics, minecraft.player, boat, delta, boat.getPickResult(), 1.0f);
+                renderEntity(guiGraphics, minecraft.player, boat, delta, boat.getPickResult(), 1.0f, 0.9f);
             } else if (entity instanceof Minecart minecart) {
-                renderEntity(guiGraphics, minecraft.player, minecart, delta, new ItemStack(Items.MINECART, 1), 1.1f);
+                renderEntity(guiGraphics, minecraft.player, minecart, delta, new ItemStack(Items.MINECART, 1), 1.1f, 0.9f);
             }
         }
     }
@@ -271,12 +271,12 @@ public class Radar {
 
         for (Entity entity : minecraft.level.entitiesForRendering()) {
             if (entity instanceof ItemEntity item) {
-                renderEntity(guiGraphics, minecraft.player, item, delta, item.getItem(), 0f);
+                renderEntity(guiGraphics, minecraft.player, item, delta, item.getItem(), 0f, 0.9f);
             }
         }
     }
 
-    private void renderEntity(GuiGraphics guiGraphics, Player player, Entity entity, float delta, ItemStack item, float blit) {
+    private void renderEntity(GuiGraphics guiGraphics, Player player, Entity entity, float delta, ItemStack item, float blit, float entityScale) {
         double scale = config.getRadarSize() / config.getRange();
 
         double px = player.xOld + (player.getX() - player.xOld) * delta;
@@ -298,7 +298,7 @@ public class Radar {
             guiGraphics.pose().mulPose(Axis.ZP.rotationDegrees(player.getViewYRot(delta)));
         }
         guiGraphics.pose().translate(0, 0, blit);
-        guiGraphics.pose().scale(config.getIconSize(), config.getIconSize(), 1);
+        guiGraphics.pose().scale(config.getIconSize() * entityScale, config.getIconSize() * entityScale, 1);
         guiGraphics.pose().mulPose(new Matrix4f().scaling(1.0f, -1.0f, 1.0f));
         guiGraphics.pose().scale(16.0f, 16.0f, 16.0f);
 

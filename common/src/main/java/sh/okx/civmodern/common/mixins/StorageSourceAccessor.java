@@ -1,6 +1,5 @@
 package sh.okx.civmodern.common.mixins;
 
-import net.minecraft.client.KeyMapping;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.level.storage.LevelStorageSource;
 import org.spongepowered.asm.mixin.Mixin;

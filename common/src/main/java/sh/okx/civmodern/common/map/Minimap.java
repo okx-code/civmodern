@@ -11,6 +11,9 @@ import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.util.Mth;
+import net.minecraft.world.scores.DisplaySlot;
+import net.minecraft.world.scores.Objective;
+import net.minecraft.world.scores.Scoreboard;
 import org.joml.Matrix4f;
 import sh.okx.civmodern.common.CivMapConfig;
 import sh.okx.civmodern.common.ColourProvider;
@@ -38,7 +41,6 @@ public class Minimap {
     private final MapCache cache;
     private final CivMapConfig config;
     private final ColourProvider provider;
-    private float zoom = 4;
 
     private static final RegionAtlasTexture blank = new RegionAtlasTexture();
 
@@ -60,9 +62,13 @@ public class Minimap {
             return;
         }
         Minecraft mc = Minecraft.getInstance();
-        if (mc.options.hideGui || mc.getDebugOverlay().showDebugScreen()) {
+        Scoreboard scoreboard = mc.level.getScoreboard();
+        Objective objective = scoreboard.getDisplayObjective(DisplaySlot.LIST);
+        if (mc.options.hideGui || mc.getDebugOverlay().showDebugScreen() || !(!mc.options.keyPlayerList.isDown() || mc.isLocalServer() && mc.player.connection.getListedOnlinePlayers().size() <= 1 && objective == null)) {
             return;
         }
+
+        float zoom = config.getMinimapZoom();
 
         float size = config.getMinimapSize();
 
@@ -130,6 +136,7 @@ public class Minimap {
             drawnX += screenX == 0 ? tmp / 2 : SIZE;
         }
 
+        RenderSystem.enableDepthTest();
         if (config.isPlayerWaypointsEnabled()) {
             // TODO fix the player rendering above the chevron
             // todo fading
@@ -143,7 +150,7 @@ public class Minimap {
                     continue;
                 }
                 matrices.pushPose();
-                matrices.translate(tx, ty, 200);
+                matrices.translate(tx, ty, -100);
 
                 boolean old = waypoint.timestamp().until(Instant.now(), ChronoUnit.MINUTES) >= 10;
                 int colour = (old ? 0x77 : 0xFF) << 24 | 0xFFFFFF;
@@ -189,7 +196,7 @@ public class Minimap {
         glEnable(GL_POLYGON_SMOOTH);
         RenderSystem.setShader(CoreShaders.POSITION_COLOR);
         BufferBuilder bufferBuilder = Tesselator.getInstance().begin(VertexFormat.Mode.TRIANGLE_STRIP, DefaultVertexFormat.POSITION_COLOR);
-        matrices.translate(size / 2, size / 2, 0);
+        matrices.translate(size / 2, size / 2, 2000);
         matrices.mulPose(Axis.ZP.rotationDegrees(player.getViewYRot(event.deltaTick()) % 360f));
         matrices.scale(4, 4, 1);
         int chevronColour = provider.getChevronColour() | 0xFF000000;
@@ -215,9 +222,11 @@ public class Minimap {
     }
 
     public void cycleZoom() {
+        float zoom = config.getMinimapZoom();
         zoom /= 2;
         if (zoom < 0.5f) {
             zoom = 16f;
         }
+        config.setMinimapZoom(zoom);
     }
 }

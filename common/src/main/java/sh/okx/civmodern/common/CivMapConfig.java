@@ -45,6 +45,9 @@ public class CivMapConfig {
     private Alignment minimapAlignment;
     private int minimapSize;
     private boolean playerWaypointsEnabled;
+    private float minimapZoom;
+    private boolean cratesAreCompacted;
+    private boolean showRepairCost;
 
     public CivMapConfig(File file, Properties properties) {
         this.file = file;
@@ -78,6 +81,9 @@ public class CivMapConfig {
         this.minimapAlignment = Alignment.valueOf(properties.getProperty("minimap_alignment", "top_right").toUpperCase());
         this.minimapSize = Integer.parseInt(properties.getProperty("minimap_size", "100"));
         this.playerWaypointsEnabled = Boolean.parseBoolean(properties.getProperty("player_waypoints_enabled", "true"));
+        this.minimapZoom = Float.parseFloat(properties.getProperty("minimap_zoom", "4"));
+        this.cratesAreCompacted = Boolean.parseBoolean(properties.getProperty("crates_are_compacted", "true"));
+        this.showRepairCost = Boolean.parseBoolean(properties.getProperty("show_repair_cost", "true"));
     }
 
     public void save() {
@@ -112,6 +118,9 @@ public class CivMapConfig {
             properties.setProperty("minimap_alignment", minimapAlignment.name().toLowerCase());
             properties.setProperty("minimap_size", Integer.toString(minimapSize));
             properties.setProperty("player_waypoints_enabled", Boolean.toString(playerWaypointsEnabled));
+            properties.setProperty("minimap_zoom", Float.toString(minimapZoom));
+            properties.setProperty("crates_are_compacted", Boolean.toString(cratesAreCompacted));
+            properties.setProperty("show_repair_cost", Boolean.toString(showRepairCost));
 
             try (FileOutputStream output = new FileOutputStream(file)) {
                 properties.store(output, null);
@@ -360,5 +369,29 @@ public class CivMapConfig {
 
     public void setPlayerWaypointsEnabled(boolean playerWaypointsEnabled) {
         this.playerWaypointsEnabled = playerWaypointsEnabled;
+    }
+
+    public float getMinimapZoom() {
+        return minimapZoom;
+    }
+
+    public void setMinimapZoom(float minimapZoom) {
+        this.minimapZoom = minimapZoom;
+    }
+
+    public boolean isCratesAreCompacted() {
+        return cratesAreCompacted;
+    }
+
+    public void setCratesAreCompacted(boolean cratesAreCompacted) {
+        this.cratesAreCompacted = cratesAreCompacted;
+    }
+
+    public boolean isShowRepairCost() {
+        return showRepairCost;
+    }
+
+    public void setShowRepairCost(boolean showRepairCost) {
+        this.showRepairCost = showRepairCost;
     }
 }

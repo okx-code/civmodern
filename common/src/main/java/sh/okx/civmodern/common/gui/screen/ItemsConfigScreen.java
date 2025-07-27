@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Objects;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.core.component.DataComponentMap;
 import net.minecraft.core.component.DataComponents;
@@ -18,12 +19,14 @@ import org.lwjgl.glfw.GLFW;
 import sh.okx.civmodern.common.CivMapConfig;
 import sh.okx.civmodern.common.ColourProvider;
 import sh.okx.civmodern.common.features.ExtendedItemStack;
+import sh.okx.civmodern.common.gui.Alignment;
 import sh.okx.civmodern.common.gui.widget.ColourTextEditBox;
 import sh.okx.civmodern.common.gui.widget.HsbColourPicker;
 import sh.okx.civmodern.common.gui.widget.ImageButton;
 import sh.okx.civmodern.common.gui.widget.TextRenderable;
+import sh.okx.civmodern.common.gui.widget.ToggleButton;
 
-final class CompactedConfigScreen extends AbstractConfigScreen {
+final class ItemsConfigScreen extends AbstractConfigScreen {
     private static final ItemStack ITEM; static {
         ITEM = new ItemStack(Items.STONE, 64);
         ITEM.applyComponents(
@@ -41,7 +44,7 @@ final class CompactedConfigScreen extends AbstractConfigScreen {
     private int itemX;
     private int itemY;
 
-    CompactedConfigScreen(
+    ItemsConfigScreen(
         final @NotNull CivMapConfig config,
         final @NotNull ColourProvider colourProvider,
         final @NotNull MainConfigScreen parent
@@ -49,7 +52,7 @@ final class CompactedConfigScreen extends AbstractConfigScreen {
         super(
             config,
             Objects.requireNonNull(parent),
-            Component.translatable("civmodern.screen.compacted.title")
+            Component.translatable("civmodern.screen.items.title")
         );
         this.colourProvider = Objects.requireNonNull(colourProvider);
     }
@@ -107,6 +110,29 @@ final class CompactedConfigScreen extends AbstractConfigScreen {
             }
         ));
         offsetY += Button.DEFAULT_HEIGHT + 10;
+
+        addRenderableWidget(new ToggleButton(
+            this.centreX - (Button.DEFAULT_WIDTH / 2),
+            offsetY,
+            ToggleButton.DEFAULT_BUTTON_WIDTH,
+            Component.translatable("civmodern.screen.items.crates"),
+            this.config::isCratesAreCompacted,
+            this.config::setCratesAreCompacted,
+            Tooltip.create(Component.translatable("civmodern.screen.items.crates.tooltip")),
+            ToggleButton.DEFAULT_NARRATION
+        ));
+        offsetY += Button.DEFAULT_HEIGHT + 4;
+
+        addRenderableWidget(new ToggleButton(
+            this.centreX - (Button.DEFAULT_WIDTH / 2),
+            offsetY,
+            ToggleButton.DEFAULT_BUTTON_WIDTH,
+            Component.translatable("civmodern.screen.items.repair"),
+            this.config::isShowRepairCost,
+            this.config::setShowRepairCost,
+            Tooltip.create(Component.translatable("civmodern.screen.items.repair.tooltip")),
+            ToggleButton.DEFAULT_NARRATION
+        ));
 
         addRenderableWidget(
             Button

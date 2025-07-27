@@ -85,7 +85,7 @@ public class RegionRenderer {
                             }
                         }
                     } else {
-                        color = blockCache.get(blockBiomeId);
+                        color = cachedColor;
                     }
 
                     if (waterDepth > 0) {
@@ -110,16 +110,18 @@ public class RegionRenderer {
                         alpha = waterDepth > 0 ? 0x22 : 0x44;
                     }
 
-                    color = blend(color, (double) alpha / 0xFF);
+                    if (alpha != 0) {
+                        color = blend(color, (double) alpha / 0xFF);
+                    }
 
                     int red = color >> 16 & 0xFF;
                     int green = color >> 8 & 0xFF;
                     int blue = color & 0xFF;
 
                     short rgb565 = 0;
-                    rgb565 |= (red / 8) << 11;
-                    rgb565 |= (green / 4) << 5;
-                    rgb565 |= (blue / 8);
+                    rgb565 |= (red >> 3) << 11;
+                    rgb565 |= (green >> 2) << 5;
+                    rgb565 |= (blue >> 3);
 
                     colours[(x - minX) + (z - minZ) * (maxZ - minZ)] = rgb565;
                 }
