@@ -19,7 +19,6 @@ import net.minecraft.client.multiplayer.PlayerInfo;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.player.RemotePlayer;
 import net.minecraft.client.renderer.CoreShaders;
-import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.core.BlockPos;
@@ -46,14 +45,11 @@ import sh.okx.civmodern.common.events.ClientTickEvent;
 import sh.okx.civmodern.common.events.PostRenderGameOverlayEvent;
 
 import java.net.URL;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
-import java.util.function.Consumer;
 
 import static org.lwjgl.opengl.GL11.*;
 
@@ -258,28 +254,25 @@ public class Radar {
     private void renderBoatsMinecarts(GuiGraphics guiGraphics, float delta) {
         Minecraft minecraft = Minecraft.getInstance();
 
-        List<Consumer<MultiBufferSource>> consumers = new ArrayList<>();
-
         for (Entity entity : minecraft.level.entitiesForRendering()) {
             if (entity instanceof Boat boat) {
-                consumers.add(renderEntity(guiGraphics, minecraft.player, boat, delta, boat.getPickResult(), 1.0f, 0.9f));
+                renderEntity(guiGraphics, minecraft.player, boat, delta, boat.getPickResult(), 1.0f, 0.9f);
             } else if (entity instanceof Minecart minecart) {
-                consumers.add(renderEntity(guiGraphics, minecraft.player, minecart, delta, new ItemStack(Items.MINECART, 1), 1.1f, 0.9f));
+                renderEntity(guiGraphics, minecraft.player, minecart, delta, new ItemStack(Items.MINECART, 1), 1.1f, 0.9f);
             }
         }
-        guiGraphics.drawSpecial(s -> consumers.forEach(v -> v.accept(s)));
+        guiGraphics.flush();
     }
 
     private void renderItems(GuiGraphics guiGraphics, float delta) {
         Minecraft minecraft = Minecraft.getInstance();
 
-        List<Consumer<MultiBufferSource>> consumers = new ArrayList<>();
         for (Entity entity : minecraft.level.entitiesForRendering()) {
             if (entity instanceof ItemEntity item) {
-                consumers.add(renderEntity(guiGraphics, minecraft.player, item, delta, item.getItem(), 0f, 0.9f));
+                renderEntity(guiGraphics, minecraft.player, item, delta, item.getItem(), 0f, 0.9f);
             }
         }
-        guiGraphics.drawSpecial(s -> consumers.forEach(v -> v.accept(s)));
+        guiGraphics.flush();
     }
 
     private double rescale(double dx, double dz) {
@@ -291,7 +284,7 @@ public class Radar {
         return (1 / distance) * ld;
     }
 
-    private Consumer<MultiBufferSource> renderEntity(GuiGraphics guiGraphics, Player player, Entity entity, float delta, ItemStack item, float blit, float entityScale) {
+    private void renderEntity(GuiGraphics guiGraphics, Player player, Entity entity, float delta, ItemStack item, float blit, float entityScale) {
         double scale = config.getRadarSize() / config.getRange();
 
         double px = player.xOld + (player.getX() - player.xOld) * delta;
@@ -302,28 +295,29 @@ public class Radar {
         double dx = px - x;
         double dz = pz - z;
         if (dx * dx + dz * dz > config.getRange() * config.getRange()) {
-            return s -> {};
+            return;
         }
 
         double logscale = rescale(dx, dz);
 
-        return source -> {
-            guiGraphics.pose().pushPose();
-            guiGraphics.pose().translate(dx * scale * logscale, dz * scale * logscale, 150);
-            if (config.isNorthUp()) {
-                guiGraphics.pose().mulPose(Axis.ZP.rotationDegrees(180));
-            } else {
-                guiGraphics.pose().mulPose(Axis.ZP.rotationDegrees(player.getViewYRot(delta)));
-            }
-            guiGraphics.pose().translate(0, 0, blit);
-            guiGraphics.pose().scale(config.getIconSize() * entityScale, config.getIconSize() * entityScale, 1);
-            guiGraphics.pose().mulPose(new Matrix4f().scaling(1.0f, -1.0f, 1.0f));
-            guiGraphics.pose().scale(16.0f, 16.0f, 16.0f);
-            Lighting.setupForFlatItems();
-            Minecraft.getInstance().getItemRenderer().renderStatic(player, item, ItemDisplayContext.GUI, false, guiGraphics.pose(), source, Minecraft.getInstance().level, 0xF000F0, OverlayTexture.NO_OVERLAY, 0);
-            Lighting.setupFor3DItems();
-            guiGraphics.pose().popPose();
-        };
+        guiGraphics.pose().pushPose();
+        guiGraphics.pose().translate(dx * scale * logscale, dz * scale * logscale, 150);
+        if (config.isNorthUp()) {
+            guiGraphics.pose().mulPose(Axis.ZP.rotationDegrees(180));
+        } else {
+            guiGraphics.pose().mulPose(Axis.ZP.rotationDegrees(player.getViewYRot(delta)));
+        }
+        guiGraphics.pose().translate(0, 0, blit);
+        guiGraphics.pose().scale(config.getIconSize() * entityScale, config.getIconSize() * entityScale, 1);
+        guiGraphics.pose().mulPose(new Matrix4f().scaling(1.0f, -1.0f, 1.0f));
+        guiGraphics.pose().scale(16.0f, 16.0f, 16.0f);
+
+        Lighting.setupForFlatItems();
+        guiGraphics.drawSpecial(source ->
+            Minecraft.getInstance().getItemRenderer().renderStatic(player, item, ItemDisplayContext.GUI, false, guiGraphics.pose(), source, Minecraft.getInstance().level, 0xF000F0, OverlayTexture.NO_OVERLAY, 0));
+        Lighting.setupFor3DItems();
+
+        guiGraphics.pose().popPose();
     }
 
     private void renderPlayers(GuiGraphics guiGraphics, float delta) {
