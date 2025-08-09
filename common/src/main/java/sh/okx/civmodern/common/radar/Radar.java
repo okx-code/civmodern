@@ -19,9 +19,8 @@ import net.minecraft.client.multiplayer.PlayerInfo;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.player.RemotePlayer;
 import net.minecraft.client.renderer.CoreShaders;
-import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.texture.OverlayTexture;
-import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -44,15 +43,17 @@ import org.joml.Matrix4f;
 import sh.okx.civmodern.common.CivMapConfig;
 import sh.okx.civmodern.common.ColourProvider;
 import sh.okx.civmodern.common.events.ClientTickEvent;
-import sh.okx.civmodern.common.events.EventBus;
 import sh.okx.civmodern.common.events.PostRenderGameOverlayEvent;
 
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
+import java.util.function.Consumer;
 
 import static org.lwjgl.opengl.GL11.*;
 
@@ -257,26 +258,40 @@ public class Radar {
     private void renderBoatsMinecarts(GuiGraphics guiGraphics, float delta) {
         Minecraft minecraft = Minecraft.getInstance();
 
+        List<Consumer<MultiBufferSource>> consumers = new ArrayList<>();
+
         for (Entity entity : minecraft.level.entitiesForRendering()) {
             if (entity instanceof Boat boat) {
-                renderEntity(guiGraphics, minecraft.player, boat, delta, boat.getPickResult(), 1.0f, 0.9f);
+                consumers.add(renderEntity(guiGraphics, minecraft.player, boat, delta, boat.getPickResult(), 1.0f, 0.9f));
             } else if (entity instanceof Minecart minecart) {
-                renderEntity(guiGraphics, minecraft.player, minecart, delta, new ItemStack(Items.MINECART, 1), 1.1f, 0.9f);
+                consumers.add(renderEntity(guiGraphics, minecraft.player, minecart, delta, new ItemStack(Items.MINECART, 1), 1.1f, 0.9f));
             }
         }
+        guiGraphics.drawSpecial(s -> consumers.forEach(v -> v.accept(s)));
     }
 
     private void renderItems(GuiGraphics guiGraphics, float delta) {
         Minecraft minecraft = Minecraft.getInstance();
 
+        List<Consumer<MultiBufferSource>> consumers = new ArrayList<>();
         for (Entity entity : minecraft.level.entitiesForRendering()) {
             if (entity instanceof ItemEntity item) {
-                renderEntity(guiGraphics, minecraft.player, item, delta, item.getItem(), 0f, 0.9f);
+                consumers.add(renderEntity(guiGraphics, minecraft.player, item, delta, item.getItem(), 0f, 0.9f));
             }
         }
+        guiGraphics.drawSpecial(s -> consumers.forEach(v -> v.accept(s)));
     }
 
-    private void renderEntity(GuiGraphics guiGraphics, Player player, Entity entity, float delta, ItemStack item, float blit, float entityScale) {
+    private double rescale(double dx, double dz) {
+        if (!config.isRadarLogarithm()) {
+            return 1;
+        }
+        double distance = Math.sqrt(dx * dx + dz * dz);
+        double ld = (Math.log1p(distance) / Math.log1p(config.getRange())) * config.getRange();
+        return (1 / distance) * ld;
+    }
+
+    private Consumer<MultiBufferSource> renderEntity(GuiGraphics guiGraphics, Player player, Entity entity, float delta, ItemStack item, float blit, float entityScale) {
         double scale = config.getRadarSize() / config.getRange();
 
         double px = player.xOld + (player.getX() - player.xOld) * delta;
@@ -287,28 +302,28 @@ public class Radar {
         double dx = px - x;
         double dz = pz - z;
         if (dx * dx + dz * dz > config.getRange() * config.getRange()) {
-            return;
+            return s -> {};
         }
 
-        guiGraphics.pose().pushPose();
-        guiGraphics.pose().translate(dx * scale, dz * scale, 150);
-        if (config.isNorthUp()) {
-            guiGraphics.pose().mulPose(Axis.ZP.rotationDegrees(180));
-        } else {
-            guiGraphics.pose().mulPose(Axis.ZP.rotationDegrees(player.getViewYRot(delta)));
-        }
-        guiGraphics.pose().translate(0, 0, blit);
-        guiGraphics.pose().scale(config.getIconSize() * entityScale, config.getIconSize() * entityScale, 1);
-        guiGraphics.pose().mulPose(new Matrix4f().scaling(1.0f, -1.0f, 1.0f));
-        guiGraphics.pose().scale(16.0f, 16.0f, 16.0f);
+        double logscale = rescale(dx, dz);
 
-        Lighting.setupForFlatItems();
-        guiGraphics.drawSpecial(source ->
-            Minecraft.getInstance().getItemRenderer().renderStatic(player, item, ItemDisplayContext.GUI, false, guiGraphics.pose(), source, Minecraft.getInstance().level, 0xF000F0, OverlayTexture.NO_OVERLAY, 0));
-        guiGraphics.flush();
-        Lighting.setupFor3DItems();
-
-        guiGraphics.pose().popPose();
+        return source -> {
+            guiGraphics.pose().pushPose();
+            guiGraphics.pose().translate(dx * scale * logscale, dz * scale * logscale, 150);
+            if (config.isNorthUp()) {
+                guiGraphics.pose().mulPose(Axis.ZP.rotationDegrees(180));
+            } else {
+                guiGraphics.pose().mulPose(Axis.ZP.rotationDegrees(player.getViewYRot(delta)));
+            }
+            guiGraphics.pose().translate(0, 0, blit);
+            guiGraphics.pose().scale(config.getIconSize() * entityScale, config.getIconSize() * entityScale, 1);
+            guiGraphics.pose().mulPose(new Matrix4f().scaling(1.0f, -1.0f, 1.0f));
+            guiGraphics.pose().scale(16.0f, 16.0f, 16.0f);
+            Lighting.setupForFlatItems();
+            Minecraft.getInstance().getItemRenderer().renderStatic(player, item, ItemDisplayContext.GUI, false, guiGraphics.pose(), source, Minecraft.getInstance().level, 0xF000F0, OverlayTexture.NO_OVERLAY, 0);
+            Lighting.setupFor3DItems();
+            guiGraphics.pose().popPose();
+        };
     }
 
     private void renderPlayers(GuiGraphics guiGraphics, float delta) {
@@ -333,8 +348,10 @@ public class Radar {
             RenderSystem.defaultBlendFunc();
             RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1);
 
+            double logscale = rescale(dx, dz);
+
             guiGraphics.pose().pushPose();
-            guiGraphics.pose().translate(dx * v, dz * v, 2011);
+            guiGraphics.pose().translate(dx * v * logscale, dz * v * logscale, 2011);
             guiGraphics.pose().scale(0.9f, 0.9f, 0);
 
             PlayerInfo entry = minecraft.player.connection.getPlayerInfo(player.getUUID());

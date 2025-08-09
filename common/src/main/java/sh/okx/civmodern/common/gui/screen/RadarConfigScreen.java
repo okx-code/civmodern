@@ -343,6 +343,17 @@ final class RadarConfigScreen extends AbstractConfigScreen {
                 }
             }
         ));
+        addRenderableWidget(
+            Button
+                .builder(
+                    Component.translatable("civmodern.screen.radar.log", this.config.isRadarLogarithm() ? Component.translatable("civmodern.screen.radar.log.logarithmic") : Component.translatable("civmodern.screen.radar.log.linear")),
+                    (button) -> {
+                        this.config.setRadarLogarithm(!this.config.isRadarLogarithm());
+                        button.setMessage(Component.translatable("civmodern.screen.radar.log", this.config.isRadarLogarithm() ? Component.translatable("civmodern.screen.radar.log.logarithmic") : Component.translatable("civmodern.screen.radar.log.linear")));
+                    }
+                )
+                .pos(rightSideX, offsetY)
+                .build());
         offsetY += Button.DEFAULT_HEIGHT + 4;
 
         offsetY += 30 + 2;
