@@ -280,6 +280,9 @@ public class Radar {
             return 1;
         }
         double distance = Math.sqrt(dx * dx + dz * dz);
+        if (distance < 0.1) {
+            return 1;
+        }
         double ld = (Math.log1p(distance) / Math.log1p(config.getRange())) * config.getRange();
         return (1 / distance) * ld;
     }
