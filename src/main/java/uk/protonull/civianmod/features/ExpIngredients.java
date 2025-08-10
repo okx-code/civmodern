@@ -1,7 +1,7 @@
 package uk.protonull.civianmod.features;
 
-import java.util.List;
 import java.util.Set;
+import java.util.function.Consumer;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.Item;
@@ -16,7 +16,7 @@ public final class ExpIngredients {
 
     public static void addExpTooltip(
         final @NotNull ItemStack item,
-        final @NotNull List<Component> tooltipLines
+        final @NotNull Consumer<Component> tooltipAdder
     ) {
         if (!enabled) {
             return;
@@ -24,7 +24,7 @@ public final class ExpIngredients {
         if (!isExpIngredient(item)) {
             return;
         }
-        tooltipLines.add(
+        tooltipAdder.accept(
             Component.empty()
                 .withStyle(ChatFormatting.YELLOW)
                 .append(Component.translatable("civianmod.xp.ingredient"))

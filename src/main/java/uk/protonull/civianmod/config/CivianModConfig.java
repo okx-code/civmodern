@@ -85,11 +85,11 @@ public final class CivianModConfig {
     // Legacy structure
     // ============================================================
 
-    @SerialEntry(value = "items", required = false)
+    @SerialEntry(value = "items", required = false, nullable = true)
     public LegacyItemSettings legacyItemSettings = null;
-    @SerialEntry(value = "polyfills", required = false)
+    @SerialEntry(value = "polyfills", required = false, nullable = true)
     public LegacyPolyfillsSettings legacyPolyfillsSettings = null;
-    @SerialEntry(value = "iceRoad", required = false)
+    @SerialEntry(value = "iceRoad", required = false, nullable = true)
     public LegacyIceRoadSettings legacyIceRoadSettings = null;
 
     // ============================================================

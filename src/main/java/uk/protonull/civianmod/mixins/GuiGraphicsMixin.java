@@ -27,7 +27,7 @@ public abstract class GuiGraphicsMixin {
             return value;
         }
         return switch (CivianItemStack.getCompactedItemType(item)) {
-            case CompactedItem type -> String.valueOf(item.getCount());
+            case final CompactedItem type -> String.valueOf(item.getCount());
             case null -> null;
         };
     }
@@ -41,7 +41,7 @@ public abstract class GuiGraphicsMixin {
         final @Local(argsOnly = true) ItemStack item
     ) {
         return switch (CivianItemStack.getCompactedItemType(item)) {
-            case CompactedItem type -> type.getRBG();
+            case final CompactedItem type -> type.getRBG();
             case null -> decorationColour;
         };
     }

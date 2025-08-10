@@ -1,5 +1,7 @@
 package uk.protonull.civianmod.mixins;
 
+import com.llamalad7.mixinextras.expression.Definition;
+import com.llamalad7.mixinextras.expression.Expression;
 import com.llamalad7.mixinextras.sugar.Local;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.MultiPlayerGameMode;
@@ -47,12 +49,16 @@ public abstract class SafeMiningMixin {
     @Inject(
         method = "continueAttack",
         at = @At(
-            value = "INVOKE_ASSIGN",
-            target = "Lnet/minecraft/world/phys/BlockHitResult;getDirection()Lnet/minecraft/core/Direction;",
+            value = "MIXINEXTRAS:EXPRESSION",
             shift = At.Shift.AFTER
         ),
         cancellable = true
     )
+    @Definition(
+        id = "getDirection",
+        method = "Lnet/minecraft/world/phys/BlockHitResult;getDirection()Lnet/minecraft/core/Direction;"
+    )
+    @Expression("? = ?.getDirection()")
     protected void civianmod$preventToolBreakage(
         final boolean leftClick,
         final @NotNull CallbackInfo ci,

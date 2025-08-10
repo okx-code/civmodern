@@ -1,10 +1,11 @@
 package uk.protonull.civianmod.features;
 
-import java.util.List;
+import java.util.function.Consumer;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
+import net.minecraft.world.item.component.TooltipDisplay;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import uk.protonull.civianmod.config.TooltipLineOption;
@@ -53,9 +54,14 @@ public record ItemDurability(
 
     public static void addRepairLevelLine(
         final @NotNull ItemStack item,
-        final @NotNull List<Component> tooltipLines,
+        final @NotNull TooltipDisplay tooltipDisplay,
+        final @NotNull Consumer<Component> tooltipAdder,
         final @NotNull TooltipFlag tooltipFlag
     ) {
+        // Respect the server's intention to have this information hidden
+        if (!tooltipDisplay.shows(DataComponents.REPAIR_COST)) {
+            return;
+        }
         final TooltipLineOption show = showRepairLevel;
         if (show == TooltipLineOption.NEVER) {
             return;
@@ -67,7 +73,7 @@ public record ItemDurability(
         if (repairCost < 1) {
             return;
         }
-        tooltipLines.add(Component.translatable(
+        tooltipAdder.accept(Component.translatable(
             "civianmod.repair.level",
             Integer.toString(repairCost)
         ));
@@ -75,9 +81,14 @@ public record ItemDurability(
 
     public static void addDamageLevelLine(
         final @NotNull ItemStack item,
-        final @NotNull List<Component> tooltipLines,
+        final @NotNull TooltipDisplay tooltipDisplay,
+        final @NotNull Consumer<Component> tooltipAdder,
         final @NotNull TooltipFlag tooltipFlag
     ) {
+        // Respect the server's intention to have this information hidden
+        if (!tooltipDisplay.shows(DataComponents.DAMAGE)) {
+            return;
+        }
         final TooltipLineOption show = showDamageLevel;
         if (show == TooltipLineOption.NEVER) {
             return;
@@ -92,7 +103,7 @@ public record ItemDurability(
         if (durability.damage() <= 0) {
             return;
         }
-        tooltipLines.add(Component.translatable(
+        tooltipAdder.accept(Component.translatable(
             "item.durability",
             durability.getCurrentDurability(),
             durability.maxDamage()

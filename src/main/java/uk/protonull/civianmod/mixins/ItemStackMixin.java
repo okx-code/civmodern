@@ -1,13 +1,13 @@
 package uk.protonull.civianmod.mixins;
 
-import com.llamalad7.mixinextras.sugar.Local;
-import java.util.List;
+import java.util.function.Consumer;
 import net.minecraft.core.component.PatchedDataComponentMap;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
+import net.minecraft.world.item.component.TooltipDisplay;
 import net.minecraft.world.level.ItemLike;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -17,7 +17,6 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import uk.protonull.civianmod.features.CompactedItem;
 import uk.protonull.civianmod.features.ExpIngredients;
 import uk.protonull.civianmod.features.ItemDurability;
@@ -55,33 +54,33 @@ public abstract class ItemStackMixin implements CivianItemStack {
     // ============================================================
 
     @Inject(
-        method = "getTooltipLines",
+        method = "addDetailsToTooltip",
         at = @At(
             value = "INVOKE",
             target = "Lnet/minecraft/world/item/TooltipFlag;isAdvanced()Z",
-            ordinal = 1,
             shift = At.Shift.BEFORE
         )
     )
     private void civianmod$addOptionalTooltipLines(
         final @NotNull Item.TooltipContext tooltipContext,
-        final Player player,
+        final @NotNull TooltipDisplay tooltipDisplay,
+        Player player,
         final @NotNull TooltipFlag tooltipFlag,
-        final @NotNull CallbackInfoReturnable<List<Component>> cir,
-        final @Local @NotNull List<Component> tooltipLines
+        final @NotNull Consumer<Component> tooltipAdder,
+        final @NotNull CallbackInfo ci
     ) {
         final var self = (ItemStack) (Object) this;
-        ItemDurability.addRepairLevelLine(self, tooltipLines, tooltipFlag);
-        ItemDurability.addDamageLevelLine(self, tooltipLines, tooltipFlag);
-        ExpIngredients.addExpTooltip(self, tooltipLines);
+        ItemDurability.addRepairLevelLine(self, tooltipDisplay, tooltipAdder, tooltipFlag);
+        ItemDurability.addDamageLevelLine(self, tooltipDisplay, tooltipAdder, tooltipFlag);
+        ExpIngredients.addExpTooltip(self, tooltipAdder);
     }
 
     /**
      * Prevents the default durability line from being added, giving control of that to
-     * {@link uk.protonull.civianmod.features.ItemDurability#addDamageLevelLine(net.minecraft.world.item.ItemStack, java.util.List, net.minecraft.world.item.TooltipFlag)}
+     * {@link uk.protonull.civianmod.features.ItemDurability#addDamageLevelLine(ItemStack, TooltipDisplay, Consumer, TooltipFlag)}
      */
     @Redirect(
-        method = "getTooltipLines",
+        method = "addDetailsToTooltip",
         at = @At(
             value = "INVOKE",
             target = "Lnet/minecraft/world/item/ItemStack;isDamaged()Z"

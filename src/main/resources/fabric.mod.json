@@ -16,9 +16,6 @@
     "entrypoints": {
         "client": [
             "uk.protonull.civianmod.CivianMod::bootstrap"
-        ],
-        "modmenu": [
-            "uk.protonull.civianmod.features.modmenu.ModMenuIntegration"
         ]
     },
     "depends": {
@@ -28,7 +25,7 @@
         "yet_another_config_lib_v3": ">=${yacl_version}"
     },
     "suggests": {
-        "modmenu": ">=${modmenu_version}"
+
     },
     "accessWidener": "civianmod.accesswidener",
     "mixins": [

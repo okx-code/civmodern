@@ -5,7 +5,7 @@ import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import org.jetbrains.annotations.NotNull;
 import uk.protonull.civianmod.events.StartOfClientTickEvent;
-import uk.protonull.civianmod.events.HotbarSlotChangedEvent;
+import uk.protonull.civianmod.events.BeforeHotbarSlotChangedEvent;
 import uk.protonull.civianmod.mixins.KeyMappingAccessor;
 
 public class AttackMacro {
@@ -73,7 +73,7 @@ public class AttackMacro {
 
     @Subscribe
     private void onScroll(
-        final @NotNull HotbarSlotChangedEvent event
+        final @NotNull BeforeHotbarSlotChangedEvent event
     ) {
         set(false);
     }

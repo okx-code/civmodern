@@ -1,7 +1,7 @@
 accessWidener v2 named
 
 # https://fabricmc.net/wiki/tutorial:accesswideners
-# https://linkie.shedaniel.dev/mappings?namespace=mojang&version=1.21.4
+# https://linkie.shedaniel.dev/mappings?namespace=mojang&version=1.21.8
 
 # Use './gradlew :genSources' after any change to this file.
 # You'll probably need to reload your Gradle project too.

@@ -30,7 +30,7 @@ public enum CompactedItem {
     }
 
     public int getRBG() {
-        return this.colour & 0xFF_FF_FF;
+        return 0xFF_00_00_00 | this.colour;
     }
 
     private static final String CRATE_LORE = "Crate";
