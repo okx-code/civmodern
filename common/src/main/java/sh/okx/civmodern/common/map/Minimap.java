@@ -71,6 +71,7 @@ public class Minimap {
         float zoom = config.getMinimapZoom();
 
         float size = config.getMinimapSize();
+        Font font = Minecraft.getInstance().font;
 
         PoseStack matrices = event.guiGraphics().pose();
 
@@ -108,6 +109,9 @@ public class Minimap {
         LocalPlayer player = Minecraft.getInstance().player;
         float px = (float) Mth.lerp(event.deltaTick(), player.xo, player.getX());
         float pz = (float) Mth.lerp(event.deltaTick(), player.zo, player.getZ());
+        int playerBX = player.getBlockX();
+        int playerBY = player.getBlockY();
+        int playerBZ = player.getBlockZ();
         float x = px - (size * zoom) / 2;
         float y = pz - (size * zoom) / 2;
 
@@ -136,6 +140,7 @@ public class Minimap {
             drawnX += screenX == 0 ? tmp / 2 : SIZE;
         }
 
+        event.guiGraphics().drawString(font, "(%d, %s, %d)".formatted(playerBX, playerBY, playerBZ), 0, 0, 0xFFFFFF);
         RenderSystem.enableDepthTest();
         if (config.isPlayerWaypointsEnabled()) {
             // TODO fix the player rendering above the chevron
