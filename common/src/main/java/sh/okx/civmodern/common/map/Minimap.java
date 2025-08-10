@@ -140,7 +140,9 @@ public class Minimap {
             drawnX += screenX == 0 ? tmp / 2 : SIZE;
         }
 
-        event.guiGraphics().drawString(font, "(%d, %s, %d)".formatted(playerBX, playerBY, playerBZ), 0, 0, 0xFFFFFF);
+        if (config.isShowMinimapCoords()) {
+            event.guiGraphics().drawString(font, "(%d, %s, %d)".formatted(playerBX, playerBY, playerBZ), 0, 0, 0xFFFFFF);
+        }
         RenderSystem.enableDepthTest();
         if (config.isPlayerWaypointsEnabled()) {
             // TODO fix the player rendering above the chevron

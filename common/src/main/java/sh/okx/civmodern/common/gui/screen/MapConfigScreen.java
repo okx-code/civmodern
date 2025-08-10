@@ -105,7 +105,8 @@ public class MapConfigScreen extends AbstractConfigScreen {
             }
         }));
         offset += 24;
-
+        addRenderableWidget(new ToggleButton(left, offset, ToggleButton.DEFAULT_BUTTON_WIDTH, Component.translatable("civmodern.screen.map.coords"), this.config::isShowMinimapCoords, this.config::setShowMinimapCoords, null, ToggleButton.DEFAULT_NARRATION));
+        offset += 24;
         chevronColourY = offset;
 
         offset += 12;
