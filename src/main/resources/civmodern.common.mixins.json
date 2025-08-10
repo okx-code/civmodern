@@ -1,0 +1,25 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "sh.okx.civmodern.common.mixins",
+  "compatibilityLevel": "JAVA_17",
+  "mixins": [],
+  "client": [
+    "BlockStateChangeMixin",
+    "ChatMixin",
+    "ClientPacketListenerMixin",
+    "GuiGraphicsMixin",
+    "InventoryMixin",
+    "ItemStackMixin",
+    "KeyMappingAccessor",
+    "RespawnMixin",
+    "ScreenAccessor",
+    "StorageSourceAccessor",
+    "ItemRepairMixin",
+    "PolygonSmoothMixin"
+  ],
+  "server": [],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}
