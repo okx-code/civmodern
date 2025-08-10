@@ -36,6 +36,7 @@
     "civmodern.screen.radar.transparency": "Transparency: %s",
     "civmodern.screen.map.x": "Map X: %s",
     "civmodern.screen.map.y": "Map Y: %s",
+    "civmodern.screen.map.coords": "Minimap Coordinates",
     "civmodern.screen.minimap": "Minimap",
     "civmodern.screen.mapping": "Rendering",
     "civmodern.screen.radar.background_transparency": "BG Transparency: %s",

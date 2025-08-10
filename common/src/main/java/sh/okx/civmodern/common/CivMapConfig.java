@@ -49,6 +49,7 @@ public class CivMapConfig {
     private boolean cratesAreCompacted;
     private boolean showRepairCost;
     private boolean radarLogarithm;
+    private boolean showMinimapCoords;
 
     public CivMapConfig(File file, Properties properties) {
         this.file = file;
@@ -86,6 +87,8 @@ public class CivMapConfig {
         this.cratesAreCompacted = Boolean.parseBoolean(properties.getProperty("crates_are_compacted", "true"));
         this.showRepairCost = Boolean.parseBoolean(properties.getProperty("show_repair_cost", "true"));
         this.radarLogarithm = Boolean.parseBoolean(properties.getProperty("radar_logarithm", "false"));
+        this.showMinimapCoords = Boolean.parseBoolean(properties.getProperty("show_minimap_coords", "true"));
+
     }
 
     public void save() {
@@ -124,6 +127,7 @@ public class CivMapConfig {
             properties.setProperty("crates_are_compacted", Boolean.toString(cratesAreCompacted));
             properties.setProperty("show_repair_cost", Boolean.toString(showRepairCost));
             properties.setProperty("radar_logarithm", Boolean.toString(radarLogarithm));
+            properties.setProperty("show_minimap_coords", Boolean.toString(showMinimapCoords));
 
             try (FileOutputStream output = new FileOutputStream(file)) {
                 properties.store(output, null);
@@ -404,5 +408,13 @@ public class CivMapConfig {
 
     public void setRadarLogarithm(boolean radarLogarithm) {
         this.radarLogarithm = radarLogarithm;
+    }
+
+    public boolean isShowMinimapCoords() {
+        return showMinimapCoords;
+    }
+
+    public void setShowMinimapCoords(boolean showMinimapCoords) {
+        this.showMinimapCoords = showMinimapCoords;
     }
 }
