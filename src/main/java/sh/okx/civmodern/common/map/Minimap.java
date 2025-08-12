@@ -69,6 +69,8 @@ public class Minimap {
         Scoreboard scoreboard = mc.level.getScoreboard();
         Objective objective = scoreboard.getDisplayObjective(DisplaySlot.LIST);
         if (mc.options.hideGui || mc.getDebugOverlay().showDebugScreen() || !(!mc.options.keyPlayerList.isDown() || mc.isLocalServer() && mc.player.connection.getListedOnlinePlayers().size() <= 1 && objective == null)) {
+            event.guiGraphics().guiRenderState.submitPicturesInPictureState(new BlitRenderState(event.guiGraphics(),
+                ((source, stack) -> {})));
             return;
         }
 

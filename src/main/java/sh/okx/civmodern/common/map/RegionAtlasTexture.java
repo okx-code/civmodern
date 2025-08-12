@@ -1,16 +1,13 @@
 package sh.okx.civmodern.common.map;
 
-import com.mojang.blaze3d.opengl.GlRenderPipeline;
 import com.mojang.blaze3d.opengl.GlStateManager;
-import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.textures.AddressMode;
 import com.mojang.blaze3d.textures.FilterMode;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.renderer.RenderStateShard;
 import net.minecraft.client.renderer.RenderType;
-import org.joml.Matrix3x2f;
-import org.joml.Matrix3x2fStack;
 import sh.okx.civmodern.common.rendering.BlitRenderState;
 import sh.okx.civmodern.common.rendering.CivModernPipelines;
 import sh.okx.civmodern.common.rendering.RegionAbstractTexture;
@@ -45,7 +42,7 @@ public class RegionAtlasTexture {
         clear();
     }
 
-    private void clear() {
+    public void clear() {
         GlStateManager._bindTexture(this.indexTexture);
         GlStateManager._pixelStore(GL_UNPACK_SWAP_BYTES, 0);
         GlStateManager._pixelStore(GL_UNPACK_LSB_FIRST, 0);
@@ -114,6 +111,7 @@ public class RegionAtlasTexture {
             stack.setIdentity();
             int v = Minecraft.getInstance().getWindow().getGuiScale();
             this.texture.getTexture().setTextureFilter(linear ? FilterMode.LINEAR : FilterMode.NEAREST, FilterMode.NEAREST, true);
+            this.texture.getTexture().setAddressMode(AddressMode.CLAMP_TO_EDGE);
             stack.scale(v, v, 1);
             stack.translate(translateX, translateY, 0);
             bufferBuilder.addVertex(stack.last(), i, l, 0).setUv(f, n).setColor(0xffffffff).setLight(0xff);

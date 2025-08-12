@@ -38,7 +38,6 @@ import sh.okx.civmodern.common.events.ClientTickEvent;
 import sh.okx.civmodern.common.events.PostRenderGameOverlayEvent;
 import sh.okx.civmodern.common.rendering.CivModernPipelines;
 
-import java.net.URL;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Random;
@@ -47,16 +46,7 @@ import java.util.UUID;
 
 public class Radar {
 
-    private static boolean hideY;
-
-    static {
-        URL resource = Radar.class.getResource("/civmc");
-        if (resource != null) {
-            hideY = true;
-        } else {
-            hideY = false;
-        }
-    }
+    private static boolean hideY = true;
 
     private final ColourProvider colourProvider;
     private final CivMapConfig config;

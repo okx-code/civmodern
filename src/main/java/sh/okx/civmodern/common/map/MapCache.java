@@ -200,9 +200,9 @@ public class MapCache {
                 if (far) {
                     iterator.remove();
                 }
-                if (entry.getValue().clearDirty()) {
-                    toSave.put(entry.getKey(), loader);
-                }
+            }
+            if (entry.getValue().clearDirty()) {
+                toSave.put(entry.getKey(), loader);
             }
 
             if (loader == null || far) {
