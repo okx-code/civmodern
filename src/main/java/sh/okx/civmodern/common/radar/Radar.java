@@ -1,19 +1,7 @@
 package sh.okx.civmodern.common.radar;
 
 import com.google.common.eventbus.Subscribe;
-import com.mojang.blaze3d.opengl.GlStateManager;
-import com.mojang.blaze3d.pipeline.RenderPipeline;
-import com.mojang.blaze3d.platform.Lighting;
-import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.vertex.BufferBuilder;
-import com.mojang.blaze3d.vertex.DefaultVertexFormat;
-import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.Tesselator;
-import com.mojang.blaze3d.vertex.VertexConsumer;
-import com.mojang.blaze3d.vertex.VertexFormat.Mode;
-import com.mojang.math.Axis;
 import io.wispforest.owo.ui.core.Color;
-import io.wispforest.owo.ui.core.OwoUIDrawContext;
 import io.wispforest.owo.ui.core.OwoUIPipelines;
 import io.wispforest.owo.ui.renderstate.CircleElementRenderState;
 import io.wispforest.owo.ui.renderstate.LineElementRenderState;
@@ -22,16 +10,10 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.PlayerFaceRenderer;
-import net.minecraft.client.gui.navigation.ScreenRectangle;
-import net.minecraft.client.gui.render.TextureSetup;
-import net.minecraft.client.gui.render.state.GuiElementRenderState;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.multiplayer.PlayerInfo;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.player.RemotePlayer;
-import net.minecraft.client.renderer.RenderPipelines;
-import net.minecraft.client.renderer.RenderType;
-import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -45,18 +27,11 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.vehicle.AbstractBoat;
-import net.minecraft.world.entity.vehicle.Boat;
 import net.minecraft.world.entity.vehicle.Minecart;
-import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix3x2f;
-import org.joml.Matrix3x2fStack;
-import org.joml.Matrix3x2fc;
-import org.joml.Matrix4f;
-import org.joml.Matrix4x3f;
 import sh.okx.civmodern.common.CivMapConfig;
 import sh.okx.civmodern.common.ColourProvider;
 import sh.okx.civmodern.common.events.ClientTickEvent;
@@ -69,8 +44,6 @@ import java.util.HashSet;
 import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
-
-import static org.lwjgl.opengl.GL11.*;
 
 public class Radar {
 
@@ -353,9 +326,9 @@ public class Radar {
 
             PlayerInfo entry = minecraft.player.connection.getPlayerInfo(player.getUUID());
             if (config.isNorthUp()) {
-                guiGraphics.pose().rotate(180);
+                guiGraphics.pose().rotate((float) Math.toRadians(180));
             } else {
-                guiGraphics.pose().rotate(minecraft.player.getViewYRot(delta));
+                guiGraphics.pose().rotate((float) Math.toRadians(minecraft.player.getViewYRot(delta)));
             }
             guiGraphics.pose().pushMatrix();
             guiGraphics.pose().scale(config.getIconSize(), config.getIconSize());
@@ -366,15 +339,15 @@ public class Radar {
                 location = ResourceLocation.withDefaultNamespace("textures/entity/steve.png");
             }
             PlayerFaceRenderer.draw(guiGraphics, location, -4, -4, 8, true, false, -1);
-//            guiGraphics.blit(RenderType::guiTextured, location, -4, -4, 8, 8, 8, 8, 8, 64, 64);
-//            RenderSystem.disableBlend();
             guiGraphics.pose().pushMatrix();
             guiGraphics.pose().translate(0, 4.5f * config.getIconSize());
             guiGraphics.pose().scale(0.6f * config.getTextSize(), 0.6f * config.getTextSize());
             Component component = Component.literal(
                 player.getScoreboardName() + " (" + (hideY() ? ((int) Math.round(Math.sqrt(dx * dx + dz * dz))) : (int) player.getY()) + ")");
-            guiGraphics.drawCenteredString(minecraft.font, component, 0, 0, 0xffffff);
+            guiGraphics.drawCenteredString(minecraft.font, component, 0, 1, -1);
 
+            guiGraphics.pose().popMatrix();
+            guiGraphics.pose().popMatrix();
             guiGraphics.pose().popMatrix();
         }
     }
