@@ -68,10 +68,11 @@ public class AutoNavigation {
         // TODO when user hits a key then stop macro (maybe add button to resume previous route)
         // TODO shadow? when showing preview route
         // TODO shift click - show this on the gui instead of queuing
+        Vec2 destination = destinations.peek();
+        double distanceRemaining = Mth.lengthSquared(player.getVehicle().getX() - destination.x, player.getVehicle().getZ() - destination.y);
 
         if (player.getVehicle() instanceof Boat boat) {
-            Vec2 destination = destinations.peek();
-            if (Mth.lengthSquared(player.getVehicle().getX() - destination.x, player.getVehicle().getZ() - destination.y) < 5 * 5) {
+            if (distanceRemaining < 5 * 5) {
                 mc.options.keyUp.setDown(false);
                 mc.options.keyLeft.setDown(false);
                 mc.options.keyRight.setDown(false);
@@ -111,29 +112,24 @@ public class AutoNavigation {
             }
             mc.options.keyUp.setDown(true);
         } else {
-            Vec2 destination = destinations.peek();
-            if (Mth.lengthSquared(player.getVehicle().getX() - destination.x, player.getVehicle().getZ() - destination.y) < 2 * 2) {
+            if (distanceRemaining > 3 * 3) {
                 // Look in the direction of the destination
-                destinations.poll();
+                destinations.poll();    
                 if (destinations.peek() == null) {
-                    mc.options.keyLeft.setDown(false);
-                    mc.options.keyRight.setDown(false);
-                    mc.options.keyUp.setDown(false);
+                    reset();
                     return;
                 }
             } else {
                  Vec3 destinationVec3 = new Vec3(destination.x, player.getEyeY(), destination.y);
 
-                 float turnLerp = 0.17f;
+                 float turnAlpha = 0.17f;
                  double destinationDistance = destinationVec3.subtract(player.getEyePosition()).length();
                  Vec3 turnStart = player.getEyePosition().add(player.getLookAngle().multiply(destinationDistance, 0, destinationDistance));
-                 Vec3 turnCurrent = turnStart.lerp(destinationVec3, turnLerp);
+                 Vec3 turnCurrent = turnStart.lerp(destinationVec3, turnAlpha);
 
                  player.lookAt(EntityAnchorArgument.Anchor.EYES, turnCurrent);
                  player.getVehicle().lookAt(EntityAnchorArgument.Anchor.EYES, turnCurrent);
             }
-            mc.options.keyLeft.setDown(false);
-            mc.options.keyRight.setDown(false);
             mc.options.keyUp.setDown(true);
         }
     }
