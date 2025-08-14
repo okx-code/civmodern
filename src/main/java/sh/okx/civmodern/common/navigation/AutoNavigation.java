@@ -122,10 +122,9 @@ public class AutoNavigation {
                     return;
                 }
             } else {
-                 // Janky turning. Toggleable by config
                  Vec3 destinationVec3 = new Vec3(destination.x, player.getEyeY(), destination.y);
 
-                 float turnLerp = 0.01f;
+                 float turnLerp = 0.17f;
                  double destinationDistance = destinationVec3.subtract(player.getEyePosition()).length();
                  Vec3 turnStart = player.getEyePosition().add(player.getLookAngle().multiply(destinationDistance, 0, destinationDistance));
                  Vec3 turnCurrent = turnStart.lerp(destinationVec3, turnLerp);
