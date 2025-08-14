@@ -123,11 +123,15 @@ public class AutoNavigation {
                 }
             } else {
                  // Janky turning. Toggleable by config
-                 /*
-                 player.lookAt(EntityAnchorArgument.Anchor.EYES, new Vec3(destination.x,  player.getEyeY(), destination.y));
-                 player.getVehicle().lookAt(EntityAnchorArgument.Anchor.EYES, new Vec3(destination.x,  player.getVehicle().getEyeY(), destination.y));
-                 
-                  */
+                 Vec3 destinationVec3 = new Vec3(destination.x, player.getEyeY(), destination.y);
+
+                 float turnLerp = 0.01f;
+                 double destinationDistance = destinationVec3.subtract(player.getEyePosition()).length();
+                 Vec3 turnStart = player.getEyePosition().add(player.getLookAngle().multiply(destinationDistance, 0, destinationDistance));
+                 Vec3 turnCurrent = turnStart.lerp(destinationVec3, turnLerp);
+
+                 player.lookAt(EntityAnchorArgument.Anchor.EYES, turnCurrent);
+                 player.getVehicle().lookAt(EntityAnchorArgument.Anchor.EYES, turnCurrent);
             }
             mc.options.keyLeft.setDown(false);
             mc.options.keyRight.setDown(false);
