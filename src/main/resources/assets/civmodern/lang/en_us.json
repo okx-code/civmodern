@@ -53,7 +53,7 @@
     "civmodern.screen.ice.stop": "Stop on low food",
     "civmodern.screen.ice.stop.tooltip": "Automatically stop the ice-road macro when critically hungry?",
     "civmodern.screen.map.title": "Civ Modern Config (Map)",
-    "civmodern.map.boat.tooltip": "Use while in a boat\nRight click to place a boat navigation waypoint\nShift right click to delete a waypoint\nControl right click to stop",
+    "civmodern.map.boat.tooltip": "Use while in a boat or riding a steerable animal\nRight click to place a navigation waypoint\nShift right click to delete a waypoint\nControl right click or dismount to stop",
     "civmodern.map.players.tooltip": "Display players that trigger snitches on the map",
     "civmodern.map.newwaypoint.tooltip": "Create new waypoint",
     "civmodern.map.highlight.tooltip": "Set highlighted waypoint",
