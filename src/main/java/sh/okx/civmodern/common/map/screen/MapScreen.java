@@ -3,7 +3,6 @@ package sh.okx.civmodern.common.map.screen;
 import com.mojang.blaze3d.platform.Window;
 import io.wispforest.owo.ui.core.Color;
 import io.wispforest.owo.ui.renderstate.LineElementRenderState;
-import io.wispforest.owo.ui.renderstate.RingElementRenderState;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
@@ -24,7 +23,7 @@ import org.joml.Matrix3x2f;
 import org.joml.Matrix3x2fStack;
 import sh.okx.civmodern.common.AbstractCivModernMod;
 import sh.okx.civmodern.common.CivMapConfig;
-import sh.okx.civmodern.common.boat.BoatNavigation;
+import sh.okx.civmodern.common.navigation.AutoNavigation;
 import sh.okx.civmodern.common.gui.widget.ImageButton;
 import sh.okx.civmodern.common.map.MapCache;
 import sh.okx.civmodern.common.map.RegionAtlasTexture;
@@ -48,7 +47,6 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
 
-import static org.lwjgl.opengl.GL11.*;
 import static sh.okx.civmodern.common.map.RegionAtlasTexture.SIZE;
 
 public class MapScreen extends Screen {
@@ -59,7 +57,7 @@ public class MapScreen extends Screen {
     private final AbstractCivModernMod mod;
     private final KeyMapping key;
     private final MapCache mapCache;
-    private final BoatNavigation navigation;
+    private final AutoNavigation navigation;
     private final Waypoints waypoints;
     private final PlayerWaypoints playerWaypoints;
 
@@ -89,7 +87,7 @@ public class MapScreen extends Screen {
 
     private boolean changedConfig = false;
 
-    public MapScreen(AbstractCivModernMod mod, KeyMapping key, CivMapConfig config, MapCache mapCache, BoatNavigation navigation, Waypoints waypoints, PlayerWaypoints playerWaypoints) {
+    public MapScreen(AbstractCivModernMod mod, KeyMapping key, CivMapConfig config, MapCache mapCache, AutoNavigation navigation, Waypoints waypoints, PlayerWaypoints playerWaypoints) {
         super(Component.translatable("civmodern.screen.map.title"));
 
         this.mod = mod;

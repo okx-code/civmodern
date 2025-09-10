@@ -1,7 +1,6 @@
 package sh.okx.civmodern.common;
 
 import com.google.common.eventbus.Subscribe;
-import com.mojang.blaze3d.platform.InputConstants;
 import com.mojang.blaze3d.platform.InputConstants.Type;
 
 import java.io.File;
@@ -19,15 +18,13 @@ import net.fabricmc.fabric.api.client.rendering.v1.SpecialGuiElementRegistry;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.Options;
-import net.minecraft.client.gui.render.pip.GuiEntityRenderer;
-import net.minecraft.client.gui.render.state.pip.GuiEntityRenderState;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.multiplayer.ClientSuggestionProvider;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.lwjgl.glfw.GLFW;
-import sh.okx.civmodern.common.boat.BoatNavigation;
+import sh.okx.civmodern.common.navigation.AutoNavigation;
 import sh.okx.civmodern.common.events.*;
 import sh.okx.civmodern.common.gui.screen.MainConfigScreen;
 import sh.okx.civmodern.common.macro.AttackMacro;
@@ -39,10 +36,8 @@ import sh.okx.civmodern.common.map.screen.MapScreen;
 import sh.okx.civmodern.common.map.waypoints.Waypoint;
 import sh.okx.civmodern.common.parser.ParsedWaypoint;
 import sh.okx.civmodern.common.radar.Radar;
-import sh.okx.civmodern.common.rendering.BlitRenderState;
 import sh.okx.civmodern.common.rendering.BlitRenderer;
 import sh.okx.civmodern.common.rendering.CivModernPipelines;
-import sh.okx.civmodern.common.rendering.RegionTileStateShard;
 
 public abstract class AbstractCivModernMod {
 
@@ -68,7 +63,7 @@ public abstract class AbstractCivModernMod {
     private AttackMacro attackMacro;
 
     private WorldListener worlds;
-    private BoatNavigation boatNavigation;
+    private AutoNavigation autoNavigation;
 
     public final EventBus eventBus = new EventBus("CivModernEvents");
 
@@ -155,7 +150,7 @@ public abstract class AbstractCivModernMod {
         this.iceRoadMacro = new IceRoadMacro(this, config, this.iceRoadBinding);
         this.attackMacro = new AttackMacro(this, this.attackBinding, options.keyAttack);
 
-        this.boatNavigation = new BoatNavigation(this);
+        this.autoNavigation = new AutoNavigation(this);
     }
 
     public abstract void registerKeyBinding(KeyMapping mapping);
@@ -178,7 +173,7 @@ public abstract class AbstractCivModernMod {
             if (!Screen.hasControlDown()) {
                 this.worlds.getWaypoints().setTarget(waypoint);
             } else {
-                MapScreen screen = new MapScreen(this, this.mapBinding, config, worlds.getCache(), boatNavigation, worlds.getWaypoints(), worlds.getPlayerWaypoints());
+                MapScreen screen = new MapScreen(this, this.mapBinding, config, worlds.getCache(), autoNavigation, worlds.getWaypoints(), worlds.getPlayerWaypoints());
                 screen.setNewWaypoint(waypoint);
                 Minecraft.getInstance().setScreen(screen);
             }
@@ -195,7 +190,7 @@ public abstract class AbstractCivModernMod {
         }
         while (mapBinding.consumeClick()) {
             if (worlds.getCache() != null) {
-                Minecraft.getInstance().setScreen(new MapScreen(this, this.mapBinding, config, worlds.getCache(), boatNavigation, worlds.getWaypoints(), worlds.getPlayerWaypoints()));
+                Minecraft.getInstance().setScreen(new MapScreen(this, this.mapBinding, config, worlds.getCache(), autoNavigation, worlds.getWaypoints(), worlds.getPlayerWaypoints()));
             }
         }
         while (minimapZoomBinding.consumeClick()) {
