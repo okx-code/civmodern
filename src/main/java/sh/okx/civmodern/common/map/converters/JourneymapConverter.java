@@ -69,7 +69,14 @@ public class JourneymapConverter implements Converter {
                 currServer.ip.replace(".", "~"),
                 getIpFromAddress(currServer.ip)
         );
-        return base.resolve("mp").resolve(mpDirName).resolve(dimension);
+
+        // try multiworld support first
+        var mutliWorldPath = base.resolve("mp").resolve(mpDirName).resolve(dimension);
+        if (mutliWorldPath.toFile().exists()) {
+            return mutliWorldPath;
+        }
+        // fallback to "normal" schema
+        return base.resolve("mp").resolve(currServer.name).resolve(dimension);
     }
 
     public boolean filesAvailable() {
