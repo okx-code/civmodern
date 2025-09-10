@@ -12,6 +12,7 @@ import net.minecraft.world.phys.Vec2;
 import net.minecraft.world.phys.Vec3;
 import sh.okx.civmodern.common.AbstractCivModernMod;
 import sh.okx.civmodern.common.events.ClientTickEvent;
+import sh.okx.civmodern.common.events.WorldRenderLastEvent;
 
 import java.util.ArrayDeque;
 import java.util.Deque;
@@ -44,7 +45,7 @@ public class AutoNavigation {
     private double rotation = 0;
 
     @Subscribe
-    public void tick(ClientTickEvent event) {
+    public void tick(WorldRenderLastEvent event) {
         if (destinations.isEmpty()) {
             return;
         }
@@ -112,9 +113,9 @@ public class AutoNavigation {
             }
             mc.options.keyUp.setDown(true);
         } else {
-            if (distanceRemaining > 3 * 3) {
+            if (distanceRemaining < 3 * 3) {
                 // Look in the direction of the destination
-                destinations.poll();    
+                destinations.poll();
                 if (destinations.peek() == null) {
                     reset();
                     return;
@@ -122,9 +123,9 @@ public class AutoNavigation {
             } else {
                  Vec3 destinationVec3 = new Vec3(destination.x, player.getEyeY(), destination.y);
 
-                 float turnAlpha = 0.17f;
-                 double destinationDistance = destinationVec3.subtract(player.getEyePosition()).length();
-                 Vec3 turnStart = player.getEyePosition().add(player.getLookAngle().multiply(destinationDistance, 0, destinationDistance));
+                 float turnAlpha = 0.17f * event.tickDelta();
+                 double destinationDistance = destinationVec3.subtract(player.getEyePosition(event.tickDelta())).length();
+                 Vec3 turnStart = player.getEyePosition(event.tickDelta()).add(player.getLookAngle().multiply(destinationDistance, 0, destinationDistance));
                  Vec3 turnCurrent = turnStart.lerp(destinationVec3, turnAlpha);
 
                  player.lookAt(EntityAnchorArgument.Anchor.EYES, turnCurrent);
