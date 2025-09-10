@@ -150,7 +150,7 @@ public class Minimap {
             ((source, stack) -> renderers.forEach(r -> r.render(source, stack)))));
 
         if (config.isShowMinimapCoords()) {
-            event.guiGraphics().drawCenteredString(mc.font,  "(%d, %s, %d)".formatted(playerBX, playerBY, playerBZ), (int) (size / 2), (int) size + 2, -1);
+            event.guiGraphics().drawCenteredString(mc.font, "(%d, %s, %d)".formatted(playerBX, playerBY, playerBZ), (int) (size / 2), (int) size + 2, -1);
         }
         if (config.isPlayerWaypointsEnabled()) {
             // TODO fix the player rendering above the chevron
