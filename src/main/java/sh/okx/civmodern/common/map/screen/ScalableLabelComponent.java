@@ -235,19 +235,8 @@ public class ScalableLabelComponent extends BaseComponent {
             float cy = mouseY / lambdaScale;
             if (hover && cx >= left && cx <= right && cy >= top - 2 && cy <= bottom + (2)) {
                 context.fill((int) left, (int) top - 1, (int) right, (int) bottom + 1, 0xffa09f9b);
-
-                context.drawLine((int) top, (int) left, (int) bottom, (int) right, 1, color.get());
-//                    Tesselator tessellator = Tesselator.getInstance();
-//                    BufferBuilder buffer = tessellator.begin(VertexFormat.Mode.TRIANGLE_STRIP, DefaultVertexFormat.POSITION_COLOR);
-//                    Matrix4f matrix4f = context.getMatrixStack().last().pose();
-//                    buffer.addVertex(matrix4f, top, left, 0).setColor(colour);
-//                    buffer.addVertex(matrix4f, top, right, 0).setColor(colour);
-//                    buffer.addVertex(matrix4f, bottom, right, 0).setColor(colour);
-//                    buffer.addVertex(matrix4f, bottom, left, 0).setColor(colour);
-//                    RenderType.gui().draw(buffer.buildOrThrow());
             }
             context.drawString(this.textRenderer, renderText, (int) sx, (int) sy, this.color.get().argb(), this.shadow);
-
 
             context.pop();
         }
@@ -270,6 +259,14 @@ public class ScalableLabelComponent extends BaseComponent {
     public boolean onMouseClick(double mouseX, double mouseY, int button) {
         if (button != 0) {
             return false;
+        }
+        float x = this.x;
+        float y = this.y;
+        if (this.horizontalSizing.get().isContent()) {
+            x += this.horizontalSizing.get().value;
+        }
+        if (this.verticalSizing.get().isContent()) {
+            y += this.verticalSizing.get().value;
         }
 
         float sx = (x / scale);

@@ -18,6 +18,7 @@ import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
+import sh.okx.civmodern.common.gui.widget.ColourTextEditBox;
 import sh.okx.civmodern.common.gui.widget.HsbColourPicker;
 import sh.okx.civmodern.common.gui.widget.ImageButton;
 import sh.okx.civmodern.common.map.waypoints.Waypoint;
@@ -34,6 +35,7 @@ public class NewWaypointModal extends Modal<FlowLayout> {
     private TextBoxComponent xBox;
     private TextBoxComponent yBox;
     private TextBoxComponent zBox;
+    private ColourTextEditBox colourBox;
 
     private TextBoxComponent nameBox;
 
@@ -62,15 +64,20 @@ public class NewWaypointModal extends Modal<FlowLayout> {
             this.visible = false;
             this.targeting = true;
         });
-        xBox = Components.textBox(Sizing.fixed(44), Integer.toString(x));
+        xBox = Components.textBox(Sizing.fixed(55), Integer.toString(x));
         xBox.setFilter(numFilter);
         xBox.onChanged().subscribe(value -> this.updateDone());
-        yBox = Components.textBox(Sizing.fixed(26), Integer.toString(y));
+        yBox = Components.textBox(Sizing.fixed(32), Integer.toString(y));
         yBox.setFilter(numFilter);
         yBox.onChanged().subscribe(value -> this.updateDone());
-        zBox = Components.textBox(Sizing.fixed(44), Integer.toString(z));
+        zBox = Components.textBox(Sizing.fixed(55), Integer.toString(z));
         zBox.setFilter(numFilter);
         zBox.onChanged().subscribe(value -> this.updateDone());
+
+        colourBox = new ColourTextEditBox(Sizing.fixed(55), () -> colour, c -> {
+            this.colour = c;
+            this.previewColour = c;
+        });
 
         colourPicker = new HsbColourPicker(
             0,
@@ -79,6 +86,7 @@ public class NewWaypointModal extends Modal<FlowLayout> {
             20,
             this.colour,
             (colour) -> {
+                colourBox.setColourFromInt(colour);
                 this.colour = colour;
                 this.previewColour = colour;
             },
@@ -114,8 +122,7 @@ public class NewWaypointModal extends Modal<FlowLayout> {
                         )
                         .child(
                             Containers.horizontalFlow(Sizing.content(), Sizing.fixed(40))
-                                .child(coordsButton.margins(Insets.right(4)))
-                                .child(colourPicker)
+                                .child(coordsButton.margins(Insets.right(0)))
                                 .margins(Insets.bottom(6))
                                 .alignment(HorizontalAlignment.RIGHT, VerticalAlignment.BOTTOM)
                                 .positioning(Positioning.relative(100, 100))
@@ -123,7 +130,13 @@ public class NewWaypointModal extends Modal<FlowLayout> {
                     )
                     .margins(Insets.horizontal(4).withTop(4))
             )
-            .child(doneButton.margins(Insets.horizontal(4).withTop(4)))
+            .child(
+                Containers.horizontalFlow(Sizing.fill(), Sizing.fixed(24))
+                    .child(doneButton.horizontalSizing(Sizing.fixed(93)).margins(Insets.right(4).withTop(1)))
+                    .child(colourBox)
+                    .child(colourPicker.margins(Insets.top(1).withLeft(2)))
+                    .margins(Insets.horizontal(4).withTop(4))
+            )
             .surface(Surface.DARK_PANEL)
             .padding(Insets.of(6));
 

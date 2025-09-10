@@ -51,11 +51,17 @@ public class RegionReference {
         if (!this.isReferenced()) {
             throw new IllegalStateException("cannot mark dirty region with no references");
         }
-        this.dirty.set(true);
+        if (!this.dirty.getAndSet(true)) {
+            addReference(null);
+        }
     }
 
     public boolean clearDirty() {
-        return this.dirty.getAndSet(false);
+        boolean dirty = this.dirty.getAndSet(false);
+        if (dirty) {
+            removeReference();
+        }
+        return dirty;
     }
 
     public boolean isReferenced() {

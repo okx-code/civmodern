@@ -115,8 +115,7 @@ public class MapScreen extends Screen {
         newWaypointModal = new NewWaypointModal(waypoints);
         if (newWaypoint == null) {
             LocalPlayer player = Minecraft.getInstance().player;
-            Short yLevel = mapCache.getYLevel(player.getBlockX(), player.getBlockZ());
-            newWaypointModal.open("", player.getBlockX(), yLevel != null ? yLevel + 2 : player.getBlockY() + 1, player.getBlockZ());
+            newWaypointModal.open("", player.getBlockX(), player.getBlockY() + 1, player.getBlockZ());
         } else {
             newWaypointModal.open(newWaypoint.name(), newWaypoint.x(), newWaypoint.y(), newWaypoint.z());
             newWaypointModal.setVisible(true);
@@ -127,6 +126,9 @@ public class MapScreen extends Screen {
         addRenderableWidget(positionContextMenu);
 
         openWaypointButton = new ImageButton(this.width / 2 - 22, 10, 20, 20, ResourceLocation.fromNamespaceAndPath("civmodern", "gui/new.png"), imbg -> {
+            if (editWaypointModal.isTargeting()) {
+                return;
+            }
             newWaypointModal.setVisible(!newWaypointModal.isVisible());
             if (newWaypointModal.isVisible()) {
                 editWaypointModal.setVisible(false);

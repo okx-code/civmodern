@@ -29,6 +29,7 @@ public class PositionContextMenu extends Modal<FlowLayout> {
     }
 
     public void open(int targetX, Short targetY, int targetZ, int x, int z) {
+        this.options.clear();
         this.layout.rootComponent.clearChildren();
         ScalableLabelComponent createWaypoint = new ScalableLabelComponent(Component.literal("Create waypoint"), c -> {
             this.setVisible(false);

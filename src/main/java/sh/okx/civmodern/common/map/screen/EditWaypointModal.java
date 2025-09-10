@@ -17,6 +17,7 @@ import net.minecraft.client.gui.components.Button;
 import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
+import sh.okx.civmodern.common.gui.widget.ColourTextEditBox;
 import sh.okx.civmodern.common.gui.widget.HsbColourPicker;
 import sh.okx.civmodern.common.gui.widget.ImageButton;
 import sh.okx.civmodern.common.map.waypoints.Waypoint;
@@ -33,6 +34,7 @@ public class EditWaypointModal extends Modal<FlowLayout> {
     private TextBoxComponent xBox;
     private TextBoxComponent yBox;
     private TextBoxComponent zBox;
+    private ColourTextEditBox colourBox;
     private HsbColourPicker colourPicker;
     private int colour = 0xFF0000;
     private int previewColour = colour;
@@ -45,7 +47,7 @@ public class EditWaypointModal extends Modal<FlowLayout> {
     private boolean targeting = false;
 
     public EditWaypointModal(Waypoints waypoints) {
-        super(OwoUIAdapter.createWithoutScreen(Minecraft.getInstance().getWindow().getGuiScaledWidth() / 2 - 104, 48, 196, 116, Containers::verticalFlow));
+        super(OwoUIAdapter.createWithoutScreen(Minecraft.getInstance().getWindow().getGuiScaledWidth() / 2 - 104 - 12, 48, 220, 116, Containers::verticalFlow));
         super.layout.rootComponent.allowOverflow(true);
         this.waypoints = waypoints;
     }
@@ -94,6 +96,7 @@ public class EditWaypointModal extends Modal<FlowLayout> {
             20,
             waypoint.colour(),
             (colour) -> {
+                colourBox.setColourFromInt(colour);
                 this.colour = colour;
                 this.previewColour = colour;
             },
@@ -119,6 +122,11 @@ public class EditWaypointModal extends Modal<FlowLayout> {
         zBox.setFilter(numFilter);
         zBox.onChanged().subscribe(value -> this.updateDone());
 
+        colourBox = new ColourTextEditBox(Sizing.fixed(55), () -> colour, c -> {
+            this.colour = c;
+            this.previewColour = c;
+        });
+
         this.layout.rootComponent.clearChildren();
         this.layout.rootComponent
             .child(
@@ -143,7 +151,8 @@ public class EditWaypointModal extends Modal<FlowLayout> {
                         .child(
                             Containers.horizontalFlow(Sizing.content(), Sizing.fixed(40))
                                 .child(coordsButton.margins(Insets.right(4)))
-                                .child(colourPicker)
+                                .child(copyButton.margins(Insets.right(4)))
+                                .child(deleteButton)
                                 .margins(Insets.bottom(6))
                                 .alignment(HorizontalAlignment.RIGHT, VerticalAlignment.BOTTOM)
                                 .positioning(Positioning.relative(100, 100))
@@ -153,10 +162,10 @@ public class EditWaypointModal extends Modal<FlowLayout> {
             )
             .child(
                 Containers.horizontalFlow(Sizing.fill(), Sizing.content())
-                    .child(doneButton.horizontalSizing(Sizing.fill(35)).positioning(Positioning.relative(0, 0)))
-                    .child(cancelButton.horizontalSizing(Sizing.fill(30)).margins(Insets.right(8)))
-                    .child(copyButton.margins(Insets.right(4)))
-                    .child(deleteButton)
+                    .child(doneButton.horizontalSizing(Sizing.fill(28)).margins(Insets.right(8).withTop(1)).positioning(Positioning.relative(0, 0)))
+                    .child(cancelButton.horizontalSizing(Sizing.fill(28)).margins(Insets.right(8).withTop(1)))
+                    .child(colourBox)
+                    .child(colourPicker.margins(Insets.top(1).withLeft(2)))
                     .horizontalAlignment(HorizontalAlignment.RIGHT)
                     .margins(Insets.horizontal(4).withTop(4)))
             .surface(Surface.DARK_PANEL)
