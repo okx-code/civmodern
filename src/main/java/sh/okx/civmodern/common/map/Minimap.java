@@ -115,6 +115,9 @@ public class Minimap {
         LocalPlayer player = Minecraft.getInstance().player;
         float px = (float) Mth.lerp(event.deltaTick(), player.xo, player.getX());
         float pz = (float) Mth.lerp(event.deltaTick(), player.zo, player.getZ());
+        int playerBX = player.getBlockX();
+        int playerBY = player.getBlockY();
+        int playerBZ = player.getBlockZ();
         float x = px - (size * zoom) / 2;
         float y = pz - (size * zoom) / 2;
 
@@ -146,6 +149,9 @@ public class Minimap {
         graphics.guiRenderState.submitPicturesInPictureState(new BlitRenderState(graphics,
             ((source, stack) -> renderers.forEach(r -> r.render(source, stack)))));
 
+        if (config.isShowMinimapCoords()) {
+            event.guiGraphics().drawString(font, "(%d, %s, %d)".formatted(playerBX, playerBY, playerBZ), 0, 0, 0xFFFFFF);
+        }
         if (config.isPlayerWaypointsEnabled()) {
             // TODO fix the player rendering above the chevron
             // todo fading
