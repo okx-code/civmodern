@@ -7,6 +7,7 @@ import net.minecraft.commands.arguments.EntityAnchorArgument;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.animal.HappyGhast;
 import net.minecraft.world.entity.animal.horse.AbstractHorse;
+import net.minecraft.world.entity.vehicle.AbstractBoat;
 import net.minecraft.world.entity.vehicle.Boat;
 import net.minecraft.world.phys.Vec2;
 import net.minecraft.world.phys.Vec3;
@@ -72,7 +73,7 @@ public class AutoNavigation {
         Vec2 destination = destinations.peek();
         double distanceRemaining = Mth.lengthSquared(player.getVehicle().getX() - destination.x, player.getVehicle().getZ() - destination.y);
 
-        if (player.getVehicle() instanceof Boat boat) {
+        if (player.getVehicle() instanceof AbstractBoat boat) {
             if (distanceRemaining < 5 * 5) {
                 mc.options.keyUp.setDown(false);
                 mc.options.keyLeft.setDown(false);
