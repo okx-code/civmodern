@@ -666,7 +666,7 @@ public class MapScreen extends Screen {
 
     @Override
     public boolean keyPressed(int i, int j, int k) {
-        if (this.key.matches(i, j)) {
+        if (this.key.matches(i, j) && !newWaypointModal.isVisible() && !editWaypointModal.isVisible()) {
             Minecraft.getInstance().setScreen(null);
             return true;
         }
