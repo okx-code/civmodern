@@ -299,6 +299,29 @@ public class MapFolder {
         }
     }
 
+    public Map<RegionDataType, byte[]> getAllRegionData(RegionKey key) {
+        try (PreparedStatement statement = this.connection.prepareStatement("SELECT type, data FROM regions WHERE x = ? AND z = ?")) {
+            statement.setInt(1, key.x());
+            statement.setInt(2, key.z());
+
+            ResultSet resultSet = statement.executeQuery();
+
+            Map<RegionDataType, byte[]> datas = new HashMap<>();
+            while (resultSet.next()) {
+                byte[] data;
+                byte[] compressed = resultSet.getBytes("data");
+                ByteArrayInputStream in = new ByteArrayInputStream(compressed);
+                try (ZstdCompressorInputStream zstd = new ZstdCompressorInputStream(in, RecyclingBufferPool.INSTANCE)) {
+                    data = zstd.readAllBytes();
+                }
+                datas.put(RegionDataType.valueOf(resultSet.getString("type").toUpperCase()), data);
+            }
+            return datas;
+        } catch (SQLException | IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     public void close() {
         try {
             this.connection.close();

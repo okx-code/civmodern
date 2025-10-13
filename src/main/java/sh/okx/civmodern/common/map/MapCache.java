@@ -7,6 +7,8 @@ import net.minecraft.world.level.chunk.ChunkAccess;
 import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.level.chunk.status.ChunkStatus;
 import net.minecraft.world.level.levelgen.Heightmap;
+import org.apache.logging.log4j.Level;
+import sh.okx.civmodern.common.AbstractCivModernMod;
 import sh.okx.civmodern.common.map.data.RegionLoader;
 import sh.okx.civmodern.common.map.data.RegionMapUpdater;
 import sh.okx.civmodern.common.map.data.RegionReference;
@@ -137,48 +139,47 @@ public class MapCache {
             return texture1;
         });
 
-        ChunkAccess north = chunk.getLevel().getChunk(pos.x, pos.z - 1, ChunkStatus.FULL, false);
-        ChunkAccess west = chunk.getLevel().getChunk(pos.x - 1, pos.z, ChunkStatus.FULL, false);
-
         primeHeightmaps(chunk);
-        primeHeightmaps(north);
-        primeHeightmaps(west);
 
         boolean addedAtlas = gettingAtlas.add(atlas);
         executor.submit(() -> {
-            RegionReference reference = addReference(region);
             try {
-                RegionLoader loader = reference.getLoader();
-                this.nearbyRegions.put(region, loader);
-                // TODO fully get rid of banding, this is only a partial solution
-                RegionMapUpdater updater = new RegionMapUpdater(loader, blockLookup, biomeLookup);
-                boolean updated = updater.updateChunk(chunk.getLevel().registryAccess(), chunk, north, west);
+                RegionReference reference = addReference(region);
+                try {
+                    RegionLoader loader = reference.getLoader();
+                    this.nearbyRegions.put(region, loader);
+                    // TODO fully get rid of banding, this is only a partial solution
+                    RegionMapUpdater updater = new RegionMapUpdater(loader, blockLookup, biomeLookup);
+                    boolean updated = updater.updateChunk(chunk.getLevel().registryAccess(), chunk);
 
-                boolean shouldRender = loader.render();
-                if (shouldRender) {
-                    RegionRenderer renderer = new RegionRenderer(loader, blockLookup, biomeLookup);
-                    renderer.render(tex, region.x() & ATLAS_LENGTH - 1, region.z() & ATLAS_LENGTH - 1);
-                }
-                if (updated) {
-                    reference.markDirty();
-                    if (!shouldRender) {
-                        int regionLocalX = pos.getRegionLocalX();
-                        int regionLocalZ = pos.getRegionLocalZ();
+                    boolean shouldRender = loader.render();
+                    if (shouldRender) {
                         RegionRenderer renderer = new RegionRenderer(loader, blockLookup, biomeLookup);
-                        renderer.renderChunk(tex, region.x() & ATLAS_LENGTH - 1, region.z() & ATLAS_LENGTH - 1, regionLocalX, regionLocalZ);
+                        renderer.render(tex, region.x() & ATLAS_LENGTH - 1, region.z() & ATLAS_LENGTH - 1);
                     }
+                    if (updated) {
+                        reference.markDirty();
+                        if (!shouldRender) {
+                            int regionLocalX = pos.getRegionLocalX();
+                            int regionLocalZ = pos.getRegionLocalZ();
+                            RegionRenderer renderer = new RegionRenderer(loader, blockLookup, biomeLookup);
+                            renderer.renderChunk(tex, region.x() & ATLAS_LENGTH - 1, region.z() & ATLAS_LENGTH - 1, regionLocalX, regionLocalZ);
+                        }
+                    }
+                } finally {
+                    reference.removeReference();
                 }
-            } finally {
-                reference.removeReference();
-            }
-            if (addedAtlas) {
-                for (int x = 0; x < ATLAS_LENGTH; x++) {
-                    for (int z = 0; z < ATLAS_LENGTH; z++) {
-                        if ((x != (regionX & ATLAS_LENGTH - 1) || z != (regionZ & (ATLAS_LENGTH - 1)))) {
-                            enqueue(new RegionKey(atlas.x() << ATLAS_BITS | x, atlas.z() << ATLAS_BITS | z));
+                if (addedAtlas) {
+                    for (int x = 0; x < ATLAS_LENGTH; x++) {
+                        for (int z = 0; z < ATLAS_LENGTH; z++) {
+                            if ((x != (regionX & ATLAS_LENGTH - 1) || z != (regionZ & (ATLAS_LENGTH - 1)))) {
+                                enqueue(new RegionKey(atlas.x() << ATLAS_BITS | x, atlas.z() << ATLAS_BITS | z));
+                            }
                         }
                     }
                 }
+            } catch (RuntimeException ex) {
+                AbstractCivModernMod.LOGGER.log(Level.WARN, "Rendering chunk", ex);
             }
         });
     }

@@ -11,12 +11,12 @@ import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.resources.ResourceLocation;
 
 public class CivModernPipelines {
-    public static final RenderPipeline GUI_TRIANGLE_STRIP_BLEND = RenderPipeline.builder(RenderPipelines.GUI_SNIPPET)
-        .withLocation(ResourceLocation.fromNamespaceAndPath("owo", "pipeline/gui_triangle_strip"))
+    public static final RenderPipeline GUI_TRIANGLE_STRIP_BLEND = RenderPipelines.register(RenderPipeline.builder(RenderPipelines.GUI_SNIPPET)
+        .withLocation(ResourceLocation.fromNamespaceAndPath("owo", "pipeline/gui_triangle_strip2"))
         .withVertexFormat(DefaultVertexFormat.POSITION_COLOR, VertexFormat.Mode.TRIANGLE_STRIP)
-        .build();
+        .build());
     public static final RenderPipeline GUI_QUADS = RenderPipeline.builder(RenderPipelines.GUI_SNIPPET)
-        .withLocation(ResourceLocation.fromNamespaceAndPath("owo", "pipeline/gui_quads"))
+        .withLocation(ResourceLocation.fromNamespaceAndPath("civmodern", "pipeline/gui_quads2"))
         .withVertexFormat(DefaultVertexFormat.POSITION_COLOR, VertexFormat.Mode.QUADS)
         .build();
 
@@ -35,6 +35,7 @@ public class CivModernPipelines {
     public static final RenderPipeline REGION_DEFAULT_RENDER_PIPELINE = RenderPipeline.builder(POSITION_TEX_COLOR_SHADER, COLOR_WRITE).withLocation("cm/pipeline/pos_tex_color").withVertexFormat(DefaultVertexFormat.POSITION_TEX_COLOR, VertexFormat.Mode.QUADS).withDepthTestFunction(DepthTestFunction.LEQUAL_DEPTH_TEST).withBlend(BlendFunction.TRANSLUCENT).withCull(false).build();
 
     public static void register() {
+        RenderPipelines.register(GUI_QUADS);
         RenderPipelines.register(TEXT);
         RenderPipelines.register(REGION_DEFAULT_RENDER_PIPELINE);
     }

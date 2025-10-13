@@ -14,6 +14,7 @@ public class CivMapConfig {
     public static final int DEFAULT_RADAR_FG_COLOUR = 0x0D0202;
     public static final int DEFAULT_RADAR_BG_COLOUR = 0xE8E3E3;
     public static final int DEFAULT_CHEVRON_COLOUR = 0xFF0000;
+    public static final int DEFAULT_BORDER_COLOUR = 0x7a7a7a;
     private final File file;
     private int compactedColour;
     private int radarCircles;
@@ -50,6 +51,7 @@ public class CivMapConfig {
     private boolean showRepairCost;
     private boolean radarLogarithm;
     private boolean showMinimapCoords;
+    private int borderColour;
 
     public CivMapConfig(File file, Properties properties) {
         this.file = file;
@@ -88,7 +90,7 @@ public class CivMapConfig {
         this.showRepairCost = Boolean.parseBoolean(properties.getProperty("show_repair_cost", "true"));
         this.radarLogarithm = Boolean.parseBoolean(properties.getProperty("radar_logarithm", "false"));
         this.showMinimapCoords = Boolean.parseBoolean(properties.getProperty("show_minimap_coords", "true"));
-
+        this.borderColour = Integer.parseInt(properties.getProperty("border_colour", Integer.toString(DEFAULT_BORDER_COLOUR)));
     }
 
     public void save() {
@@ -128,6 +130,7 @@ public class CivMapConfig {
             properties.setProperty("show_repair_cost", Boolean.toString(showRepairCost));
             properties.setProperty("radar_logarithm", Boolean.toString(radarLogarithm));
             properties.setProperty("show_minimap_coords", Boolean.toString(showMinimapCoords));
+            properties.setProperty("border_colour", Integer.toString(borderColour));
 
             try (FileOutputStream output = new FileOutputStream(file)) {
                 properties.store(output, null);
@@ -416,5 +419,13 @@ public class CivMapConfig {
 
     public void setShowMinimapCoords(boolean showMinimapCoords) {
         this.showMinimapCoords = showMinimapCoords;
+    }
+
+    public void setBorderColour(int borderColour) {
+        this.borderColour = borderColour;
+    }
+
+    public int getBorderColour() {
+        return borderColour;
     }
 }

@@ -6,18 +6,30 @@ import net.minecraft.client.gui.navigation.ScreenRectangle;
 import net.minecraft.client.gui.render.state.pip.PictureInPictureRenderState;
 import net.minecraft.client.renderer.MultiBufferSource;
 import org.jetbrains.annotations.Nullable;
+import org.joml.Matrix3x2f;
+import org.joml.Matrix3x2fStack;
 import sh.okx.civmodern.common.map.RegionAtlasTexture;
 
 public record BlitRenderState(
     GuiGraphics graphics,
+    int x,
+    int y,
+    int sizeX,
+    int sizeY,
+    ScreenRectangle bounds,
 	@Nullable ScreenRectangle scissorArea,
     Renderer renderer
 ) implements PictureInPictureRenderState {
 	public BlitRenderState(
 		GuiGraphics graphics,
+        int x,
+        int y,
+        int sizeX,
+        int sizeY,
+        Matrix3x2fStack pose,
         Renderer renderer
 	) {
-		this(graphics, graphics.scissorStack.peek(), renderer);
+		this(graphics, x, y, sizeX, sizeY, getBounds(graphics.scissorStack.peek(), pose, x, y, sizeX, sizeY), graphics.scissorStack.peek(), renderer);
 	}
 
     @Override
@@ -27,17 +39,17 @@ public record BlitRenderState(
 
     @Override
     public int x1() {
-        return RegionAtlasTexture.SIZE;
+        return sizeX;
     }
 
     @Override
     public int y0() {
-        return 0;
+        return y;
     }
 
     @Override
     public int y1() {
-        return RegionAtlasTexture.SIZE;
+        return sizeY;
     }
 
     @Override
@@ -45,9 +57,9 @@ public record BlitRenderState(
         return 1;
     }
 
-    @Override
-    public ScreenRectangle bounds() {
-        return PictureInPictureRenderState.getBounds(0, 0, RegionAtlasTexture.SIZE, RegionAtlasTexture.SIZE, null);
+    private static ScreenRectangle getBounds(ScreenRectangle scissorArea, Matrix3x2fStack stack, int x, int y, int sizeX, int sizeY) {
+        ScreenRectangle bounds = new ScreenRectangle(x, y, sizeX - x, sizeY - y).transformMaxBounds(stack);
+        return scissorArea != null ? scissorArea.intersection(bounds) : bounds;
     }
 
     public interface Renderer {

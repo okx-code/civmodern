@@ -1,6 +1,7 @@
 package sh.okx.civmodern.common.radar;
 
 import com.google.common.eventbus.Subscribe;
+import io.wispforest.owo.Owo;
 import io.wispforest.owo.ui.core.Color;
 import io.wispforest.owo.ui.core.OwoUIPipelines;
 import io.wispforest.owo.ui.renderstate.CircleElementRenderState;
@@ -214,10 +215,10 @@ public class Radar {
         renderLines(guiGraphics);
 //
         if (config.isShowItems()) {
-            renderItems(guiGraphics, delta);
+//            renderItems(guiGraphics, delta);
         }
-        renderBoatsMinecarts(guiGraphics, delta);
-        renderPlayers(guiGraphics, delta);
+//        renderBoatsMinecarts(guiGraphics, delta);
+//        renderPlayers(guiGraphics, delta);
 
         guiGraphics.pose().popMatrix();
     }
@@ -242,7 +243,7 @@ public class Radar {
             if (entity instanceof ItemEntity item) {
                 renderEntity(guiGraphics, minecraft.player, item, delta, item.getItem(), 0f, 0.9f);
                 i++;
-                if (i > 10_000) {
+                if (i > 3_000) {
                     return;
                 }
             }

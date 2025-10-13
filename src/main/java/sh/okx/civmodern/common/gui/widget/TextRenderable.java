@@ -20,7 +20,7 @@ public sealed abstract class TextRenderable implements Renderable {
         final int y,
         final @NotNull Component text
     ) {
-        this(font, x, y, text, 0xFF_FF_FF);
+        this(font, x, y, text, 0xFF_FF_FFFF);
     }
 
     protected TextRenderable(

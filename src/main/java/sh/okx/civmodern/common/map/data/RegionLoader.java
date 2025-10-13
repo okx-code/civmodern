@@ -1,5 +1,6 @@
 package sh.okx.civmodern.common.map.data;
 
+import com.mojang.datafixers.types.Func;
 import sh.okx.civmodern.common.map.MapFolder;
 import sh.okx.civmodern.common.map.RegionDataType;
 import sh.okx.civmodern.common.map.RegionKey;
@@ -17,6 +18,8 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 public class RegionLoader {
 
@@ -28,6 +31,7 @@ public class RegionLoader {
 
     private volatile int[] mapData;
     private volatile short[] yLevels;
+    private volatile short[] waterYLevels;
     private volatile long[] chunkTimestamps;
 
     private final AtomicBoolean hasBeenRendered = new AtomicBoolean(false);
@@ -40,64 +44,96 @@ public class RegionLoader {
         this.mapFolder = mapFolder;
     }
 
-    public int[] getOrLoadMapData() {
-        if (this.mapData == null) {
+    public void loadAllData() {
+        if (this.mapData != null && this.yLevels != null && this.chunkTimestamps != null) {
+            return;
+        }
+        this.lock.writeLock().lock();
+        try {
+            if (this.mapData != null && this.yLevels != null && this.chunkTimestamps != null) {
+                return;
+            }
+            for (Map.Entry<RegionDataType, byte[]> entry : this.mapFolder.getAllRegionData(key).entrySet()) {
+                switch (entry.getKey()) {
+                    case MAP -> {
+                        if (this.mapData == null) setMapData(entry.getValue());
+                    }
+                    case Y_LEVELS -> {
+                        if (this.yLevels == null) setYLevels(entry.getValue());
+                    }
+                    case WATER_Y_LEVELS -> {
+                        if (this.waterYLevels == null) setWaterYLevels(entry.getValue());
+                    }
+                    case CHUNK_TIMESTAMPS -> {
+                        if (this.chunkTimestamps == null) setChunkTimestamps(entry.getValue());
+                    }
+                }
+            }
+        } finally {
+            this.lock.writeLock().unlock();
+        }
+    }
+
+    private void setMapData(byte[] regionData) {
+        this.mapData = new int[RegionMapUpdater.SIZE * RegionMapUpdater.SIZE];
+        if (regionData != null) {
+            ByteBuffer.wrap(regionData).asIntBuffer().get(this.mapData);
+        }
+    }
+
+    private void setYLevels(byte[] regionData) {
+        this.yLevels = new short[RegionMapUpdater.SIZE * RegionMapUpdater.SIZE];
+        if (regionData != null) {
+            ByteBuffer.wrap(regionData).asShortBuffer().get(this.yLevels);
+        }
+    }
+
+    private void setWaterYLevels(byte[] regionData) {
+        this.waterYLevels = new short[RegionMapUpdater.SIZE * RegionMapUpdater.SIZE];
+        if (regionData != null) {
+            ByteBuffer.wrap(regionData).asShortBuffer().get(this.waterYLevels);
+        }
+    }
+
+    private void setChunkTimestamps(byte[] regionData) {
+        this.chunkTimestamps = new long[RegionMapUpdater.SIZE / 16 * RegionMapUpdater.SIZE / 16];
+        if (regionData != null) {
+            ByteBuffer.wrap(regionData).asLongBuffer().get(this.chunkTimestamps);
+        }
+    }
+
+    private <T> T getOrLoadData(Supplier<T> getter, Consumer<byte[]> setter, RegionDataType dataType) {
+        if (getter.get() == null) {
             this.lock.writeLock().lock();
             try {
-                if (this.mapData != null) {
-                    return this.mapData;
+                T val;
+                if ((val = getter.get()) != null) {
+                    return val;
                 }
-                byte[] regionData = this.mapFolder.getRegionData(key, RegionDataType.MAP);
-                this.mapData = new int[RegionMapUpdater.SIZE * RegionMapUpdater.SIZE];
-                if (regionData != null) {
-                    ByteBuffer.wrap(regionData).asIntBuffer().get(this.mapData);
-                }
-                this.loaded.add(RegionDataType.MAP);
+                byte[] regionData = this.mapFolder.getRegionData(key, dataType);
+                setter.accept(regionData);
+                this.loaded.add(dataType);
             } finally {
                 this.lock.writeLock().unlock();
             }
         }
-        return this.mapData;
+        return getter.get();
+    }
+
+    public int[] getOrLoadMapData() {
+        return getOrLoadData(() -> this.mapData, this::setMapData, RegionDataType.MAP);
     }
 
     public short[] getOrLoadYLevels() {
-        if (this.yLevels == null) {
-            this.lock.writeLock().lock();
-            try {
-                if (this.yLevels != null) {
-                    return this.yLevels;
-                }
-                byte[] regionData = this.mapFolder.getRegionData(key, RegionDataType.Y_LEVELS);
-                this.yLevels = new short[RegionMapUpdater.SIZE * RegionMapUpdater.SIZE];
-                if (regionData != null) {
-                    ByteBuffer.wrap(regionData).asShortBuffer().get(this.yLevels);
-                }
-                this.loaded.add(RegionDataType.Y_LEVELS);
-            } finally {
-                this.lock.writeLock().unlock();
-            }
-        }
-        return this.yLevels;
+        return getOrLoadData(() -> this.yLevels, this::setYLevels, RegionDataType.Y_LEVELS);
     }
 
     public long[] getOrLoadChunkTimestamps() {
-        if (this.chunkTimestamps == null) {
-            this.lock.writeLock().lock();
-            try {
-                if (this.chunkTimestamps != null) {
-                    return this.chunkTimestamps;
-                }
-                byte[] regionData = this.mapFolder.getRegionData(key, RegionDataType.CHUNK_TIMESTAMPS);
-                this.chunkTimestamps = new long[RegionMapUpdater.SIZE / 16 * RegionMapUpdater.SIZE / 16];
-                if (regionData != null) {
-                    ByteBuffer.wrap(regionData).asLongBuffer().get(this.chunkTimestamps);
-                }
-                this.loaded.add(RegionDataType.CHUNK_TIMESTAMPS);
-            } finally {
-                this.lock.writeLock().unlock();
-            }
-        }
-        return this.chunkTimestamps;
+        return getOrLoadData(() -> this.chunkTimestamps, this::setChunkTimestamps, RegionDataType.CHUNK_TIMESTAMPS);
+    }
+
+    public short[] getOrLoadWaterYLevels() {
+        return getOrLoadData(() -> this.waterYLevels, this::setWaterYLevels, RegionDataType.WATER_Y_LEVELS);
     }
 
     public boolean render() {

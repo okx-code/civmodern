@@ -61,34 +61,60 @@ public class RegionMapUpdater {
         return pos.getY() - depth;
     }
 
-    public boolean updateChunk(RegistryAccess registryAccess, ChunkAccess chunk, ChunkAccess north, ChunkAccess west) {
+    public boolean updateChunk(RegistryAccess registryAccess, ChunkAccess chunk) {
         Registry<Biome> registry = registryAccess.lookupOrThrow(Registries.BIOME);
         boolean updated = false;
 
         int rx = chunk.getPos().getRegionLocalX() * 16;
         int rz = chunk.getPos().getRegionLocalZ() * 16;
-
-        int[] northY = new int[16];
-        if (north == null) {
-            Arrays.fill(northY, Integer.MIN_VALUE);
-        } else {
-            for (int x = 0; x < 16; x++) {
-                northY[x] = getHeight(registryAccess, north, x, 15);
-            }
-        }
-        int[] westY = new int[16];
-        if (west == null) {
-            Arrays.fill(westY, Integer.MIN_VALUE);
-        } else {
-            for (int z = 0; z < 16; z++) {
-                westY[z] = getHeight(registryAccess, west, 15, z);
-            }
-        }
         loader.getLock().writeLock().lock();
         try {
+            loader.loadAllData();
             int[] data = loader.getOrLoadMapData();
             short[] ylevels = loader.getOrLoadYLevels();
+            short[] waterylevels = loader.getOrLoadWaterYLevels();
             long[] chunkTimestamps = loader.getOrLoadChunkTimestamps();
+
+            short[] northY = new short[16];
+            for (int x = 0; x < 16; x++) {
+                int pos = (rz - 1) + ((rx + x) * 512);
+                if (pos < 0 || pos >= ylevels.length) {
+                    northY[x] = Short.MIN_VALUE;
+                    continue;
+                }
+                short waterY = waterylevels[pos];
+                if (waterY != 0) {
+                    northY[x] = (short) (waterY < 0 ? waterY : waterY - 1);
+                } else {
+                    short y = ylevels[pos];
+                    if (y > 0) {
+                        y -= 1;
+                    } else if (y == 0) {
+                        y = Short.MIN_VALUE;
+                    }
+                    northY[x] = y;
+                }
+            }
+            short[] westY = new short[16];
+            for (int z = 0; z < 16; z++) {
+                int pos = (rz + z) + ((rx - 1) * 512);
+                if (pos < 0 || pos >= ylevels.length) {
+                    westY[z] = Short.MIN_VALUE;
+                    continue;
+                }
+                short waterY = waterylevels[pos];
+                if (waterY != 0) {
+                    westY[z] = (short) (waterY < 0 ? waterY : waterY - 1);
+                } else {
+                    short y = ylevels[pos];
+                    if (y > 0) {
+                        y -= 1;
+                    } else if (y == 0) {
+                        y = Short.MIN_VALUE;
+                    }
+                    westY[z] = y;
+                }
+            }
 
             int chunkIndex = rz / 16 + rx / 16 * 512 / 16;
             chunkTimestamps[chunkIndex] = System.currentTimeMillis();
@@ -130,7 +156,7 @@ public class RegionMapUpdater {
                     dataValue |= blockId << 16;
                     dataValue |= Math.min(depth, 0xF) << 12;
 
-                    if (westY[z - rz] != Integer.MIN_VALUE) {
+                    if (westY[z - rz] != Short.MIN_VALUE) {
                         if (westY[z - rz] > pos.getY() - depth) {
                             dataValue |= 0b11 << 10;
                         } else if (westY[z - rz] == pos.getY() - depth) {
@@ -141,9 +167,9 @@ public class RegionMapUpdater {
                     } else {
                         dataValue |= current & 0xC00;
                     }
-                    westY[z - rz] = pos.getY() - depth;
+                    westY[z - rz] = (short) (pos.getY() - depth);
 
-                    if (northY[x - rx] != Integer.MIN_VALUE) {
+                    if (northY[x - rx] != Short.MIN_VALUE) {
                         if (northY[x - rx] > pos.getY() - depth) {
                             dataValue |= 0b11 << 8;
                         } else if (northY[x - rx] == pos.getY() - depth) {
@@ -154,8 +180,7 @@ public class RegionMapUpdater {
                     } else {
                         dataValue |= current & 0x300;
                     }
-                    northY[x - rx] = pos.getY() - depth;
-
+                    northY[x - rx] = (short) (pos.getY() - depth);
 
                     int biomeId = biomeLookup.getOrCreateId(registry.getKey(chunk.getNoiseBiome(pos.getX() >> 2, pos.getY() >> 2, pos.getZ() >> 2).value()).toString());
                     if (biomeId > 0xFF) {
@@ -170,6 +195,13 @@ public class RegionMapUpdater {
                         ylevel++; // zero has a special significance as the null value
                     }
                     ylevels[z + x * 512] = ylevel;
+                    if (depth != 0) {
+                        short waterylevel = (short) (pos.getY() - depth);
+                        if (waterylevel >= 0) {
+                            waterylevel++;
+                        }
+                        waterylevels[z + x * 512] = waterylevel;
+                    }
 
                     if (current != dataValue || ylevel != yCurrent) {
                         updated = true;

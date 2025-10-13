@@ -1,12 +1,6 @@
 package sh.okx.civmodern.common.map;
 
 import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.vertex.BufferBuilder;
-import com.mojang.blaze3d.vertex.DefaultVertexFormat;
-import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.Tesselator;
-import com.mojang.blaze3d.vertex.VertexFormat;
-import com.mojang.math.Axis;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.player.LocalPlayer;
@@ -16,7 +10,6 @@ import net.minecraft.world.scores.Objective;
 import net.minecraft.world.scores.Scoreboard;
 import org.joml.Matrix3x2f;
 import org.joml.Matrix3x2fStack;
-import org.joml.Matrix4f;
 import sh.okx.civmodern.common.CivMapConfig;
 import sh.okx.civmodern.common.ColourProvider;
 import sh.okx.civmodern.common.events.PostRenderGameOverlayEvent;
@@ -35,7 +28,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static org.lwjgl.opengl.GL11.*;
 import static sh.okx.civmodern.common.map.RegionAtlasTexture.SIZE;
 
 public class Minimap {
@@ -69,7 +61,7 @@ public class Minimap {
         Scoreboard scoreboard = mc.level.getScoreboard();
         Objective objective = scoreboard.getDisplayObjective(DisplaySlot.LIST);
         if (mc.options.hideGui || mc.getDebugOverlay().showDebugScreen() || !(!mc.options.keyPlayerList.isDown() || mc.isLocalServer() && mc.player.connection.getListedOnlinePlayers().size() <= 1 && objective == null)) {
-            event.guiGraphics().guiRenderState.submitPicturesInPictureState(new BlitRenderState(event.guiGraphics(),
+            event.guiGraphics().guiRenderState.submitPicturesInPictureState(new BlitRenderState(event.guiGraphics(), 0, 0, 0, 0, event.guiGraphics().pose(),
                 ((source, stack) -> {})));
             return;
         }
@@ -83,8 +75,8 @@ public class Minimap {
 
         matrices.pushMatrix();
 
-        int offsetX = config.getMinimapX();
-        int offsetY = config.getMinimapY();
+        int offsetX = config.getMinimapX() + 2;
+        int offsetY = config.getMinimapY() + 2;
 
         int translateX;
         int translateY;
@@ -146,11 +138,14 @@ public class Minimap {
             drawnY = 0;
             drawnX += screenX == 0 ? tmp / 2 : SIZE;
         }
-        graphics.guiRenderState.submitPicturesInPictureState(new BlitRenderState(graphics,
+
+        matrices.translate(-2, -2);
+        graphics.fill(0, 0, (int) (size + 4), (int) (size + 4), 0xff000000 | provider.getBorderColour());
+        graphics.guiRenderState.submitPicturesInPictureState(new BlitRenderState(graphics, 0, 0, translateX + config.getMinimapSize(), translateY + config.getMinimapSize(), matrices,
             ((source, stack) -> renderers.forEach(r -> r.render(source, stack)))));
 
         if (config.isShowMinimapCoords()) {
-            event.guiGraphics().drawCenteredString(mc.font, "(%d, %s, %d)".formatted(playerBX, playerBY, playerBZ), (int) (size / 2), (int) size + 2, -1);
+            event.guiGraphics().drawCenteredString(mc.font, "%d, %s, %d".formatted(playerBX, playerBY, playerBZ), (int) (size / 2), (int) size + 6, -1);
         }
         if (config.isPlayerWaypointsEnabled()) {
             // TODO fix the player rendering above the chevron

@@ -33,6 +33,6 @@ public record ChevronRenderState(
 
     @Override
     public ScreenRectangle bounds() {
-        return new ScreenRectangle(-2, -2, 4, 4);
+        return new ScreenRectangle(-2, -2, 4, 4).transformMaxBounds(this.pose);
     }
 }

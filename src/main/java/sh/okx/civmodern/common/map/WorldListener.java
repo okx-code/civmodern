@@ -1,10 +1,13 @@
 package sh.okx.civmodern.common.map;
 
 import com.google.common.eventbus.Subscribe;
+import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
+import net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.toasts.SystemToast;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.chunk.LevelChunk;
 import sh.okx.civmodern.common.AbstractCivModernMod;
@@ -51,6 +54,12 @@ public class WorldListener {
     public WorldListener(CivMapConfig config, ColourProvider colourProvider) {
         this.config = config;
         this.provider = colourProvider;
+
+        HudElementRegistry.attachElementBefore(VanillaHudElements.CHAT, ResourceLocation.fromNamespaceAndPath("civmodern", "minimap"), (context, tickCounter) -> {
+            if (this.minimap != null) {
+                this.minimap.onRender(new PostRenderGameOverlayEvent(context, tickCounter.getGameTimeDeltaPartialTick(true)));
+            }
+        });
     }
 
     @Subscribe
@@ -234,9 +243,6 @@ public class WorldListener {
     @Subscribe
     public void onRender(PostRenderGameOverlayEvent event) {
         RenderQueue.runAll();
-        if (this.minimap != null) {
-            this.minimap.onRender(event);
-        }
     }
 
     @Subscribe

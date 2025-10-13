@@ -16,6 +16,7 @@ import sh.okx.civmodern.common.gui.DoubleValue;
 import sh.okx.civmodern.common.gui.widget.DoubleOptionUpdateableSliderWidget;
 import sh.okx.civmodern.common.gui.widget.HsbColourPicker;
 import sh.okx.civmodern.common.gui.widget.ImageButton;
+import sh.okx.civmodern.common.gui.widget.TextRenderable;
 import sh.okx.civmodern.common.gui.widget.ToggleButton;
 import sh.okx.civmodern.common.mixins.ScreenAccessor;
 
@@ -32,6 +33,7 @@ public class MapConfigScreen extends AbstractConfigScreen {
 
     // for passing move events
     private HsbColourPicker chevronPicker;
+    private HsbColourPicker borderPicker;
 
     public MapConfigScreen(ColourProvider colourProvider, CivMapConfig config, Screen parent) {
         super(config, parent, Component.translatable("civmodern.screen.map.title"));
@@ -111,8 +113,11 @@ public class MapConfigScreen extends AbstractConfigScreen {
 
         offset += 12;
 
-        chevronPicker = addColourPicker(centre, offset, CivMapConfig.DEFAULT_CHEVRON_COLOUR, config::getChevronColour, config::setChevronColour,
+        chevronPicker = addColourPicker("Chevron colour", left, offset, CivMapConfig.DEFAULT_CHEVRON_COLOUR, config::getChevronColour, config::setChevronColour,
             colourProvider::setTemporaryChevronColour);
+
+        borderPicker = addColourPicker("Border colour", right, offset, CivMapConfig.DEFAULT_BORDER_COLOUR, config::getBorderColour, config::setBorderColour,
+            colourProvider::setTemporaryBorderColour);
 
         offset += 36;
         addRenderableWidget(Button.builder(CommonComponents.GUI_DONE, button -> {
@@ -121,8 +126,16 @@ public class MapConfigScreen extends AbstractConfigScreen {
         }).pos(centre, getFooterY(offset)).size(150, 20).build());
     }
 
-    private HsbColourPicker addColourPicker(int x, int y, int defaultColour, Supplier<Integer> colourGet, Consumer<Integer> colourSet, Consumer<Integer> preview) {
+    private HsbColourPicker addColourPicker(String title, int x, int y, int defaultColour, Supplier<Integer> colourGet, Consumer<Integer> colourSet, Consumer<Integer> preview) {
+
         int left = (x + 75) - (60 + 8 + 20 + 8 + 20) / 2;
+
+        addRenderableOnly(new TextRenderable.CentreAligned(
+            this.font,
+            left + 60,
+            chevronColourY,
+            Component.literal(title)
+        ));
         EditBox widget = new EditBox(font, left, y, 60, 20, Component.empty());
         widget.setValue("#" + String.format("%06X", colourGet.get()));
         widget.setMaxLength(7);
@@ -154,6 +167,9 @@ public class MapConfigScreen extends AbstractConfigScreen {
         if (chevronPicker != null) {
             chevronPicker.close();
         }
+        if (borderPicker != null) {
+            borderPicker.close();
+        }
     }
 
     @Override
@@ -169,15 +185,14 @@ public class MapConfigScreen extends AbstractConfigScreen {
         if (chevronPicker != null) {
             chevronPicker.mouseMoved(d, e);
         }
+        if (borderPicker != null) {
+            borderPicker.mouseMoved(d, e);
+        }
     }
 
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float delta) {
-        Component backgroundColour = Component.literal("Chevron colour");
-
-        graphics.drawString(font, backgroundColour, (int) (this.width / 2f - font.width(backgroundColour) / 2f), chevronColourY, 0xffffff, true);
-
-        graphics.drawCenteredString(this.font, this.title, this.width / 2, 15, 0xffffff);
+        graphics.drawCenteredString(this.font, this.title, this.width / 2, 15, 0xffffffff);
 
         // Don't call super since we don't want the dark or blurred background to obscure changes to the radar
         for (final Renderable renderable : ((ScreenAccessor) (Object) this).civmodern$getRenderables()) {

@@ -2,6 +2,7 @@ package sh.okx.civmodern.common.map.screen;
 
 import com.mojang.blaze3d.platform.Window;
 import io.wispforest.owo.ui.core.Color;
+import io.wispforest.owo.ui.core.OwoUIPipelines;
 import io.wispforest.owo.ui.renderstate.LineElementRenderState;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
@@ -202,7 +203,7 @@ public class MapScreen extends Screen {
                 }
             }
         }
-        guiGraphics.guiRenderState.submitPicturesInPictureState(new BlitRenderState(guiGraphics,
+        guiGraphics.guiRenderState.submitPicturesInPictureState(new BlitRenderState(guiGraphics, 0, 0, (int) (window.getWidth()), (int) (window.getHeight()), guiGraphics.pose(),
             ((source, stack) -> renderers.forEach(r -> r.render(source, stack)))));
 
         matrices.pushMatrix();
