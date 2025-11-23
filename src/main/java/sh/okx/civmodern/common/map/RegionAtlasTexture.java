@@ -8,6 +8,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.renderer.RenderStateShard;
 import net.minecraft.client.renderer.RenderType;
+import org.lwjgl.opengl.GL;
 import sh.okx.civmodern.common.rendering.BlitRenderState;
 import sh.okx.civmodern.common.rendering.CivModernPipelines;
 import sh.okx.civmodern.common.rendering.RegionAbstractTexture;
@@ -19,6 +20,16 @@ import static org.lwjgl.opengl.GL44.*;
 
 public class RegionAtlasTexture {
     public static final int SIZE = 4096;
+
+    private static short[] buffer;
+
+    static {
+        if (GL.getCapabilities().GL_ARB_clear_texture) {
+            buffer = null;
+        } else {
+            buffer = new short[SIZE * SIZE];
+        }
+    }
 
     private int indexTexture;
     private RenderType type;
@@ -50,8 +61,10 @@ public class RegionAtlasTexture {
         GlStateManager._pixelStore(GL_UNPACK_SKIP_ROWS, 0);
         GlStateManager._pixelStore(GL_UNPACK_SKIP_PIXELS, 0);
         GlStateManager._pixelStore(GL_UNPACK_ALIGNMENT, 2);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB565, SIZE, SIZE, 0, GL_RGB, GL_UNSIGNED_SHORT_5_6_5, (short[]) null);
-        glClearTexImage(this.indexTexture, 0, GL_RGB, GL_UNSIGNED_SHORT_5_6_5, new short[]{0}); // black
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB565, SIZE, SIZE, 0, GL_RGB, GL_UNSIGNED_SHORT_5_6_5, buffer);
+        if (buffer == null) {
+            glClearTexImage(this.indexTexture, 0, GL_RGB, GL_UNSIGNED_SHORT_5_6_5, new short[]{0}); // black
+        }
         glGenerateMipmap(GL_TEXTURE_2D);
     }
 
