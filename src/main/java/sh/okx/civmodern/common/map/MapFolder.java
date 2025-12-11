@@ -169,11 +169,13 @@ public class MapFolder {
             try (PreparedStatement statement = this.connection.prepareStatement("INSERT INTO regions (x, z, type, data) VALUES (?, ?, ?, ?) ON CONFLICT DO UPDATE SET data = excluded.data")) {
                 for (Map.Entry<RegionKey, RegionLoader> entry : dataMap.entrySet()) {
                     for (RegionDataType data : entry.getValue().getLoaded()) {
+                        byte[] bytes = compressed.get(entry.getKey()).get(data);
+                        if (bytes == null) {
+                            continue;
+                        }
                         statement.setInt(1, entry.getKey().x());
                         statement.setInt(2, entry.getKey().z());
                         statement.setString(3, data.getDatabaseKey());
-
-                        byte[] bytes = compressed.get(entry.getKey()).get(data);
 
                         statement.setBytes(4, bytes);
                         statement.addBatch();

@@ -1,6 +1,5 @@
 package sh.okx.civmodern.common.map.data;
 
-import com.mojang.datafixers.types.Func;
 import sh.okx.civmodern.common.map.MapFolder;
 import sh.okx.civmodern.common.map.RegionDataType;
 import sh.okx.civmodern.common.map.RegionKey;
@@ -10,10 +9,7 @@ import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantLock;
