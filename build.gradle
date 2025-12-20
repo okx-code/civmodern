@@ -110,15 +110,6 @@ processResources {
 //}
 
 import groovy.json.JsonBuilder
-import net.fabricmc.loom.task.RemapJarTask
-
-tasks.register("remapCivMc", RemapJarTask) {
-    inputFile.set jar.archiveFile
-//    dependsOn shadowJar
-    archiveClassifier = "civmc-fabric"
-    from sourceSets.main.output
-    from "civmc"
-}
 
 tasks.register("cleanJar", Delete) {
     delete fileTree("dist") {
@@ -128,7 +119,7 @@ tasks.register("cleanJar", Delete) {
 
 tasks.register("copyJar", Copy) {
     dependsOn cleanJar
-    from remapJar, remapCivMc
+    from remapJar
     into "dist"
 }
 
