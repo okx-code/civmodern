@@ -72,23 +72,22 @@ java {
 }
 
 processResources {
+    def expansions = [
+        "mod_name"             : project.mod_name,
+        "mod_version"          : project.mod_version,
+        "mod_description"      : project.mod_description,
+        "mod_home_url"         : project.mod_home_url,
+        "mod_source_url"       : project.mod_source_url,
+        "copyright_licence"    : project.copyright_licence,
+        "minecraft_version"    : project.minecraft_version,
+        "fabric_loader_version": project.fabric_loader_version,
+    ]
+    inputs.properties(expansions)
     filesMatching("assets/civmodern/lang/en_us.json") {
-        expand([
-                "mod_name": project.mod_name,
-        ])
+        expand(expansions)
     }
     filesMatching("fabric.mod.json") {
-        expand([
-                "mod_name"             : project.mod_name,
-                "mod_version"          : project.mod_version,
-                "mod_description"      : project.mod_description,
-                "mod_home_url"         : project.mod_home_url,
-                "mod_source_url"       : project.mod_source_url,
-                "copyright_licence"    : project.copyright_licence,
-
-                "minecraft_version"    : project.minecraft_version,
-                "fabric_loader_version": project.fabric_loader_version,
-        ])
+        expand(expansions)
         filter {
             (it as String).replace(
                     "\"%FABRIC_AUTHORS_ARRAY%\"",
