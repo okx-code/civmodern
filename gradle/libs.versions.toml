@@ -1,0 +1,29 @@
+[versions]
+minecraft = "1.21.8"
+# https://fabricmc.net/versions.html
+fabricLoom = "1.11-SNAPSHOT"
+fabricLoader = "0.17.2"
+fabricApi = "0.134.0+1.21.8"
+# https://modrinth.com/mod/owo-lib/versions?l=fabric
+owo = "0.12.23+1.21.8"
+# https://modrinth.com/mod/modmenu/versions?l=fabric
+modMenu = "am1Siv7F"
+# https://mvnrepository.com/artifact/org.xerial/sqlite-jdbc
+sqlite = "3.49.1.0"
+# https://mvnrepository.com/artifact/com.github.luben/zstd-jni
+zstd = "1.5.7-6"
+
+[libraries]
+minecraft = { group = "com.mojang", name = "minecraft", version.ref = "minecraft" }
+fabricLoader = { group = "net.fabricmc", name = "fabric-loader", version.ref = "fabricLoader" }
+fabricApi = { group = "net.fabricmc.fabric-api", name = "fabric-api", version.ref = "fabricApi" }
+owoLib = { group = "io.wispforest", name = "owo-lib", version.ref = "owo" }
+owoSentinel = { group = "io.wispforest", name = "owo-sentinel", version.ref = "owo" }
+modMenu = { group = "maven.modrinth", name = "modmenu", version.ref = "modMenu" }
+sqlite = { group = "org.xerial", name = "sqlite-jdbc", version.ref = "sqlite" }
+zstd = { group = "com.github.luben", name = "zstd-jni", version.ref = "zstd" }
+
+[plugins]
+fabricLoom = { id = "fabric-loom", version.ref = "fabricLoom" }
+# https://github.com/GradleUp/shadow/releases
+#shadow = { id = "com.gradleup.shadow", version = "7.1.2" }

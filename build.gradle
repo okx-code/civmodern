@@ -2,39 +2,35 @@
 // See Gradle's releases here: https://gradle.org/releases/
 
 plugins {
-    id("fabric-loom") version "${loom_version}"
-//    id("com.github.johnrengelman.shadow") version "7.1.2"
+    alias(libs.plugins.fabricLoom)
+    //alias(libs.plugins.shadow)
 }
 
 dependencies {
-    minecraft "com.mojang:minecraft:${project.minecraft_version}"
+    minecraft(libs.minecraft)
     mappings(loom.layered() {
         officialMojangMappings()
     })
 
-    modCompileOnly("maven.modrinth:modmenu:lEkperf6")
+    modImplementation(libs.fabricLoader)
+    modImplementation(libs.fabricApi)
 
-    modImplementation "io.wispforest:owo-lib:${project.owo_version}"
-    modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
-    modImplementation "net.fabricmc:fabric-loader:${project.fabric_loader_version}"
-    include "io.wispforest:owo-sentinel:${project.owo_version}"
-    implementation "org.xerial:sqlite-jdbc:3.49.1.0"
-    compileOnly("com.github.luben:zstd-jni:1.5.7-4")
-    implementation "com.github.luben:zstd-jni:1.5.7-3:linux_amd64"
-    implementation "com.github.luben:zstd-jni:1.5.7-3:linux_aarch64"
-    implementation "com.github.luben:zstd-jni:1.5.7-3:darwin_x86_64"
-    implementation "com.github.luben:zstd-jni:1.5.7-3:darwin_aarch64"
-    implementation "com.github.luben:zstd-jni:1.5.7-3:win_amd64"
-    implementation "com.github.luben:zstd-jni:1.5.7-3:win_aarch64"
-    loom {
-        include("org.xerial:sqlite-jdbc:3.49.1.0")
-        include("com.github.luben:zstd-jni:1.5.7-3:linux_amd64")
-        include("com.github.luben:zstd-jni:1.5.7-3:linux_aarch64")
-        include("com.github.luben:zstd-jni:1.5.7-3:darwin_x86_64")
-        include("com.github.luben:zstd-jni:1.5.7-3:darwin_aarch64")
-        include("com.github.luben:zstd-jni:1.5.7-3:win_amd64")
-        include("com.github.luben:zstd-jni:1.5.7-3:win_aarch64")
-    }
+    modImplementation(libs.owoLib)
+    include(libs.owoSentinel)
+
+    modImplementation(libs.modMenu)
+
+    implementation(libs.sqlite)
+    // TODO: You should probably depend on https://modrinth.com/plugin/sqlite-jdbc instead
+    include(libs.sqlite)
+
+    compileOnly(libs.zstd)
+    include(variantOf(libs.zstd) { classifier("linux_amd64") })
+    include(variantOf(libs.zstd) { classifier("linux_aarch64") })
+    include(variantOf(libs.zstd) { classifier("darwin_x86_64") })
+    include(variantOf(libs.zstd) { classifier("darwin_aarch64") })
+    include(variantOf(libs.zstd) { classifier("win_amd64") })
+    include(variantOf(libs.zstd) { classifier("win_aarch64") })
 }
 
 base {
@@ -77,8 +73,8 @@ processResources {
                 "mod_source_url"       : project.mod_source_url,
                 "copyright_licence"    : project.copyright_licence,
 
-                "minecraft_version"    : project.minecraft_version,
-                "fabric_loader_version": project.fabric_loader_version,
+                "minecraft_version"    : libs.versions.minecraft.get(),
+                "fabric_loader_version": libs.versions.fabricLoader.get(),
         ])
         filter {
             (it as String).replace(
