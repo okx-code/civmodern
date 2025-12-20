@@ -45,9 +45,6 @@ import java.util.Set;
 import java.util.UUID;
 
 public class Radar {
-
-    private static boolean hideY = true;
-
     private final ColourProvider colourProvider;
     private final CivMapConfig config;
 
@@ -82,10 +79,6 @@ public class Radar {
         }
     }
 
-    private boolean hideY() {
-        return hideY;
-    }
-
     @Subscribe
     private void onWorldTickPing(
         final @NotNull ClientTickEvent event
@@ -105,13 +98,13 @@ public class Radar {
                     if (config.isPingEnabled()) {
                         BlockPos pos = player.blockPosition();
                         String lastWaypointCommand =
-                            "/civmodern_openwaypoint [x:" + pos.getX() + ",y:" + (hideY() ? Minecraft.getInstance().player.getBlockY() : pos.getY()) + ",z:" + pos.getZ() + ",name:"
+                            "/civmodern_openwaypoint [x:" + pos.getX() + ",y:" + Minecraft.getInstance().player.getBlockY() + ",z:" + pos.getZ() + ",name:"
                                 + player.getScoreboardName() + "]";
 
                         Minecraft.getInstance().player.displayClientMessage(
                             Component.translatable("civmodern.radar.enter",
                                     player.getName(),
-                                    Component.literal(hideY() ? (pos.getX() + " " + pos.getZ()) : (pos.getX() + " " + pos.getY() + " " + pos.getZ()))
+                                    Component.literal(pos.getX() + " " + pos.getZ())
                                         .withStyle(ChatFormatting.AQUA))
                                 .setStyle(Style.EMPTY
                                     .withClickEvent(
@@ -132,12 +125,12 @@ public class Radar {
                     BlockPos pos = player.blockPosition();
                     // TODO: Replace with player waypoints
                     String lastWaypointCommand =
-                        "/civmodern_openwaypoint [x:" + pos.getX() + ",y:" + (hideY() ? Minecraft.getInstance().player.getBlockY() : pos.getY()) + ",z:" + pos.getZ() + ",name:"
+                        "/civmodern_openwaypoint [x:" + pos.getX() + ",y:" + Minecraft.getInstance().player.getBlockY() + ",z:" + pos.getZ() + ",name:"
                             + player.getScoreboardName() + "]";
                     Minecraft.getInstance().player.displayClientMessage(
                         Component.translatable("civmodern.radar.leave",
                                 player.getName(),
-                                Component.literal(hideY() ? (pos.getX() + " " + pos.getZ()) : (pos.getX() + " " + pos.getY() + " " + pos.getZ()))
+                                Component.literal(pos.getX() + " " + pos.getZ())
                                     .withStyle(s -> s.applyFormat(ChatFormatting.AQUA)))
                             .setStyle(Style.EMPTY
                                 .withClickEvent(
@@ -333,7 +326,7 @@ public class Radar {
             guiGraphics.pose().translate(0, 4.5f * config.getIconSize());
             guiGraphics.pose().scale(0.6f * config.getTextSize(), 0.6f * config.getTextSize());
             Component component = Component.literal(
-                player.getScoreboardName() + " (" + (hideY() ? ((int) Math.round(Math.sqrt(dx * dx + dz * dz))) : (int) player.getY()) + ")");
+                player.getScoreboardName() + " (" + ((int) Math.round(Math.sqrt(dx * dx + dz * dz))) + ")");
             guiGraphics.drawCenteredString(minecraft.font, component, 0, 1, -1);
 
             guiGraphics.pose().popMatrix();
