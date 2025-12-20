@@ -6,15 +6,6 @@ plugins {
 //    id("com.github.johnrengelman.shadow") version "7.1.2"
 }
 
-loom {
-//    silentMojangMappingsLicense()
-    mods {
-        "modid" {
-            sourceSet sourceSets.main
-        }
-    }
-}
-
 dependencies {
     minecraft "com.mojang:minecraft:${project.minecraft_version}"
     mappings(loom.layered() {
@@ -97,17 +88,6 @@ processResources {
         }
     }
 }
-
-//shadowJar {
-//    zip64 = true
-//    archiveClassifier = "dev-shadow"
-//}
-
-//remapJar {
-//    input.set shadowJar.archiveFile
-//    dependsOn shadowJar
-//    archiveClassifier = "fabric"
-//}
 
 import groovy.json.JsonBuilder
 
