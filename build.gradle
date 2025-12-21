@@ -21,7 +21,6 @@ dependencies {
     modImplementation(libs.modMenu)
 
     implementation(libs.sqlite)
-    // TODO: You should probably depend on https://modrinth.com/plugin/sqlite-jdbc instead
     include(libs.sqlite)
 
     compileOnly(libs.zstd)
@@ -88,7 +87,7 @@ import groovy.json.JsonBuilder
 
 tasks.register("cleanJar", Delete) {
     delete fileTree("dist") {
-        include "*-fabric.jar"
+        include "*.jar"
     }
 }
 
