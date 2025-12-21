@@ -64,6 +64,7 @@ public class RegionLoader {
                         if (this.chunkTimestamps == null) setChunkTimestamps(entry.getValue());
                     }
                 }
+                this.loaded.add(entry.getKey());
             }
         } finally {
             this.lock.writeLock().unlock();
