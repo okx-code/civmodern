@@ -130,7 +130,6 @@ public class MapCache {
         RegionKey region = new RegionKey(regionX, regionZ);
 
 
-        // TODO post process neighbouring north and west chunks (if loaded) to finish height shading
         RegionKey atlas = new RegionKey(regionX >> ATLAS_BITS, regionZ >> ATLAS_BITS);
         RegionAtlasTexture tex = this.textureCache.computeIfAbsent(atlas, k -> {
             RegionAtlasTexture texture1 = new RegionAtlasTexture();
@@ -147,7 +146,6 @@ public class MapCache {
                 try {
                     RegionLoader loader = reference.getLoader();
                     this.nearbyRegions.put(region, loader);
-                    // TODO fully get rid of banding, this is only a partial solution
                     RegionMapUpdater updater = new RegionMapUpdater(loader, blockLookup, biomeLookup);
                     boolean[] renderEastSouth = new boolean[2];
                     boolean updated = updater.updateChunk(chunk.getLevel().registryAccess(), chunk, renderEastSouth);

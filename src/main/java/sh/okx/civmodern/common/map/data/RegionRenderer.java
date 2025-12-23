@@ -23,7 +23,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 public class RegionRenderer {
-    public static final boolean perf = true;
+    public static final boolean perf = false;
     public static final AtomicLong totalns = new AtomicLong();
     public static final AtomicInteger count = new AtomicInteger();
 
@@ -52,8 +52,8 @@ public class RegionRenderer {
         render(texture, rx, rz, 0, 512, 0, 512);
 
         if (perf) {
-            totalns.addAndGet(System.nanoTime() - start);
             count.incrementAndGet();
+            totalns.addAndGet(System.nanoTime() - start);
         }
     }
 

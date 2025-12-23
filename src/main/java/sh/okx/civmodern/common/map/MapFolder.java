@@ -60,7 +60,6 @@ public class MapFolder {
                 statement.execute("INSERT INTO meta VALUES (\"version\", " + VERSION + ") ON CONFLICT DO NOTHING");
 
                 statement.execute("CREATE INDEX IF NOT EXISTS region_pos ON regions (x, z)");
-//                statement.execute("DROP INDEX IF EXISTS region_pos");
             }
         } catch (SQLException e) {
             throw new RuntimeException(e);
