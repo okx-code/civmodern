@@ -149,7 +149,8 @@ public class MapCache {
                     this.nearbyRegions.put(region, loader);
                     // TODO fully get rid of banding, this is only a partial solution
                     RegionMapUpdater updater = new RegionMapUpdater(loader, blockLookup, biomeLookup);
-                    boolean updated = updater.updateChunk(chunk.getLevel().registryAccess(), chunk);
+                    boolean[] renderEastSouth = new boolean[2];
+                    boolean updated = updater.updateChunk(chunk.getLevel().registryAccess(), chunk, renderEastSouth);
 
                     boolean shouldRender = loader.render();
                     if (shouldRender) {
@@ -163,6 +164,12 @@ public class MapCache {
                             int regionLocalZ = pos.getRegionLocalZ();
                             RegionRenderer renderer = new RegionRenderer(loader, blockLookup, biomeLookup);
                             renderer.renderChunk(tex, region.x() & ATLAS_LENGTH - 1, region.z() & ATLAS_LENGTH - 1, regionLocalX, regionLocalZ);
+                            if (regionLocalX < 31 && renderEastSouth[0]) {
+                                renderer.render(tex, region.x() & ATLAS_LENGTH - 1, region.z() & ATLAS_LENGTH - 1, (regionLocalX + 1) * 16, (regionLocalX + 1) * 16 + 1, regionLocalZ * 16, regionLocalZ * 16 + 16);
+                            }
+                            if (regionLocalZ < 31 && renderEastSouth[1]) {
+                                renderer.render(tex, region.x() & ATLAS_LENGTH - 1, region.z() & ATLAS_LENGTH - 1, regionLocalX * 16, regionLocalX * 16 + 16, (regionLocalZ + 1) * 16, (regionLocalZ + 1) * 16 + 1);
+                            }
                         }
                     }
                 } finally {

@@ -39,29 +39,7 @@ public class RegionMapUpdater {
         this.biomeLookup = biomeLookup;
     }
 
-    private int getHeight(RegistryAccess registryAccess, ChunkAccess chunk, int x, int z) {
-        BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos(chunk.getPos().getBlockX(x), chunk.getHeight(Heightmap.Types.WORLD_SURFACE, x, z) + 1, chunk.getPos().getBlockZ(z));
-        int depth;
-        do {
-            pos.setY(pos.getY() - 1);
-            Block block;
-            BlockState state = chunk.getBlockState(pos);
-            if (state.getFluidState().is(Fluids.WATER) || state.getFluidState().is(Fluids.FLOWING_WATER)) {
-                BlockPos bottomPos = new BlockPos.MutableBlockPos(pos.getX(), chunk.getHeight(Heightmap.Types.OCEAN_FLOOR_WG, pos.getX(), pos.getZ()), pos.getZ());
-                depth = pos.getY() - bottomPos.getY();
-                block = chunk.getBlockState(bottomPos).getBlock();
-            } else {
-                block = state.getBlock();
-                depth = 0;
-            }
-            if (ColoursConfig.BLOCK_COLOURS.getOrDefault(registryAccess.lookupOrThrow(Registries.BLOCK).getKey(block).toString(), block.defaultMapColor().col) > 0) {
-                break;
-            }
-        } while (pos.getY() > chunk.getMinY());
-        return pos.getY() - depth;
-    }
-
-    public boolean updateChunk(RegistryAccess registryAccess, ChunkAccess chunk) {
+    public boolean updateChunk(RegistryAccess registryAccess, ChunkAccess chunk, boolean[] renderEastSouth) {
         Registry<Biome> registry = registryAccess.lookupOrThrow(Registries.BIOME);
         boolean updated = false;
 
@@ -78,7 +56,7 @@ public class RegionMapUpdater {
             short[] northY = new short[16];
             for (int x = 0; x < 16; x++) {
                 int pos = (rz - 1) + ((rx + x) * 512);
-                if (pos < 0 || pos >= ylevels.length) {
+                if (pos < 0 || pos >= waterylevels.length) {
                     northY[x] = Short.MIN_VALUE;
                     continue;
                 }
@@ -86,19 +64,13 @@ public class RegionMapUpdater {
                 if (waterY != 0) {
                     northY[x] = (short) (waterY < 0 ? waterY : waterY - 1);
                 } else {
-                    short y = ylevels[pos];
-                    if (y > 0) {
-                        y -= 1;
-                    } else if (y == 0) {
-                        y = Short.MIN_VALUE;
-                    }
-                    northY[x] = y;
+                    northY[x] = Short.MIN_VALUE;
                 }
             }
             short[] westY = new short[16];
             for (int z = 0; z < 16; z++) {
                 int pos = (rz + z) + ((rx - 1) * 512);
-                if (pos < 0 || pos >= ylevels.length) {
+                if (pos < 0 || pos >= waterylevels.length) {
                     westY[z] = Short.MIN_VALUE;
                     continue;
                 }
@@ -106,13 +78,7 @@ public class RegionMapUpdater {
                 if (waterY != 0) {
                     westY[z] = (short) (waterY < 0 ? waterY : waterY - 1);
                 } else {
-                    short y = ylevels[pos];
-                    if (y > 0) {
-                        y -= 1;
-                    } else if (y == 0) {
-                        y = Short.MIN_VALUE;
-                    }
-                    westY[z] = y;
+                    westY[z] = Short.MIN_VALUE;
                 }
             }
 
@@ -162,7 +128,7 @@ public class RegionMapUpdater {
                         } else if (westY[z - rz] == pos.getY() - depth) {
                             dataValue |= 0b01 << 10;
                         }
-                    } else if ((current >> 10 & 0x3) == 0) {
+                    } else if ((current & 0xC00) == 0) {
                         dataValue |= 0b10 << 10;
                     } else {
                         dataValue |= current & 0xC00;
@@ -175,7 +141,7 @@ public class RegionMapUpdater {
                         } else if (northY[x - rx] == pos.getY() - depth) {
                             dataValue |= 0b01 << 8;
                         }
-                    } else if ((current >> 8 & 0x3) == 0) {
+                    } else if ((current & 0x300) == 0) {
                         dataValue |= 0b10 << 8;
                     } else {
                         dataValue |= current & 0x300;
@@ -195,12 +161,19 @@ public class RegionMapUpdater {
                         ylevel++; // zero has a special significance as the null value
                     }
                     ylevels[z + x * 512] = ylevel;
-                    if (depth != 0) {
-                        short waterylevel = (short) (pos.getY() - depth);
-                        if (waterylevel >= 0) {
-                            waterylevel++;
-                        }
-                        waterylevels[z + x * 512] = waterylevel;
+
+                    short waterylevel = (short) (pos.getY() - depth);
+                    if (waterylevel >= 0) {
+                        waterylevel++;
+                    }
+                    updated |= waterylevels[z + x * 512] != waterylevel;
+                    waterylevels[z + x * 512] = waterylevel;
+
+                    if (updated && x == rx + 15) {
+                        renderEastSouth[0] = true;
+                    }
+                    if (updated && z == rx + 15) {
+                        renderEastSouth[1] = true;
                     }
 
                     if (current != dataValue || ylevel != yCurrent) {

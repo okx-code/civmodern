@@ -57,13 +57,14 @@ public class RegionRenderer {
         }
     }
 
-    private void render(RegionAtlasTexture texture, int rx, int rz, int minX, int maxX, int minZ, int maxZ) {
+    public void render(RegionAtlasTexture texture, int rx, int rz, int minX, int maxX, int minZ, int maxZ) {
         try {
-            this.loader.getRenderLock().lock(); // TODO make lock less coarse
+            this.loader.getRenderLock().lock();
 
             int[] data = this.loader.getOrLoadMapData();
 
             short[] colours = new short[(maxX - minX) * (maxZ - minZ)];
+            int ptr = 0;
 
             Int2IntMap blockCache = new Int2IntOpenHashMap();
             Int2IntMap biomeCache = new Int2IntOpenHashMap();
@@ -71,8 +72,8 @@ public class RegionRenderer {
             // todo fix
             RegistryAccess registryAccess = Minecraft.getInstance().player.level().registryAccess();
             Registry<Biome> registry = registryAccess.lookupOrThrow(Registries.BIOME);
-            for (int x = minX; x < maxX; x++) {
-                for (int z = minZ; z < maxZ; z++) {
+            for (int z = minZ; z < maxZ; z++) {
+                for (int x = minX; x < maxX; x++) {
                     int packedData = data[z + x * 512];
                     int blockId = (packedData >>> 16) & 0xFFFF;
                     int waterDepth = (packedData >>> 12) & 0xF;
@@ -136,16 +137,16 @@ public class RegionRenderer {
                         color = blend(color, (double) alpha / 0xFF);
                     }
 
-                    int red = color >> 16 & 0xFF;
-                    int green = color >> 8 & 0xFF;
+                    int red = color >>> 16 & 0xFF;
+                    int green = color >>> 8 & 0xFF;
                     int blue = color & 0xFF;
 
                     short rgb565 = 0;
-                    rgb565 |= (red >> 3) << 11;
-                    rgb565 |= (green >> 2) << 5;
-                    rgb565 |= (blue >> 3);
+                    rgb565 |= (red >>> 3) << 11;
+                    rgb565 |= (green >>> 2) << 5;
+                    rgb565 |= (blue >>> 3);
 
-                    colours[(x - minX) + (z - minZ) * (maxZ - minZ)] = rgb565;
+                    colours[ptr++] = rgb565;
                 }
             }
 

@@ -145,6 +145,9 @@ public class MapFolder {
                                 } else if (data == RegionDataType.Y_LEVELS) {
                                     buf = ByteBuffer.allocate(512 * 512 * 2);
                                     buf.asShortBuffer().put(entry.getValue().getOrLoadYLevels());
+                                } else if (data == RegionDataType.WATER_Y_LEVELS) {
+                                    buf = ByteBuffer.allocate(512 * 512 * 2);
+                                    buf.asShortBuffer().put(entry.getValue().getOrLoadWaterYLevels());
                                 } else if (data == RegionDataType.CHUNK_TIMESTAMPS) {
                                     buf = ByteBuffer.allocate(512 / 16 * 512 / 16 * 8);
                                     buf.asLongBuffer().put(entry.getValue().getOrLoadChunkTimestamps());

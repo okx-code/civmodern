@@ -24,6 +24,12 @@ dependencies {
     include(libs.sqlite)
 
     compileOnly(libs.zstd)
+    implementation(variantOf(libs.zstd) { classifier("linux_amd64") })
+    implementation(variantOf(libs.zstd) { classifier("linux_aarch64") })
+    implementation(variantOf(libs.zstd) { classifier("darwin_x86_64") })
+    implementation(variantOf(libs.zstd) { classifier("darwin_aarch64") })
+    implementation(variantOf(libs.zstd) { classifier("win_amd64") })
+    implementation(variantOf(libs.zstd) { classifier("win_aarch64") })
     include(variantOf(libs.zstd) { classifier("linux_amd64") })
     include(variantOf(libs.zstd) { classifier("linux_aarch64") })
     include(variantOf(libs.zstd) { classifier("darwin_x86_64") })
