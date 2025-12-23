@@ -42,6 +42,8 @@ public class MapFolder {
     private final File historyFile;
     private final History history;
 
+    private final ThreadLocal<PreparedStatement> getRegionData = new ThreadLocal<>();
+
     public MapFolder(File folder) {
         this.folder = folder;
 
@@ -56,6 +58,9 @@ public class MapFolder {
                 statement.execute("CREATE TABLE IF NOT EXISTS regions (x INT NOT NULL, z INT NOT NULL, type TEXT NOT NULL, data BLOB NOT NULL, PRIMARY KEY (x, z, type))");
 
                 statement.execute("INSERT INTO meta VALUES (\"version\", " + VERSION + ") ON CONFLICT DO NOTHING");
+
+                statement.execute("CREATE INDEX IF NOT EXISTS region_pos ON regions (x, z)");
+//                statement.execute("DROP INDEX IF EXISTS region_pos");
             }
         } catch (SQLException e) {
             throw new RuntimeException(e);
@@ -275,7 +280,17 @@ public class MapFolder {
     }
 
     public byte[] getRegionData(RegionKey key, RegionDataType type) {
-        try (PreparedStatement statement = this.connection.prepareStatement("SELECT data FROM regions WHERE x = ? AND z = ? AND type = ?")) {
+        PreparedStatement statement = getRegionData.get();
+        if (statement == null) {
+            try {
+                statement = this.connection.prepareStatement("SELECT data FROM regions WHERE x = ? AND z = ? AND type = ?");
+            } catch (SQLException e) {
+                throw new RuntimeException(e);
+            }
+            getRegionData.set(statement);
+            // just don't ever close the connections for perf :)
+        }
+        try {
             statement.setInt(1, key.x());
             statement.setInt(2, key.z());
             statement.setString(3, type.getDatabaseKey());

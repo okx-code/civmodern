@@ -5,7 +5,6 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.chunk.ChunkAccess;
 import net.minecraft.world.level.chunk.LevelChunk;
-import net.minecraft.world.level.chunk.status.ChunkStatus;
 import net.minecraft.world.level.levelgen.Heightmap;
 import org.apache.logging.log4j.Level;
 import sh.okx.civmodern.common.AbstractCivModernMod;
@@ -257,6 +256,12 @@ public class MapCache {
                 renderer.render(this.textureCache.get(new RegionKey(poll.x() >> ATLAS_BITS, poll.z() >> ATLAS_BITS)), poll.x() & ATLAS_LENGTH - 1, poll.z() & ATLAS_LENGTH - 1);
             } finally {
                 reference.removeReference();
+            }
+
+            if (RegionRenderer.perf) {
+                // race condition between count and totalns but shouldn't impact numbers much with enough regions rendered
+                int count = RegionRenderer.count.get();
+                AbstractCivModernMod.LOGGER.info("Regions loaded: {}. Average region render time: {}μs", count, (RegionRenderer.totalns.get() / count) / 1000);
             }
         });
     }

@@ -3,6 +3,7 @@ package sh.okx.civmodern.common.map.data;
 import com.mojang.blaze3d.systems.RenderSystem;
 import it.unimi.dsi.fastutil.ints.Int2IntMap;
 import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
+import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.Holder;
 import net.minecraft.core.Registry;
@@ -18,8 +19,14 @@ import sh.okx.civmodern.common.map.RegionAtlasTexture;
 import sh.okx.civmodern.common.map.RenderQueue;
 
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 public class RegionRenderer {
+    public static final boolean perf = true;
+    public static final AtomicLong totalns = new AtomicLong();
+    public static final AtomicInteger count = new AtomicInteger();
+
     private final RegionLoader loader;
 
     private final IdLookup blockLookup;
@@ -37,7 +44,17 @@ public class RegionRenderer {
     }
 
     public void render(RegionAtlasTexture texture, int rx, int rz) {
+        long start;
+        if (perf) {
+            start = System.nanoTime();
+        }
+
         render(texture, rx, rz, 0, 512, 0, 512);
+
+        if (perf) {
+            totalns.addAndGet(System.nanoTime() - start);
+            count.incrementAndGet();
+        }
     }
 
     private void render(RegionAtlasTexture texture, int rx, int rz, int minX, int maxX, int minZ, int maxZ) {
@@ -50,6 +67,7 @@ public class RegionRenderer {
 
             Int2IntMap blockCache = new Int2IntOpenHashMap();
             Int2IntMap biomeCache = new Int2IntOpenHashMap();
+
             // todo fix
             RegistryAccess registryAccess = Minecraft.getInstance().player.level().registryAccess();
             Registry<Biome> registry = registryAccess.lookupOrThrow(Registries.BIOME);
@@ -73,7 +91,12 @@ public class RegionRenderer {
                             } else {
                                 Holder.Reference<Block> blockHolder = holder.get();
                                 String key = blockHolder.key().location().toString();
-                                color = ColoursConfig.BLOCK_COLOURS.getOrDefault(key, blockHolder.value().defaultMapColor().col);
+                                Integer getColour = ColoursConfig.BLOCK_COLOURS.get(key);
+                                if (getColour == null) {
+                                    color = blockHolder.value().defaultMapColor().col;
+                                } else {
+                                    color = getColour;
+                                }
 
                                 if (ColoursConfig.BLOCKS_GRASS.contains(key)) {
                                     Biome biome = registry.getValue(ResourceLocation.parse(biomeLookup.getName(biomeId)));
@@ -90,12 +113,10 @@ public class RegionRenderer {
                     }
 
                     if (waterDepth > 0) {
-                        int fluidColor;
-                        if (biomeCache.containsKey(biomeId)) {
-                            fluidColor = biomeCache.get(biomeId);
-                        } else {
+                        int fluidColor = biomeCache.getOrDefault(biomeId, -1);
+                        if (fluidColor == -1) {
                             Biome biome = registry.getValue(ResourceLocation.parse(biomeLookup.getName(biomeId)));
-                            fluidColor = fancyFluids(biome, 0.05F);
+                            fluidColor = fancyFluids(biome.getWaterColor(), 0.05F);
                             biomeCache.put(biomeId, fluidColor);
                         }
                         color = blend(fluidColor, color | 0xFF000000) & 0xFFFFFF;
@@ -142,12 +163,12 @@ public class RegionRenderer {
         double r = (red(color1) * (1 - a0));
         double g = (green(color1) * (1 - a0));
         double b = (blue(color1) * (1 - a0));
-        return rgb((int) r, (int) g, (int) b);
+        return (int) r << 16 | (int) g << 8 | (int) b;
     }
 
-    public static int fancyFluids(Biome biome, float depth) {
+    public static int fancyFluids(int biomeWaterColour, float depth) {
         // let's do some maths to get pretty fluid colors based on depth
-        int color = biome.getWaterColor();
+        int color = biomeWaterColour;
         color = lerpARGB(color, 0xFF000000, Mth.clamp(cubicOut(depth / 1.5F), 0, 0.45f));
         color = setAlpha((int) (quinticOut(Mth.clamp(depth * 5F, 0, 1)) * 0xFF), color);
         return color;
@@ -161,12 +182,10 @@ public class RegionRenderer {
         if (color0 == color1) return color0;
         if (delta >= 1F) return color1;
         if (delta <= 0F) return color0;
-        return argb(
-            (int) Mth.lerp(delta, alpha(color0), alpha(color1)),
-            (int) Mth.lerp(delta, red(color0), red(color1)),
-            (int) Mth.lerp(delta, green(color0), green(color1)),
-            (int) Mth.lerp(delta, blue(color0), blue(color1))
-        );
+        return (int) Mth.lerp(delta, alpha(color0), alpha(color1)) << 24 |
+            (int) Mth.lerp(delta, red(color0), red(color1)) << 16 |
+            (int) Mth.lerp(delta, green(color0), green(color1)) << 8 |
+            (int) Mth.lerp(delta, blue(color0), blue(color1));
     }
 
     public static int blend(int color0, int color1) {
@@ -176,7 +195,7 @@ public class RegionRenderer {
         double r = (red(color0) * a0 + red(color1) * a1 * (1 - a0)) / a;
         double g = (green(color0) * a0 + green(color1) * a1 * (1 - a0)) / a;
         double b = (blue(color0) * a0 + blue(color1) * a1 * (1 - a0)) / a;
-        return argb((int) a * 0xFF, (int) r, (int) g, (int) b);
+        return ((int) a * 0xFF) << 24 | (int) r << 16 | (int) g << 8 | (int) b;
     }
 
     public static float quinticOut(float t) {
@@ -185,10 +204,6 @@ public class RegionRenderer {
 
     public static float cubicOut(float t) {
         return 1F + ((t -= 1F) * t * t);
-    }
-
-    public static int argb(int alpha, int red, int green, int blue) {
-        return alpha << 24 | red << 16 | green << 8 | blue;
     }
 
     public static int alpha(int argb) {
@@ -207,15 +222,10 @@ public class RegionRenderer {
         return argb & 0xFF;
     }
 
-    public static int rgb(int red, int green, int blue) {
-        return red << 16 | green << 8 | blue;
-    }
-
-
     public static int mix(int color0, int color1) {
         float r = red(color0) / 255f * red(color1) / 255f;
         float g = green(color0) / 255f * green(color1) / 255f;
         float b = blue(color0) / 255f * blue(color1) / 255f;
-        return rgb((int) (r * 255), (int) (g * 255), (int) (b * 255));
+        return (int) (r * 255) << 16 | (int) (g * 255) << 8 | (int) (b * 255);
     }
 }

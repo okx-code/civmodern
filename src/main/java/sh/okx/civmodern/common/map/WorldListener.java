@@ -24,6 +24,7 @@ import sh.okx.civmodern.common.events.RespawnEvent;
 import sh.okx.civmodern.common.events.WorldRenderLastEvent;
 import sh.okx.civmodern.common.map.converters.JourneymapConverter;
 import sh.okx.civmodern.common.map.converters.VoxelMapConverter;
+import sh.okx.civmodern.common.map.data.RegionRenderer;
 import sh.okx.civmodern.common.map.screen.ImportAvailable;
 import sh.okx.civmodern.common.map.waypoints.PlayerWaypoints;
 import sh.okx.civmodern.common.map.waypoints.Waypoint;
@@ -114,6 +115,10 @@ public class WorldListener {
             mapDirectory.mkdirs();
         }
 
+        if (RegionRenderer.perf) {
+            RegionRenderer.totalns.set(0);
+            RegionRenderer.count.set(0);
+        }
         this.file = new MapFolder(mapDirectory);
         this.waypoints = new Waypoints(this.file.getConnection());
         this.playerWaypoints = new PlayerWaypoints();
