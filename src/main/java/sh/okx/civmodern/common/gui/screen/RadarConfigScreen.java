@@ -392,7 +392,6 @@ final class RadarConfigScreen extends AbstractConfigScreen {
         offsetY += this.font.lineHeight + 2;
 
         final var colourEditBox = addRenderableWidget(new ColourTextEditBox(
-            this.font,
             innerCenterX - 30,
             offsetY,
             60,
@@ -408,7 +407,7 @@ final class RadarConfigScreen extends AbstractConfigScreen {
             20,
             colourGetter.getAsInt(),
             (colour) -> {
-                colourEditBox.setColourFromInt(colour);
+                colourEditBox.setColourText(colour);
                 colourSetter.accept(colour);
             },
             preview,
@@ -422,7 +421,7 @@ final class RadarConfigScreen extends AbstractConfigScreen {
             20,
             ROLLBACK_ICON,
             (button) -> {
-                colourEditBox.setColourFromInt(defaultColour);
+                colourEditBox.setColourText(defaultColour);
                 colourSetter.accept(defaultColour);
                 hsb.close();
             }

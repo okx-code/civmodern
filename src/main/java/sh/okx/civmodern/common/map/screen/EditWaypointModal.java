@@ -96,7 +96,7 @@ public class EditWaypointModal extends Modal<FlowLayout> {
             20,
             waypoint.colour(),
             (colour) -> {
-                colourBox.setColourFromInt(colour);
+                colourBox.setColour(colour);
                 this.colour = colour;
                 this.previewColour = colour;
             },

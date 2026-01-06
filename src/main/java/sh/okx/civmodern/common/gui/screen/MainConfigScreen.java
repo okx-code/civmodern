@@ -48,7 +48,7 @@ public final class MainConfigScreen extends AbstractConfigScreen {
             Button
                 .builder(
                     Component.translatable("civmodern.screen.main.items"),
-                    (button) -> this.minecraft.setScreen(new ItemsConfigScreen(this.config, this.colourProvider, this))
+                    (button) -> this.minecraft.setScreen(new ItemsConfigScreen(this.config, this))
                 )
                 .pos(offsetX, offsetY)
                 .build()

@@ -6,6 +6,10 @@ plugins {
     //alias(libs.plugins.shadow)
 }
 
+loom {
+    accessWidenerPath = file("src/main/resources/civmodern.accesswidener")
+}
+
 dependencies {
     minecraft(libs.minecraft)
     mappings(loom.layered() {

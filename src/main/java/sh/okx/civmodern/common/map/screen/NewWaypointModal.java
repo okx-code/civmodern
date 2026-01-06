@@ -86,7 +86,7 @@ public class NewWaypointModal extends Modal<FlowLayout> {
             20,
             this.colour,
             (colour) -> {
-                colourBox.setColourFromInt(colour);
+                colourBox.setColour(colour);
                 this.colour = colour;
                 this.previewColour = colour;
             },

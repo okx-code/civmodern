@@ -1,51 +1,47 @@
 package sh.okx.civmodern.common.gui.widget;
 
+import io.wispforest.owo.ui.component.TextBoxComponent;
+import io.wispforest.owo.ui.core.Positioning;
+import io.wispforest.owo.ui.core.Sizing;
+import java.util.Objects;
 import java.util.function.IntConsumer;
 import java.util.function.IntSupplier;
 import java.util.regex.Pattern;
-
-import io.wispforest.owo.mixin.ui.access.TextFieldWidgetAccessor;
-import io.wispforest.owo.ui.core.CursorStyle;
-import io.wispforest.owo.ui.core.Sizing;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.components.EditBox;
-import net.minecraft.network.chat.Component;
 import org.jetbrains.annotations.NotNull;
 
-public class ColourTextEditBox extends EditBox {
-    private static final Pattern HEX_COLOUR_REGEX = Pattern.compile("^(#[0-9A-F]{0,6})?$", Pattern.CASE_INSENSITIVE);
+public class ColourTextEditBox extends TextBoxComponent {
+    private static final Pattern HEX_COLOUR_REGEX = Pattern.compile("^#([0-9A-F]{0,6})?$", Pattern.CASE_INSENSITIVE);
+
+    private final IntConsumer colourSetter;
 
     public ColourTextEditBox(
-        Sizing horizontalSizing,
+        final @NotNull Sizing horizontalSizing,
         final @NotNull IntSupplier colourGetter,
         final @NotNull IntConsumer colourSetter
     ) {
-        this(Minecraft.getInstance().font, 0, 0, 0, 0, colourGetter, colourSetter);
-
-        this.sizing(horizontalSizing, Sizing.content());
-        setColourFromInt(colourGetter.getAsInt());
+        super(horizontalSizing);
+        this.colourSetter = Objects.requireNonNull(colourSetter);
+        this.setMaxLength(7);
+        this.setFilter((value) -> HEX_COLOUR_REGEX.matcher(value).matches());
+        this.onChanged().subscribe((value) -> {
+            // Support 3-digit hex codes
+            // https://developer.mozilla.org/en-US/docs/Web/CSS/hex-color
+            if (value.length() == 3) {
+                final var chars = new char[6];
+                chars[0] = chars[1] = value.charAt(0); // r
+                chars[2] = chars[3] = value.charAt(1); // g
+                chars[4] = chars[5] = value.charAt(2); // b
+                value = new String(chars);
+            }
+            if (value.length() == 6) {
+                colourSetter.accept(Integer.parseInt(value, 16));
+            }
+        });
         this.moveCursorToStart(false);
-    }
-
-    @Override
-    public void updateX(int x) {
-        super.updateX(x);
-        ((TextFieldWidgetAccessor) this).owo$updateTextPosition();
-    }
-
-    @Override
-    public void updateY(int y) {
-        super.updateY(y);
-        ((TextFieldWidgetAccessor) this).owo$updateTextPosition();
-    }
-
-    protected CursorStyle owo$preferredCursorStyle() {
-        return CursorStyle.TEXT;
+        this.setColourText(colourGetter.getAsInt());
     }
 
     public ColourTextEditBox(
-        final @NotNull Font font,
         final int x,
         final int y,
         final int width,
@@ -53,33 +49,26 @@ public class ColourTextEditBox extends EditBox {
         final @NotNull IntSupplier colourGetter,
         final @NotNull IntConsumer colourSetter
     ) {
-        super(font, x, y, width, height, Component.empty());
-        setColourFromInt(colourGetter.getAsInt());
-        setMaxLength(7);
-        setFilter((string) -> HEX_COLOUR_REGEX.matcher(string).matches());
-        setResponder((val) -> {
-            if (val.length() <= 1) {
-                return;
-            }
-            val = val.substring(1);
-            // Support 3-digit hex codes
-            // https://developer.mozilla.org/en-US/docs/Web/CSS/hex-color
-            if (val.length() == 3) {
-                final var chars = new char[6];
-                chars[0] = chars[1] = val.charAt(0); // r
-                chars[2] = chars[3] = val.charAt(1); // g
-                chars[4] = chars[5] = val.charAt(2); // b
-                val = new String(chars);
-            }
-            if (val.length() == 6) {
-                colourSetter.accept(Integer.parseInt(val, 16));
-            }
-        });
+        this(
+            Sizing.fixed(width),
+            colourGetter,
+            colourSetter
+        );
+        this.verticalSizing(Sizing.fixed(height));
+        this.positioning(Positioning.absolute(x, y));
     }
 
-    public void setColourFromInt(
+    public void setColour(
         final int colour
     ) {
-        setValue("#" + "%06X".formatted(colour));
+        this.colourSetter.accept(colour);
+        this.setColourText(colour);
+    }
+
+    /// This differs from [#setColour(int)] in that it ONLY updates the field's text.
+    public void setColourText(
+        final int colour
+    ) {
+        this.value = "#" + "%06X".formatted(0xFF_FF_FF & colour).toUpperCase();
     }
 }

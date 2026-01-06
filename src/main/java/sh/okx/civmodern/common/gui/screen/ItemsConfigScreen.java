@@ -1,219 +1,180 @@
 package sh.okx.civmodern.common.gui.screen;
 
-import java.util.List;
+import com.mojang.blaze3d.platform.InputConstants;
+import io.wispforest.owo.ui.base.BaseOwoScreen;
+import io.wispforest.owo.ui.component.Components;
+import io.wispforest.owo.ui.component.ItemComponent;
+import io.wispforest.owo.ui.container.Containers;
+import io.wispforest.owo.ui.container.FlowLayout;
+import io.wispforest.owo.ui.core.Color;
+import io.wispforest.owo.ui.core.HorizontalAlignment;
+import io.wispforest.owo.ui.core.Insets;
+import io.wispforest.owo.ui.core.OwoUIAdapter;
+import io.wispforest.owo.ui.core.Sizing;
+import io.wispforest.owo.ui.core.Surface;
+import io.wispforest.owo.ui.core.VerticalAlignment;
 import java.util.Objects;
-import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.components.Button;
+import java.util.function.IntConsumer;
+import java.util.function.IntSupplier;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.Tooltip;
+import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.player.LocalPlayer;
-import net.minecraft.core.component.DataComponentMap;
-import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.Items;
-import net.minecraft.world.item.component.ItemLore;
 import org.jetbrains.annotations.NotNull;
-import org.lwjgl.glfw.GLFW;
 import sh.okx.civmodern.common.CivMapConfig;
-import sh.okx.civmodern.common.ColourProvider;
-import sh.okx.civmodern.common.features.ExtendedItemStack;
-import sh.okx.civmodern.common.gui.Alignment;
+import sh.okx.civmodern.common.features.CompactedItem;
 import sh.okx.civmodern.common.gui.widget.ColourTextEditBox;
-import sh.okx.civmodern.common.gui.widget.HsbColourPicker;
-import sh.okx.civmodern.common.gui.widget.ImageButton;
-import sh.okx.civmodern.common.gui.widget.TextRenderable;
-import sh.okx.civmodern.common.gui.widget.ToggleButton;
+import sh.okx.civmodern.common.gui.widget.OwoButton;
+import sh.okx.civmodern.common.gui.widget.OwoColourPicker;
 
-final class ItemsConfigScreen extends AbstractConfigScreen {
-    private static final ItemStack ITEM; static {
-        ITEM = new ItemStack(Items.STONE, 64);
-        ITEM.applyComponents(
-            DataComponentMap.builder()
-                .set(DataComponents.LORE, new ItemLore(
-                    List.of(Component.literal(ExtendedItemStack.COMPACTED_ITEM_LORE))
-                ))
-                .build()
-        );
-    }
-
-    private final ColourProvider colourProvider;
-
-    private HsbColourPicker colourPicker;
-    private int itemX;
-    private int itemY;
+final class ItemsConfigScreen extends BaseOwoScreen<FlowLayout> {
+    private final CivMapConfig config;
+    private final Screen previousScreen;
 
     ItemsConfigScreen(
         final @NotNull CivMapConfig config,
-        final @NotNull ColourProvider colourProvider,
-        final @NotNull MainConfigScreen parent
+        final @NotNull Screen previousScreen
     ) {
-        super(
-            config,
-            Objects.requireNonNull(parent),
-            Component.translatable("civmodern.screen.items.title")
-        );
-        this.colourProvider = Objects.requireNonNull(colourProvider);
+        this.config = Objects.requireNonNull(config);
+        this.previousScreen = previousScreen;
+    }
+
+    /// Prevent Minecraft from pausing various parts of Minecraft while this screen is open
+    @Override
+    public boolean isPauseScreen() {
+        return false;
     }
 
     @Override
-    protected void init() {
-        super.init();
+    protected @NotNull OwoUIAdapter<FlowLayout> createAdapter() {
+        return OwoUIAdapter.create(this, Containers::verticalFlow);
+    }
 
-        addRenderableOnly(new TextRenderable.CentreAligned(
-            this.font,
-            this.centreX,
-            getHeaderY(),
-            this.title
+    @Override
+    protected void build(
+        final @NotNull FlowLayout rootComponent
+    ) {
+        rootComponent.surface(Surface.VANILLA_TRANSLUCENT);
+        rootComponent.verticalAlignment(VerticalAlignment.TOP);
+
+        final var picker = new OwoColourPicker(rootComponent);
+
+        final var body = Containers.verticalFlow(Sizing.content(), Sizing.content());
+        body.horizontalAlignment(HorizontalAlignment.CENTER);
+        body.gap(10);
+        body.padding(Insets.of(10, 10, 0, 0));
+        rootComponent.child(body);
+
+        // Title
+        body.child(
+            Components.label(Component.translatable("civmodern.screen.items.title"))
+                .color(Color.ofRgb(0xFF_FF_FF))
+                .shadow(true)
+        );
+
+        // Compacted item colours
+        body.child(colourPickerRow(
+            picker,
+            0xFF_FF_58,
+            CompactedItem.COMPACTED::getRBG,
+            CompactedItem.COMPACTED::setRBG,
+            CompactedItem.createExampleCompacted()
         ));
 
-        int offsetY = getBodyY();
-
-        this.itemX = centreX - 8; // Items have a render size of 16x16
-        this.itemY = offsetY;
-        offsetY += 16 + 10;
-
-        final var compactedColourEditBox = addRenderableWidget(new ColourTextEditBox(
-            this.font,
-            this.centreX - 30,
-            offsetY,
-            60, // width
-            20, // height
-            this.config::getColour,
-            this.config::setColour
+        // Crate colours
+        body.child(colourPickerRow(
+            picker,
+            0xFF_41_41,
+            CompactedItem.CRATE::getRBG,
+            CompactedItem.CRATE::setRBG,
+            CompactedItem.createExampleCrate()
         ));
-        addRenderableWidget(this.colourPicker = new HsbColourPicker(
-            this.centreX - (compactedColourEditBox.getWidth() / 2) - 5 - 20,
-            offsetY,
-            20,
-            20,
-            this.config.getColour(),
-            (colour) -> {
-                compactedColourEditBox.setValue("#" + "%06X".formatted(colour));
-                this.config.setColour(colour);
-            },
-            this.colourProvider::setTemporaryCompactedColour,
-            () -> {}
-        ));
-        addRenderableWidget(new ImageButton(
-            this.centreX + (compactedColourEditBox.getWidth() / 2) + 5,
-            offsetY,
-            20,
-            20,
-            ResourceLocation.tryBuild("civmodern", "gui/rollback.png"),
-            (button) -> {
-                final int colour = 0xffff58;
-                compactedColourEditBox.setValue("#FFFF58");
-                this.config.setColour(colour);
-                this.colourPicker.close();
-            }
-        ));
-        offsetY += Button.DEFAULT_HEIGHT + 10;
 
-        addRenderableWidget(new ToggleButton(
-            this.centreX - (Button.DEFAULT_WIDTH / 2),
-            offsetY,
-            ToggleButton.DEFAULT_BUTTON_WIDTH,
-            Component.translatable("civmodern.screen.items.crates"),
-            this.config::isCratesAreCompacted,
-            this.config::setCratesAreCompacted,
-            Tooltip.create(Component.translatable("civmodern.screen.items.crates.tooltip")),
-            ToggleButton.DEFAULT_NARRATION
-        ));
-        offsetY += Button.DEFAULT_HEIGHT + 4;
-
-        addRenderableWidget(new ToggleButton(
-            this.centreX - (Button.DEFAULT_WIDTH / 2),
-            offsetY,
-            ToggleButton.DEFAULT_BUTTON_WIDTH,
+        // Show repair cost
+        body.child(OwoButton.toggleButton(
             Component.translatable("civmodern.screen.items.repair"),
             this.config::isShowRepairCost,
             this.config::setShowRepairCost,
-            Tooltip.create(Component.translatable("civmodern.screen.items.repair.tooltip")),
-            ToggleButton.DEFAULT_NARRATION
+            Tooltip.create(Component.translatable("civmodern.screen.items.repair.tooltip"))
         ));
 
-        addRenderableWidget(
-            Button
-                .builder(
-                    CommonComponents.GUI_DONE,
-                    (button) -> {
-                        this.config.save();
-                        this.minecraft.setScreen(this.parent);
-                    }
-                )
-                .width(150)
-                .pos(
-                    this.centreX - 75,
-                    getFooterY(offsetY)
-                )
-                .build()
-        );
-    }
-
-    @Override
-    public void render(
-        final @NotNull GuiGraphics guiGraphics,
-        final int mouseX,
-        final int mouseY,
-        final float delta
-    ) {
-        super.render(guiGraphics, mouseX, mouseY, delta);
-
-        guiGraphics.renderItem(ITEM, this.itemX, this.itemY);
-        guiGraphics.renderItemDecorations(this.font, ITEM, this.itemX, this.itemY);
-
-        if (isCursorOverItem(mouseX, mouseY)) {
-//            guiGraphics.renderTooltip(this.font, ITEM, mouseX, mouseY);
-        }
-    }
-
-    @Override
-    public boolean mouseClicked(
-        final double mouseX,
-        final double mouseY,
-        final int button
-    ) {
-        if (!super.mouseClicked(mouseX, mouseY, button)) {
-            if (this.minecraft != null) {
-                final LocalPlayer player = this.minecraft.player;
-                if (player != null && isCursorOverItem((int) mouseX, (int) mouseY) && button == GLFW.GLFW_MOUSE_BUTTON_1 && player.isCreative()) {
-                    player.addItem(ITEM.copy());
-                    return true;
-                }
+        body.child(Components.spacer());
+        body.child(new OwoButton(
+            CommonComponents.GUI_DONE,
+            (button) -> {
+                this.config.save();
+                this.minecraft.setScreen(null); // .onClose() will redirect to the .previousScreen
             }
-            return false;
-        } else {
-            return true;
-        }
+        ));
     }
 
-    private boolean isCursorOverItem(
-        final int mouseX,
-        final int mouseY
+    private @NotNull FlowLayout colourPickerRow(
+        final @NotNull OwoColourPicker picker,
+        final int defaultColour,
+        final @NotNull IntSupplier colourGetter,
+        final @NotNull IntConsumer colourSetter,
+        final @NotNull ItemStack exampleItem
     ) {
-        return mouseX >= this.itemX - 1
-            && mouseX < this.itemX + 17
-            && mouseY > this.itemY - 1
-            && mouseY < this.itemY + 17;
-    }
-
-    @Override
-    public void mouseMoved(
-        final double mouseX,
-        final double mouseY
-    ) {
-        super.mouseMoved(mouseX, mouseY);
-        if (this.colourPicker != null) {
-            this.colourPicker.mouseMoved(mouseX, mouseY);
-        }
+        final var container = Containers.horizontalFlow(
+            Sizing.content(),
+            Sizing.content()
+        );
+        container.allowOverflow(true);
+        container.gap(2);
+        final var colourField = new ColourTextEditBox(
+            Sizing.fixed(60), // width
+            colourGetter,
+            colourSetter
+        );
+        colourField.margins(Insets.top(-1)); // For some reason, fields are offset vertically by 1px
+        return container
+            .child(OwoButton.imageButton(
+                ResourceLocation.fromNamespaceAndPath("civmodern", "gui/colour.png"),
+                (button) -> picker.showPopup(button, colourGetter, colourSetter)
+            ))
+            .child(colourField)
+            .child(OwoButton.imageButton(
+                ResourceLocation.fromNamespaceAndPath("civmodern", "gui/rollback.png"),
+                (button) -> {
+                    colourSetter.accept(defaultColour);
+                    colourField.setColourText(defaultColour);
+                }
+            ))
+            .child(Components.item(exampleItem).configure((ItemComponent component) -> {
+                component.sizing(Sizing.fixed(16), Sizing.fixed(16));
+                component.margins(Insets.both(1, 1));
+                component.showOverlay(true); // show decorations (count, damage, etc)
+                component.setTooltipFromStack(true);
+                component.mouseDown().subscribe((mouseX, mouseY, button) -> {
+                    if (button != InputConstants.MOUSE_BUTTON_MIDDLE) {
+                        return false;
+                    }
+                    final Minecraft minecraft = this.minecraft;
+                    if (minecraft == null) {
+                        return true; // Do nothing, avoid NPE
+                    }
+                    final LocalPlayer player = minecraft.player;
+                    if (player == null) {
+                        return true; // Do nothing, avoid NPE
+                    }
+                    if (!player.isCreative()) {
+                        return true; // Do nothing, not allowed
+                    }
+                    if (player.addItem(exampleItem.copy())) {
+                        player.inventoryMenu.broadcastChanges();
+                    }
+                    return true;
+                });
+            }));
     }
 
     @Override
     public void onClose() {
-        super.onClose();
-        this.colourProvider.setTemporaryCompactedColour(null);
+        this.minecraft.setScreen(this.previousScreen);
         this.config.save();
     }
 }

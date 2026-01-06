@@ -5,32 +5,46 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Constant;
 import org.spongepowered.asm.mixin.injection.ModifyConstant;
 import org.spongepowered.asm.mixin.injection.ModifyVariable;
-import sh.okx.civmodern.common.AbstractCivModernMod;
-import sh.okx.civmodern.common.features.ExtendedItemStack;
+import sh.okx.civmodern.common.features.CompactedItem;
 
 @Mixin(GuiGraphics.class)
 public abstract class GuiGraphicsMixin {
-    @ModifyVariable(method = "renderItemCount", at = @At("HEAD"), argsOnly = true)
-    protected @Nullable String civmodern$showCompactedItem(String value, @Local(argsOnly = true) ItemStack item) {
+    @Unique
+    private CompactedItem compactedItemType;
+
+    @ModifyVariable(
+        method = "renderItemCount",
+        at = @At("HEAD"),
+        argsOnly = true
+    )
+    protected @Nullable String civmodern$alwaysShowItemAmountIfCompacted(
+        final String value,
+        final @Local(argsOnly = true) ItemStack item
+    ) {
         if (value != null) {
             return value;
-        } else if (((ExtendedItemStack) (Object) item).isMarkedAsCompacted()) {
-            return String.valueOf(item.getCount());
-        } else {
-            return null;
         }
+        return switch (this.compactedItemType = CompactedItem.determineCompactedItemType(item)) {
+            case COMPACTED, CRATE -> String.valueOf(item.getCount());
+            case null -> null;
+        };
     }
 
-    @ModifyConstant(method = "renderItemCount", constant = @Constant(intValue = -1))
-    protected int civmodern$colourCompactedItem(int itemColour, @Local(argsOnly = true) ItemStack item) {
-        if (((ExtendedItemStack) (Object) item).isMarkedAsCompacted()) {
-            return 0xff000000 | AbstractCivModernMod.getInstance().getColourProvider().getCompactedColour();
-        } else {
-            return itemColour;
-        }
+    @ModifyConstant(
+        method = "renderItemCount",
+        constant = @Constant(intValue = -1)
+    )
+    protected int civmodern$colourItemDecorationIfCompacted(
+        final int colour
+    ) {
+        return switch (this.compactedItemType) {
+            case final CompactedItem type -> type.getRBG();
+            case null -> colour;
+        };
     }
 }
