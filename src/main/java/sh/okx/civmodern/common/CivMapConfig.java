@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.util.Properties;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import sh.okx.civmodern.common.features.CompactedItem;
 import sh.okx.civmodern.common.gui.Alignment;
 
 public class CivMapConfig {
@@ -16,7 +17,6 @@ public class CivMapConfig {
     public static final int DEFAULT_CHEVRON_COLOUR = 0xFF0000;
     public static final int DEFAULT_BORDER_COLOUR = 0x7a7a7a;
     private final File file;
-    private int compactedColour;
     private int radarCircles;
     private int radarSize;
     private float iconSize;
@@ -47,7 +47,6 @@ public class CivMapConfig {
     private int minimapSize;
     private boolean playerWaypointsEnabled;
     private float minimapZoom;
-    private boolean cratesAreCompacted;
     private boolean showRepairCost;
     private boolean radarLogarithm;
     private boolean showMinimapCoords;
@@ -55,7 +54,7 @@ public class CivMapConfig {
 
     public CivMapConfig(File file, Properties properties) {
         this.file = file;
-        this.compactedColour = Integer.parseInt(properties.getProperty("compacted_colour", "16777048"));
+        CompactedItem.COMPACTED.setRBG(Integer.parseInt(properties.getProperty("compacted_colour", Integer.toString(CompactedItem.COMPACTED.defaultColour))));
         this.radarCircles = Integer.parseInt(properties.getProperty("radar_circles", "4"));
         this.radarSize = Integer.parseInt(properties.getProperty("radar_size", "80"));
         this.alignment = Alignment.valueOf(properties.getProperty("alignment", "top_left").toUpperCase());
@@ -86,17 +85,17 @@ public class CivMapConfig {
         this.minimapSize = Integer.parseInt(properties.getProperty("minimap_size", "100"));
         this.playerWaypointsEnabled = Boolean.parseBoolean(properties.getProperty("player_waypoints_enabled", "true"));
         this.minimapZoom = Float.parseFloat(properties.getProperty("minimap_zoom", "4"));
-        this.cratesAreCompacted = Boolean.parseBoolean(properties.getProperty("crates_are_compacted", "true"));
         this.showRepairCost = Boolean.parseBoolean(properties.getProperty("show_repair_cost", "true"));
         this.radarLogarithm = Boolean.parseBoolean(properties.getProperty("radar_logarithm", "false"));
         this.showMinimapCoords = Boolean.parseBoolean(properties.getProperty("show_minimap_coords", "true"));
         this.borderColour = Integer.parseInt(properties.getProperty("border_colour", Integer.toString(DEFAULT_BORDER_COLOUR)));
+        CompactedItem.CRATE.setRBG(Integer.parseInt(properties.getProperty("crate_colour", Integer.toString(CompactedItem.CRATE.defaultColour))));
     }
 
     public void save() {
         try {
             Properties properties = new Properties();
-            properties.setProperty("compacted_colour", Integer.toString(compactedColour));
+            properties.setProperty("compacted_colour", Integer.toString(CompactedItem.COMPACTED.getRBG()));
             properties.setProperty("radar_circles", Integer.toString(radarCircles));
             properties.setProperty("radar_size", Integer.toString(radarSize));
             properties.setProperty("alignment", alignment.name().toLowerCase());
@@ -126,11 +125,11 @@ public class CivMapConfig {
             properties.setProperty("minimap_size", Integer.toString(minimapSize));
             properties.setProperty("player_waypoints_enabled", Boolean.toString(playerWaypointsEnabled));
             properties.setProperty("minimap_zoom", Float.toString(minimapZoom));
-            properties.setProperty("crates_are_compacted", Boolean.toString(cratesAreCompacted));
             properties.setProperty("show_repair_cost", Boolean.toString(showRepairCost));
             properties.setProperty("radar_logarithm", Boolean.toString(radarLogarithm));
             properties.setProperty("show_minimap_coords", Boolean.toString(showMinimapCoords));
             properties.setProperty("border_colour", Integer.toString(borderColour));
+            properties.setProperty("crate_colour", Integer.toString(CompactedItem.CRATE.getRBG()));
 
             try (FileOutputStream output = new FileOutputStream(file)) {
                 properties.store(output, null);
@@ -147,14 +146,6 @@ public class CivMapConfig {
 
     public void setShowItems(boolean showItems) {
         this.showItems = showItems;
-    }
-
-    public int getColour() {
-        return compactedColour;
-    }
-
-    public void setColour(int compactedColour) {
-        this.compactedColour = compactedColour;
     }
 
     public void setRadarCircles(int radarCircles) {
@@ -387,14 +378,6 @@ public class CivMapConfig {
 
     public void setMinimapZoom(float minimapZoom) {
         this.minimapZoom = minimapZoom;
-    }
-
-    public boolean isCratesAreCompacted() {
-        return cratesAreCompacted;
-    }
-
-    public void setCratesAreCompacted(boolean cratesAreCompacted) {
-        this.cratesAreCompacted = cratesAreCompacted;
     }
 
     public boolean isShowRepairCost() {

@@ -41,8 +41,6 @@
     "civmodern.screen.mapping": "Rendering",
     "civmodern.screen.radar.background_transparency": "BG Transparency: %s",
     "civmodern.screen.items.title": "Civ Modern Config (Items)",
-    "civmodern.screen.items.crates": "Include crates",
-    "civmodern.screen.items.crates.tooltip": "If enabled, crates will have the compacted item colour",
     "civmodern.screen.items.repair": "Show repair cost",
     "civmodern.screen.items.repair.tooltip": "If enabled, will show the repair cost of items in their lore",
     "civmodern.screen.ice.title": "Civ Modern Config (Ice Road Macro)",
@@ -62,8 +60,7 @@
     "civmodern.radar.enter" : "§r%s §eappeared at §b[%s§b]",
     "civmodern.radar.hover" : "Click to highlight position\nControl click to add waypoint",
     "civmodern.radar.leave" : "§r%s §edisappeared at §b[%s§b]",
-    "civmodern.button.toggle": "%s: %s",
-    "civmodern.button.toggle.on": "ON",
-    "civmodern.button.toggle.off": "OFF",
+    "civmodern.button.toggle.on": "%s: ON",
+    "civmodern.button.toggle.off": "%s: OFF",
     "civmodern.repaircost": "%d levels to repair"
 }

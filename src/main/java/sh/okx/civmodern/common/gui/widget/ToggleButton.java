@@ -35,13 +35,9 @@ public class ToggleButton extends Button {
     }
 
     protected final @NotNull Component generateLabel() {
-        return Component.translatable(
-            "civmodern.button.toggle",
-            this.label,
-            this.valueGetter.getAsBoolean()
-                ? Component.translatable("civmodern.button.toggle.on")
-                : Component.translatable("civmodern.button.toggle.off")
-        );
+        return this.valueGetter.getAsBoolean()
+            ? Component.translatable("civmodern.button.toggle.on", this.label)
+            : Component.translatable("civmodern.button.toggle.off", this.label);
     }
 
     @Override
