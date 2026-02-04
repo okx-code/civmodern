@@ -1,25 +1,19 @@
 package sh.okx.civmodern.common.gui.screen;
 
-import java.util.List;
 import java.util.Objects;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.player.LocalPlayer;
-import net.minecraft.core.component.DataComponentMap;
-import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.Items;
-import net.minecraft.world.item.component.ItemLore;
 import org.jetbrains.annotations.NotNull;
 import org.lwjgl.glfw.GLFW;
 import sh.okx.civmodern.common.CivMapConfig;
 import sh.okx.civmodern.common.ColourProvider;
-import sh.okx.civmodern.common.features.ExtendedItemStack;
-import sh.okx.civmodern.common.gui.Alignment;
+import sh.okx.civmodern.common.features.CompactedItem;
 import sh.okx.civmodern.common.gui.widget.ColourTextEditBox;
 import sh.okx.civmodern.common.gui.widget.HsbColourPicker;
 import sh.okx.civmodern.common.gui.widget.ImageButton;
@@ -27,16 +21,7 @@ import sh.okx.civmodern.common.gui.widget.TextRenderable;
 import sh.okx.civmodern.common.gui.widget.ToggleButton;
 
 final class ItemsConfigScreen extends AbstractConfigScreen {
-    private static final ItemStack ITEM; static {
-        ITEM = new ItemStack(Items.STONE, 64);
-        ITEM.applyComponents(
-            DataComponentMap.builder()
-                .set(DataComponents.LORE, new ItemLore(
-                    List.of(Component.literal(ExtendedItemStack.COMPACTED_ITEM_LORE))
-                ))
-                .build()
-        );
-    }
+    private static final ItemStack ITEM = CompactedItem.createExampleCompactedItem();
 
     private final ColourProvider colourProvider;
 
