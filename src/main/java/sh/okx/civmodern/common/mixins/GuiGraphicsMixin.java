@@ -1,7 +1,6 @@
 package sh.okx.civmodern.common.mixins;
 
 import com.llamalad7.mixinextras.sugar.Local;
-import java.util.Objects;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.Nullable;
@@ -22,7 +21,7 @@ public abstract class GuiGraphicsMixin {
         final String value,
         final @Local(argsOnly = true) ItemStack item
     ) {
-        if (CompactedItem.getType(item) == null || value != null) {
+        if (CompactedItem.getType(item) == CompactedItem.NEITHER || value != null) {
             return value;
         }
         return String.valueOf(item.getCount());
@@ -41,12 +40,6 @@ public abstract class GuiGraphicsMixin {
         final int originalColour,
         final @Local(argsOnly = true) ItemStack item
     ) {
-        return 0xFF_00_00_00 | switch (CompactedItem.getType(item)) {
-            case final CompactedItem type -> Objects.requireNonNullElse(
-                CompactedItem.getColourFor(type),
-                originalColour
-            );
-            case null -> originalColour;
-        };
+        return 0xFF_00_00_00 | CompactedItem.getColourFor(CompactedItem.getType(item)).orElse(originalColour);
     }
 }

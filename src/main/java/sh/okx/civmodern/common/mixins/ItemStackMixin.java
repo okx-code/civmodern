@@ -2,7 +2,6 @@ package sh.okx.civmodern.common.mixins;
 
 import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
@@ -15,7 +14,7 @@ public abstract class ItemStackMixin implements CompactedItem.IMixin {
     private CompactedItem compactedItemType = null;
 
     @Override
-    public @Nullable CompactedItem civmodern$getCompactedType() {
+    public @NotNull CompactedItem civmodern$getCompactedType() {
         if (this.compactedItemType == null) {
             return this.compactedItemType = CompactedItem.detectType((ItemStack) (Object) this);
         }

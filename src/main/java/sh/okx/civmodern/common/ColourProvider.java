@@ -1,6 +1,7 @@
 package sh.okx.civmodern.common;
 
 import java.util.Objects;
+import java.util.OptionalInt;
 
 public class ColourProvider {
 
@@ -17,6 +18,13 @@ public class ColourProvider {
 
     public int getCompactedColour() {
         return Objects.requireNonNullElseGet(compacted, config::getColour);
+    }
+
+    /// Convenience function
+    public OptionalInt getCrateColour() {
+        return this.config.isCratesAreCompacted()
+            ? OptionalInt.of(getCompactedColour())
+            : OptionalInt.empty();
     }
 
     public int getForegroundColour() {
