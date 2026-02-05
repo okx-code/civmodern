@@ -4,7 +4,6 @@ import com.google.common.eventbus.Subscribe;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import org.jetbrains.annotations.NotNull;
-import sh.okx.civmodern.common.AbstractCivModernMod;
 import sh.okx.civmodern.common.events.ClientTickEvent;
 import sh.okx.civmodern.common.events.ScrollEvent;
 import sh.okx.civmodern.common.mixins.KeyMappingAccessor;
@@ -20,8 +19,7 @@ public class AttackMacro {
 
     private long lastAttack;
 
-    public AttackMacro(AbstractCivModernMod mod, KeyMapping holdBinding, KeyMapping defaultBinding) {
-        mod.eventBus.register(this);
+    public AttackMacro(KeyMapping holdBinding, KeyMapping defaultBinding) {
         this.holdBinding = holdBinding;
         this.defaultBinding = defaultBinding;
     }

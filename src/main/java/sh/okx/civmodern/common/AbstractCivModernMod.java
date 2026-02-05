@@ -62,11 +62,6 @@ public abstract class AbstractCivModernMod {
     private ColourProvider colourProvider;
     private Radar radar;
 
-    private HoldKeyMacro leftMacro;
-    private HoldKeyMacro rightMacro;
-    private IceRoadMacro iceRoadMacro;
-    private AttackMacro attackMacro;
-
     private WorldListener worlds;
     private AutoNavigation autoNavigation;
 
@@ -150,10 +145,10 @@ public abstract class AbstractCivModernMod {
         this.eventBus.register(this.radar);
 
         Options options = Minecraft.getInstance().options;
-        this.leftMacro = new HoldKeyMacro(this, this.holdLeftBinding, options.keyAttack);
-        this.rightMacro = new HoldKeyMacro(this, this.holdRightBinding, options.keyUse);
-        this.iceRoadMacro = new IceRoadMacro(this, config, this.iceRoadBinding);
-        this.attackMacro = new AttackMacro(this, this.attackBinding, options.keyAttack);
+        this.eventBus.register(new HoldKeyMacro(this.holdLeftBinding, options.keyAttack));
+        this.eventBus.register(new HoldKeyMacro(this.holdRightBinding, options.keyUse));
+        this.eventBus.register(new IceRoadMacro(this.config, this.iceRoadBinding));
+        this.eventBus.register(new AttackMacro(this.attackBinding, options.keyAttack));
 
         this.autoNavigation = new AutoNavigation(this);
     }

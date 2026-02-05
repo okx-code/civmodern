@@ -7,7 +7,6 @@ import net.minecraft.core.component.DataComponents;
 import net.minecraft.world.food.FoodProperties;
 import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.NotNull;
-import sh.okx.civmodern.common.AbstractCivModernMod;
 import sh.okx.civmodern.common.CivMapConfig;
 import sh.okx.civmodern.common.events.ClientTickEvent;
 
@@ -21,8 +20,7 @@ public class IceRoadMacro {
 
     private ItemStack eating;
 
-    public IceRoadMacro(AbstractCivModernMod mod, CivMapConfig config, KeyMapping key) {
-        mod.eventBus.register(this);
+    public IceRoadMacro(CivMapConfig config, KeyMapping key) {
         this.config = config;
         this.key = key;
     }
