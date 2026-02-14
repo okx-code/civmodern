@@ -79,18 +79,18 @@ final class ItemsConfigScreen extends BaseOwoScreen<FlowLayout> {
         // Compacted item colours
         body.child(colourPickerRow(
             picker,
-            0xFF_FF_58,
-            CompactedItem.COMPACTED::getRBG,
-            CompactedItem.COMPACTED::setRBG,
+            CompactedItem.DEFAULT_COMPACTED_COLOUR,
+            () -> CompactedItem.compactedColour,
+            (colour) -> CompactedItem.compactedColour = colour,
             CompactedItem.createExampleCompacted()
         ));
 
         // Crate colours
         body.child(colourPickerRow(
             picker,
-            0xFF_41_41,
-            CompactedItem.CRATE::getRBG,
-            CompactedItem.CRATE::setRBG,
+            CompactedItem.DEFAULT_CRATE_COLOUR,
+            () -> CompactedItem.crateColour,
+            (colour) -> CompactedItem.crateColour = colour,
             CompactedItem.createExampleCrate()
         ));
 

@@ -1,22 +1,18 @@
 package sh.okx.civmodern.common.mixins;
 
 import com.llamalad7.mixinextras.sugar.Local;
+import java.util.Objects;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
-import org.spongepowered.asm.mixin.injection.Constant;
-import org.spongepowered.asm.mixin.injection.ModifyConstant;
+import org.spongepowered.asm.mixin.injection.ModifyArg;
 import org.spongepowered.asm.mixin.injection.ModifyVariable;
 import sh.okx.civmodern.common.features.CompactedItem;
 
 @Mixin(GuiGraphics.class)
 public abstract class GuiGraphicsMixin {
-    @Unique
-    private CompactedItem compactedItemType;
-
     @ModifyVariable(
         method = "renderItemCount",
         at = @At("HEAD"),
@@ -26,25 +22,25 @@ public abstract class GuiGraphicsMixin {
         final String value,
         final @Local(argsOnly = true) ItemStack item
     ) {
-        if (value != null) {
+        if (CompactedItem.getType(item) == CompactedItem.NEITHER || value != null) {
             return value;
         }
-        return switch (this.compactedItemType = CompactedItem.determineCompactedItemType(item)) {
-            case COMPACTED, CRATE -> String.valueOf(item.getCount());
-            case null -> null;
-        };
+        return String.valueOf(item.getCount());
     }
 
-    @ModifyConstant(
+    @ModifyArg(
         method = "renderItemCount",
-        constant = @Constant(intValue = -1)
+        at = @At(
+            value = "INVOKE",
+            target = "Lnet/minecraft/client/gui/GuiGraphics;drawString(Lnet/minecraft/client/gui/Font;Ljava/lang/String;IIIZ)V"
+        ),
+        index = 4, // "k"
+        remap = false
     )
     protected int civmodern$colourItemDecorationIfCompacted(
-        final int colour
+        final int originalColour,
+        final @Local(argsOnly = true) ItemStack item
     ) {
-        return switch (this.compactedItemType) {
-            case final CompactedItem type -> type.getRBG();
-            case null -> colour;
-        };
+        return 0xFF_00_00_00 | CompactedItem.getColourFor(CompactedItem.getType(item)).orElse(originalColour);
     }
 }

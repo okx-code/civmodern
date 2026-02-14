@@ -10,6 +10,7 @@
     "ClientPacketListenerMixin",
     "GuiGraphicsMixin",
     "InventoryMixin",
+    "ItemStackMixin",
     "KeyMappingAccessor",
     "RespawnMixin",
     "ScreenAccessor",

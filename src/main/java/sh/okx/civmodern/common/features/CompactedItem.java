@@ -1,8 +1,8 @@
 package sh.okx.civmodern.common.features;
 
-import java.awt.Color;
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.OptionalInt;
 import net.minecraft.core.component.DataComponentPatch;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
@@ -11,39 +11,42 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.component.ItemLore;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 public enum CompactedItem {
-    CRATE(0xFF_41_41),
-    COMPACTED(0xFF_FF_58),
-    ;
+    CRATE, COMPACTED, NEITHER;
 
-    public final int defaultColour;
-    public final Color defaultAwtColor;
-    private volatile int colour;
+    public static final int DEFAULT_COMPACTED_COLOUR = 0xFF_FF_58;
+    public static volatile int compactedColour = DEFAULT_COMPACTED_COLOUR;
 
-    CompactedItem(
-        final int defaultColour
+    public static final int DEFAULT_CRATE_COLOUR = 0xFF_41_41;
+    public static volatile int crateColour = DEFAULT_CRATE_COLOUR;
+
+    /// Convenience shortcut
+    public static @NotNull CompactedItem getType(
+        final @NotNull ItemStack item
     ) {
-        this.defaultColour = defaultColour;
-        this.defaultAwtColor = new Color(defaultColour);
-        this.colour = defaultColour;
+        return ((IMixin) (Object) item).civmodern$getCompactedType();
     }
 
-    public int getRBG() {
-        return 0xFF_00_00_00 | this.colour;
+    /// @see sh.okx.civmodern.common.mixins.ItemStackMixin
+    public interface IMixin {
+        public @NotNull CompactedItem civmodern$getCompactedType();
     }
 
-    public void setRBG(
-        final int colour
+    public static @NotNull OptionalInt getColourFor(
+        final @NotNull CompactedItem type
     ) {
-        this.colour = colour;
+        return switch (type) {
+            case COMPACTED -> OptionalInt.of(compactedColour);
+            case CRATE -> OptionalInt.of(crateColour);
+            case NEITHER -> OptionalInt.empty();
+        };
     }
 
     private static final String CRATE_LORE = "Crate";
     private static final String COMPACTED_LORE = "Compacted Item";
 
-    public static @Nullable CompactedItem determineCompactedItemType(
+    public static @NotNull CompactedItem determineCompactedItemType(
         final @NotNull ItemStack item
     ) {
         if (CompactedItem.isCrate(item)) {
@@ -53,7 +56,7 @@ public enum CompactedItem {
             return CompactedItem.COMPACTED;
         }
         else {
-            return null;
+            return CompactedItem.NEITHER;
         }
     }
 
@@ -98,6 +101,7 @@ public enum CompactedItem {
             : expected.equalsIgnoreCase(content.toString());
     }
 
+    @SuppressWarnings("deprecation")
     public static @NotNull ItemStack createExampleCrate() {
         return new ItemStack(
             Items.CHEST.builtInRegistryHolder(),
@@ -110,6 +114,7 @@ public enum CompactedItem {
         );
     }
 
+    @SuppressWarnings("deprecation")
     public static @NotNull ItemStack createExampleCompacted() {
         return new ItemStack(
             Items.STONE.builtInRegistryHolder(),

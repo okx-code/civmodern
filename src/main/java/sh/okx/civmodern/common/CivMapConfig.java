@@ -54,7 +54,10 @@ public class CivMapConfig {
 
     public CivMapConfig(File file, Properties properties) {
         this.file = file;
-        CompactedItem.COMPACTED.setRBG(Integer.parseInt(properties.getProperty("compacted_colour", Integer.toString(CompactedItem.COMPACTED.defaultColour))));
+        CompactedItem.compactedColour = switch (properties.getProperty("compacted_colour", null)) {
+            case final String raw -> Integer.parseInt(raw);
+            case null -> CompactedItem.DEFAULT_COMPACTED_COLOUR;
+        };
         this.radarCircles = Integer.parseInt(properties.getProperty("radar_circles", "4"));
         this.radarSize = Integer.parseInt(properties.getProperty("radar_size", "80"));
         this.alignment = Alignment.valueOf(properties.getProperty("alignment", "top_left").toUpperCase());
@@ -89,13 +92,16 @@ public class CivMapConfig {
         this.radarLogarithm = Boolean.parseBoolean(properties.getProperty("radar_logarithm", "false"));
         this.showMinimapCoords = Boolean.parseBoolean(properties.getProperty("show_minimap_coords", "true"));
         this.borderColour = Integer.parseInt(properties.getProperty("border_colour", Integer.toString(DEFAULT_BORDER_COLOUR)));
-        CompactedItem.CRATE.setRBG(Integer.parseInt(properties.getProperty("crate_colour", Integer.toString(CompactedItem.CRATE.defaultColour))));
+        CompactedItem.crateColour = switch (properties.getProperty("crate_colour", null)) {
+            case final String raw -> Integer.parseInt(raw);
+            case null -> CompactedItem.DEFAULT_CRATE_COLOUR;
+        };
     }
 
     public void save() {
         try {
             Properties properties = new Properties();
-            properties.setProperty("compacted_colour", Integer.toString(CompactedItem.COMPACTED.getRBG()));
+            properties.setProperty("compacted_colour", Integer.toString(CompactedItem.compactedColour));
             properties.setProperty("radar_circles", Integer.toString(radarCircles));
             properties.setProperty("radar_size", Integer.toString(radarSize));
             properties.setProperty("alignment", alignment.name().toLowerCase());
@@ -129,7 +135,7 @@ public class CivMapConfig {
             properties.setProperty("radar_logarithm", Boolean.toString(radarLogarithm));
             properties.setProperty("show_minimap_coords", Boolean.toString(showMinimapCoords));
             properties.setProperty("border_colour", Integer.toString(borderColour));
-            properties.setProperty("crate_colour", Integer.toString(CompactedItem.CRATE.getRBG()));
+            properties.setProperty("crate_colour", Integer.toString(CompactedItem.crateColour));
 
             try (FileOutputStream output = new FileOutputStream(file)) {
                 properties.store(output, null);
