@@ -134,7 +134,10 @@ final class ItemsConfigScreen extends BaseOwoScreen<FlowLayout> {
         return container
             .child(OwoButton.imageButton(
                 ResourceLocation.fromNamespaceAndPath("civmodern", "gui/colour.png"),
-                (button) -> picker.showPopup(button, colourGetter, colourSetter)
+                (button) -> picker.showPopup(button, colourGetter, (colour) -> {
+                    colourSetter.accept(colour);
+                    colourField.setColourText(colour);
+                })
             ))
             .child(colourField)
             .child(OwoButton.imageButton(
