@@ -33,7 +33,6 @@ import sh.okx.civmodern.common.macro.AttackMacro;
 import sh.okx.civmodern.common.macro.HoldKeyMacro;
 import sh.okx.civmodern.common.macro.IceRoadMacro;
 import sh.okx.civmodern.common.map.*;
-//import sh.okx.civmodern.common.map.screen.MapScreen;
 import sh.okx.civmodern.common.map.screen.MapScreen;
 import sh.okx.civmodern.common.map.waypoints.Waypoint;
 import sh.okx.civmodern.common.parser.ParsedWaypoint;

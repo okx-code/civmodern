@@ -149,6 +149,24 @@ public class MapScreen extends Screen {
         addRenderableWidget(newWaypointModal);
         addRenderableWidget(editWaypointModal);
 
+        Identifier toggleWaypointImage;
+        if (config.isWaypointRenderingEnabled()) {
+            toggleWaypointImage = Identifier.fromNamespaceAndPath("civmodern", "gui/waypoint.png");
+        } else {
+            toggleWaypointImage = Identifier.fromNamespaceAndPath("civmodern", "gui/waypointoff.png");
+        }
+        ImageButton toggleWaypoints = new ImageButton(this.width - 54, 10, 20, 20, toggleWaypointImage, imbg -> {
+            config.setWaypointRenderingEnabled(!config.isWaypointRenderingEnabled());
+            changedConfig = true;
+            if (config.isWaypointRenderingEnabled()) {
+                imbg.setImage(Identifier.fromNamespaceAndPath("civmodern", "gui/waypoint.png"));
+            } else {
+                imbg.setImage(Identifier.fromNamespaceAndPath("civmodern", "gui/waypointoff.png"));
+            }
+        });
+        toggleWaypoints.setTooltip(Tooltip.create(Component.translatable("civmodern.map.waypoints.tooltip")));
+        addRenderableWidget(toggleWaypoints);
+
         Identifier togglePlayersImage;
         if (config.isPlayerWaypointsEnabled()) {
             togglePlayersImage = Identifier.fromNamespaceAndPath("civmodern", "gui/toggleplayersoff.png");
@@ -212,45 +230,45 @@ public class MapScreen extends Screen {
         matrices.translate(0, -1);
 
         List<Waypoint> waypointList = waypoints.getWaypoints();
-        Map<String, List<Waypoint>> waypointByIcon = new HashMap<>();
-        for (Waypoint waypoint : waypointList) {
-            if (editWaypointModal.getWaypoint() == waypoint && editWaypointModal.hasChanged()) {
-                continue;
-            }
-            waypointByIcon.computeIfAbsent(waypoint.icon(), k -> new ArrayList<>()).add(waypoint);
-        }
-
-        for (List<Waypoint> waypointGroup : waypointByIcon.values()) {
-            for (Waypoint waypoint : waypointGroup) {
-                matrices.pushMatrix();
-                double x = waypoint.x() + 0.5;
-                double z = waypoint.z() + 0.5;
-                matrices.translate((float) ((x - this.x) / scale), (float) ((z - this.y) / scale));
-
-                waypoint.render2D(guiGraphics);
-                matrices.popMatrix();
-                TextureManager textureManager = Minecraft.getInstance().getTextureManager();
-                AbstractTexture abstractTexture = textureManager.getTexture(waypoint.resourceLocation());
-            }
-
-            for (Waypoint waypoint : waypointGroup) {
-                if (waypoint.name().isBlank()) {
+        if (config.isWaypointRenderingEnabled()) {
+            Map<String, List<Waypoint>> waypointByIcon = new HashMap<>();
+            for (Waypoint waypoint : waypointList) {
+                if (editWaypointModal.getWaypoint() == waypoint && editWaypointModal.hasChanged()) {
                     continue;
                 }
-                matrices.pushMatrix();
-                double x = waypoint.x() + 0.5;
-                double z = waypoint.z() + 0.5;
-                matrices.translate((float) ((x - this.x) / scale), (float) ((z - this.y) / scale));
+                waypointByIcon.computeIfAbsent(waypoint.icon(), k -> new ArrayList<>()).add(waypoint);
+            }
 
-                Font font = Minecraft.getInstance().font;
+            for (List<Waypoint> waypointGroup : waypointByIcon.values()) {
+                for (Waypoint waypoint : waypointGroup) {
+                    matrices.pushMatrix();
+                    double x = waypoint.x() + 0.5;
+                    double z = waypoint.z() + 0.5;
+                    matrices.translate((float) ((x - this.x) / scale), (float) ((z - this.y) / scale));
 
-                String str = waypoint.name();
+                    waypoint.render2D(guiGraphics);
+                    matrices.popMatrix();
+                }
 
-                matrices.translate(0, -16);//, -10);
-                MutableComponent comp = Component.literal(str);
-                guiGraphics.drawString(font, comp, -font.width(comp) / 2, 0, -1, false);//, false, last, Font.DisplayMode.NORMAL, 0, 15728880, true);
-                guiGraphics.fill(-font.width(comp) / 2, -1, font.width(comp) / 2, 9, 1056964608);
-                matrices.popMatrix();
+                for (Waypoint waypoint : waypointGroup) {
+                    if (waypoint.name().isBlank()) {
+                        continue;
+                    }
+                    matrices.pushMatrix();
+                    double x = waypoint.x() + 0.5;
+                    double z = waypoint.z() + 0.5;
+                    matrices.translate((float) ((x - this.x) / scale), (float) ((z - this.y) / scale));
+
+                    Font font = Minecraft.getInstance().font;
+
+                    String str = waypoint.name();
+
+                    matrices.translate(0, -16);//, -10);
+                    MutableComponent comp = Component.literal(str);
+                    guiGraphics.drawString(font, comp, -font.width(comp) / 2, 0, -1, false);//, false, last, Font.DisplayMode.NORMAL, 0, 15728880, true);
+                    guiGraphics.fill(-font.width(comp) / 2, -1, font.width(comp) / 2, 9, 1056964608);
+                    matrices.popMatrix();
+                }
             }
         }
 
@@ -291,7 +309,6 @@ public class MapScreen extends Screen {
 
             Waypoint targetWaypoint = new Waypoint("", 0, 0, 0, targeting ? "target" : "waypoint", 0xFF0000);
             int transparency = newWaypointModal.isTargeting() ? 0x7F : 0xFF;
-            AbstractTexture abstractTexture = Minecraft.getInstance().getTextureManager().getTexture(targetWaypoint.resourceLocation());
             targetWaypoint.render2D(guiGraphics, transparency);
 
             matrices.popMatrix();
@@ -309,7 +326,6 @@ public class MapScreen extends Screen {
                 targetWaypoint.render2D(guiGraphics);
 
                 matrices.popMatrix();
-                AbstractTexture abstractTexture = Minecraft.getInstance().getTextureManager().getTexture(targetWaypoint.resourceLocation());
             } catch (NumberFormatException ignored) {
             }
         }
@@ -346,7 +362,6 @@ public class MapScreen extends Screen {
             }
 
             Waypoint targetWaypoint = new Waypoint("", 0, 0, 0, editWaypointModal.getWaypoint().icon(), editWaypointModal.getPreviewColour());
-            AbstractTexture abstractTexture = Minecraft.getInstance().getTextureManager().getTexture(targetWaypoint.resourceLocation());
             if (editWaypointModal.getPreviewColour() != editWaypointModal.getColour()) {
                 targetWaypoint.render2D(guiGraphics);
             } else {

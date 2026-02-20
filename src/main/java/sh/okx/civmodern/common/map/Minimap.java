@@ -173,29 +173,31 @@ public class Minimap {
             }
         }
 
-        List<Waypoint> waypointList = waypoints.getWaypoints();
-        Map<String, List<Waypoint>> waypointByIcon = new HashMap<>();
-        for (Waypoint waypoint : waypointList) {
-            waypointByIcon.computeIfAbsent(waypoint.icon(), k -> new ArrayList<>()).add(waypoint);
-        }
-        matrices.pushMatrix();
-        for (List<Waypoint> waypointGroup : waypointByIcon.values()) {
-            for (Waypoint waypoint : waypointGroup) {
-                double wx = waypoint.x() + 0.5;
-                double wz = waypoint.z() + 0.5;
-                double tx = (wx - x) / zoom;
-                double ty = (wz - y) / zoom;
-                if (tx < 0 || ty < 0 || tx > size || ty > size) {
-                    continue;
-                }
-                matrices.pushMatrix();
-                matrices.translate((float) tx, (float) ty);
-
-                waypoint.render2D(graphics);
-                matrices.popMatrix();
+        if (config.isWaypointRenderingEnabled()) {
+            List<Waypoint> waypointList = waypoints.getWaypoints();
+            Map<String, List<Waypoint>> waypointByIcon = new HashMap<>();
+            for (Waypoint waypoint : waypointList) {
+                waypointByIcon.computeIfAbsent(waypoint.icon(), k -> new ArrayList<>()).add(waypoint);
             }
+            matrices.pushMatrix();
+            for (List<Waypoint> waypointGroup : waypointByIcon.values()) {
+                for (Waypoint waypoint : waypointGroup) {
+                    double wx = waypoint.x() + 0.5;
+                    double wz = waypoint.z() + 0.5;
+                    double tx = (wx - x) / zoom;
+                    double ty = (wz - y) / zoom;
+                    if (tx < 0 || ty < 0 || tx > size || ty > size) {
+                        continue;
+                    }
+                    matrices.pushMatrix();
+                    matrices.translate((float) tx, (float) ty);
+
+                    waypoint.render2D(graphics);
+                    matrices.popMatrix();
+                }
+            }
+            matrices.popMatrix();
         }
-        matrices.popMatrix();
 
         matrices.pushMatrix();
         matrices.translate(size / 2, size / 2);

@@ -142,6 +142,7 @@ public class NewWaypointModal extends Modal<FlowLayout> {
             .padding(Insets.of(6));
 
         this.layout.inflateAndMount();
+        colourBox.moveCursorToStart(false);
     }
 
     @Override

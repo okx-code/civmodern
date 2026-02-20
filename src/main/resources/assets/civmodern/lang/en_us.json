@@ -56,6 +56,7 @@
     "civmodern.screen.map.title": "Civ Modern Config (Map)",
     "civmodern.map.boat.tooltip": "Use while in a boat or riding a steerable animal\nRight click to place a navigation waypoint\nShift right click to delete a waypoint\nControl right click or dismount to stop",
     "civmodern.map.players.tooltip": "Display players that trigger snitches on the map",
+    "civmodern.map.waypoints.tooltip": "Display waypoints on the map and minimap",
     "civmodern.map.newwaypoint.tooltip": "Create new waypoint",
     "civmodern.map.highlight.tooltip": "Set highlighted waypoint",
     "civmodern.map.copy": "Copied %s to clipboard",

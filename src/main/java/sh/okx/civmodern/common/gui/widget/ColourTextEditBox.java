@@ -23,8 +23,7 @@ public class ColourTextEditBox extends EditBox {
         this(Minecraft.getInstance().font, 0, 0, 0, 0, colourGetter, colourSetter);
 
         this.sizing(horizontalSizing, Sizing.content());
-        setColourFromInt(colourGetter.getAsInt());
-        this.moveCursorToStart(false);
+//        setColourFromInt(colourGetter.getAsInt());
     }
 
     protected CursorStyle owo$preferredCursorStyle() {

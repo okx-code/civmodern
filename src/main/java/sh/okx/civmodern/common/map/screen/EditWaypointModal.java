@@ -173,6 +173,7 @@ public class EditWaypointModal extends Modal<FlowLayout> {
             .padding(Insets.of(6));
 
         this.layout.inflateAndMount();
+        colourBox.moveCursorToStart(false);
     }
 
     public String getName() {

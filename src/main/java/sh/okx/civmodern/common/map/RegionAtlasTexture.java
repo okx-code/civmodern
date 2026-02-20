@@ -1,10 +1,6 @@
 package sh.okx.civmodern.common.map;
 
 import com.mojang.blaze3d.opengl.GlStateManager;
-import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.textures.AddressMode;
-import com.mojang.blaze3d.textures.FilterMode;
-import com.mojang.blaze3d.textures.GpuSampler;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
@@ -16,9 +12,7 @@ import sh.okx.civmodern.common.rendering.CivModernPipelines;
 import sh.okx.civmodern.common.rendering.RegionAbstractTexture;
 
 import java.util.Map;
-import java.util.Set;
 import java.util.WeakHashMap;
-import java.util.function.Supplier;
 
 import static org.lwjgl.opengl.GL44.*;
 

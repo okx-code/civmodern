@@ -26,7 +26,7 @@ public abstract class RenderSetupMixin {
             Map<String, RenderSetup.TextureAndSampler> mut = new HashMap<>(map);
             boolean linear = RegionAtlasTexture.LINEAR.get(setup);
             GpuSampler sampler = linear
-                ? RenderSystem.getSamplerCache().getSampler(AddressMode.CLAMP_TO_EDGE, AddressMode.CLAMP_TO_EDGE, FilterMode.LINEAR, FilterMode.NEAREST, false)
+                ? RenderSystem.getSamplerCache().getSampler(AddressMode.CLAMP_TO_EDGE, AddressMode.CLAMP_TO_EDGE, FilterMode.NEAREST, FilterMode.LINEAR, false)
                 : RenderSystem.getSamplerCache().getSampler(AddressMode.CLAMP_TO_EDGE, AddressMode.CLAMP_TO_EDGE, FilterMode.NEAREST, FilterMode.NEAREST, false);
             mut.put("Sampler0", new RenderSetup.TextureAndSampler(tex.getTextureView(), sampler));
             return mut;
