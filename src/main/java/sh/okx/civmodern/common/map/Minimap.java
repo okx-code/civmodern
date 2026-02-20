@@ -144,7 +144,6 @@ public class Minimap {
 
         matrices.translate(-2, -2);
         graphics.fill(0, 0, (int) (size + 4), (int) (size + 4), 0xff000000 | provider.getBorderColour());
-//        graphics.blit(RenderPipelines.GUI_TEXTURED, Identifier.fromNamespaceAndPath("civmodern", "maptex"), 0, 0, 0,  0, RegionAtlasTexture.SIZE, RegionAtlasTexture.SIZE, translateX + config.getMinimapSize(), translateY + config.getMinimapSize());
         graphics.guiRenderState.submitPicturesInPictureState(new BlitRenderState(graphics, 0, 0, translateX + config.getMinimapSize(), translateY + config.getMinimapSize(), matrices,
             ((source, stack) -> renderers.forEach(r -> r.render(source, stack)))));
 
