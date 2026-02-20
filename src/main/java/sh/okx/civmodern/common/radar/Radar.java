@@ -21,13 +21,13 @@ import net.minecraft.network.chat.ClickEvent;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.HoverEvent;
 import net.minecraft.network.chat.Style;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.entity.vehicle.AbstractBoat;
-import net.minecraft.world.entity.vehicle.Minecart;
+import net.minecraft.world.entity.vehicle.boat.AbstractBoat;
+import net.minecraft.world.entity.vehicle.minecart.Minecart;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import org.jetbrains.annotations.NotNull;
@@ -61,7 +61,7 @@ public class Radar {
     }
 
     public static void playPlayerSound(String soundName, UUID playerKey) {
-        SoundEvent soundEvent = BuiltInRegistries.SOUND_EVENT.getValue(ResourceLocation.withDefaultNamespace("block.note_block." + soundName));
+        SoundEvent soundEvent = BuiltInRegistries.SOUND_EVENT.getValue(Identifier.withDefaultNamespace("block.note_block." + soundName));
         if (soundEvent == null) return;
 
         float pitch = .5f + 1.5f * new Random(playerKey.hashCode()).nextFloat();
@@ -315,11 +315,11 @@ public class Radar {
             }
             guiGraphics.pose().pushMatrix();
             guiGraphics.pose().scale(config.getIconSize(), config.getIconSize());
-            ResourceLocation location;
+            Identifier location;
             if (entry != null) {
-                location = entry.getSkin().texture();
+                location = entry.getSkin().body().texturePath();
             } else {
-                location = ResourceLocation.withDefaultNamespace("textures/entity/steve.png");
+                location = Identifier.withDefaultNamespace("textures/entity/steve.png");
             }
             PlayerFaceRenderer.draw(guiGraphics, location, -4, -4, 8, true, false, -1);
             guiGraphics.pose().pushMatrix();

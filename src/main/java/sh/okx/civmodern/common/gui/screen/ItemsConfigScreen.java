@@ -5,12 +5,13 @@ import java.util.Objects;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.Tooltip;
+import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.core.component.DataComponentMap;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.component.ItemLore;
@@ -101,7 +102,7 @@ final class ItemsConfigScreen extends AbstractConfigScreen {
             offsetY,
             20,
             20,
-            ResourceLocation.tryBuild("civmodern", "gui/rollback.png"),
+            Identifier.tryBuild("civmodern", "gui/rollback.png"),
             (button) -> {
                 final int colour = 0xffff58;
                 compactedColourEditBox.setValue("#FFFF58");
@@ -171,14 +172,13 @@ final class ItemsConfigScreen extends AbstractConfigScreen {
 
     @Override
     public boolean mouseClicked(
-        final double mouseX,
-        final double mouseY,
-        final int button
+        final MouseButtonEvent event,
+        final boolean bl
     ) {
-        if (!super.mouseClicked(mouseX, mouseY, button)) {
+        if (!super.mouseClicked(event, bl)) {
             if (this.minecraft != null) {
                 final LocalPlayer player = this.minecraft.player;
-                if (player != null && isCursorOverItem((int) mouseX, (int) mouseY) && button == GLFW.GLFW_MOUSE_BUTTON_1 && player.isCreative()) {
+                if (player != null && isCursorOverItem((int) event.x(), (int) event.y()) && event.button() == GLFW.GLFW_MOUSE_BUTTON_1 && player.isCreative()) {
                     player.addItem(ITEM.copy());
                     return true;
                 }

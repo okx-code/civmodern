@@ -1,6 +1,8 @@
 package sh.okx.civmodern.common.rendering;
 
 import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.textures.AddressMode;
+import com.mojang.blaze3d.textures.FilterMode;
 import com.mojang.blaze3d.textures.TextureFormat;
 import net.minecraft.client.renderer.texture.AbstractTexture;
 import sh.okx.civmodern.common.map.RegionAtlasTexture;

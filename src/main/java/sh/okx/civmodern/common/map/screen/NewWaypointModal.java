@@ -1,8 +1,8 @@
 package sh.okx.civmodern.common.map.screen;
 
-import io.wispforest.owo.ui.component.Components;
+import io.wispforest.owo.ui.component.UIComponents;
 import io.wispforest.owo.ui.component.TextBoxComponent;
-import io.wispforest.owo.ui.container.Containers;
+import io.wispforest.owo.ui.container.UIContainers;
 import io.wispforest.owo.ui.container.FlowLayout;
 import io.wispforest.owo.ui.core.HorizontalAlignment;
 import io.wispforest.owo.ui.core.Insets;
@@ -17,9 +17,10 @@ import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import sh.okx.civmodern.common.gui.widget.ColourTextEditBox;
 import sh.okx.civmodern.common.gui.widget.HsbColourPicker;
+import net.minecraft.client.input.MouseButtonEvent;
 import sh.okx.civmodern.common.gui.widget.ImageButton;
 import sh.okx.civmodern.common.map.waypoints.Waypoint;
 import sh.okx.civmodern.common.map.waypoints.Waypoints;
@@ -48,7 +49,7 @@ public class NewWaypointModal extends Modal<FlowLayout> {
     private boolean targeting = false;
 
     public NewWaypointModal(Waypoints waypoints) {
-        super(OwoUIAdapter.createWithoutScreen(Minecraft.getInstance().getWindow().getGuiScaledWidth() / 2 - 104, 48, 196, 116, Containers::verticalFlow));
+        super(OwoUIAdapter.createWithoutScreen(Minecraft.getInstance().getWindow().getGuiScaledWidth() / 2 - 104, 48, 196, 116, UIContainers::verticalFlow));
         super.layout.rootComponent.allowOverflow(true);
         this.waypoints = waypoints;
     }
@@ -60,17 +61,17 @@ public class NewWaypointModal extends Modal<FlowLayout> {
         doneButton = Button.builder(CommonComponents.GUI_DONE, button -> {
             this.done();
         }).build();
-        ImageButton coordsButton = new ImageButton(0, 0, 20, 20, ResourceLocation.fromNamespaceAndPath("civmodern", "gui/target.png"), imbg -> {
+        ImageButton coordsButton = new ImageButton(0, 0, 20, 20, Identifier.fromNamespaceAndPath("civmodern", "gui/target.png"), imbg -> {
             this.visible = false;
             this.targeting = true;
         });
-        xBox = Components.textBox(Sizing.fixed(55), Integer.toString(x));
+        xBox = UIComponents.textBox(Sizing.fixed(55), Integer.toString(x));
         xBox.setFilter(numFilter);
         xBox.onChanged().subscribe(value -> this.updateDone());
-        yBox = Components.textBox(Sizing.fixed(32), Integer.toString(y));
+        yBox = UIComponents.textBox(Sizing.fixed(32), Integer.toString(y));
         yBox.setFilter(numFilter);
         yBox.onChanged().subscribe(value -> this.updateDone());
-        zBox = Components.textBox(Sizing.fixed(55), Integer.toString(z));
+        zBox = UIComponents.textBox(Sizing.fixed(55), Integer.toString(z));
         zBox.setFilter(numFilter);
         zBox.onChanged().subscribe(value -> this.updateDone());
 
@@ -98,30 +99,30 @@ public class NewWaypointModal extends Modal<FlowLayout> {
         );
         colourPicker.setRVisible(false);
 
-        nameBox = Components.textBox(Sizing.expand(), name);
+        nameBox = UIComponents.textBox(Sizing.expand(), name);
         this.layout.rootComponent.clearChildren();
         this.layout.rootComponent
             .child(
-                Containers.horizontalFlow(Sizing.fill(), Sizing.fixed(24))
-                    .child(Components.label(Component.literal("Name")).margins(Insets.right(8)))
+                UIContainers.horizontalFlow(Sizing.fill(), Sizing.fixed(24))
+                    .child(UIComponents.label(Component.literal("Name")).margins(Insets.right(8)))
                     .child(nameBox)
                     .verticalAlignment(VerticalAlignment.CENTER)
                     .margins(Insets.horizontal(4).withTop(4))
             )
             .child(
-                Containers.horizontalFlow(Sizing.fill(), Sizing.content())
-                    .child(Containers.horizontalFlow(Sizing.fill(), Sizing.fixed(40))
-                        .child(Containers.grid(Sizing.content(), Sizing.content(), 2, 3)
-                            .child(Components.label(Component.literal("X")).margins(Insets.of(0, 4, 1, 0)), 0, 0)
-                            .child(Components.label(Component.literal("Y")).margins(Insets.of(0, 4, 1, 0)), 0, 1)
-                            .child(Components.label(Component.literal("Z")).margins(Insets.of(0, 4, 1, 0)), 0, 2)
+                UIContainers.horizontalFlow(Sizing.fill(), Sizing.content())
+                    .child(UIContainers.horizontalFlow(Sizing.fill(), Sizing.fixed(40))
+                        .child(UIContainers.grid(Sizing.content(), Sizing.content(), 2, 3)
+                            .child(UIComponents.label(Component.literal("X")).margins(Insets.of(0, 4, 1, 0)), 0, 0)
+                            .child(UIComponents.label(Component.literal("Y")).margins(Insets.of(0, 4, 1, 0)), 0, 1)
+                            .child(UIComponents.label(Component.literal("Z")).margins(Insets.of(0, 4, 1, 0)), 0, 2)
                             .child(xBox.margins(Insets.right(3)), 1, 0)
                             .child(yBox.margins(Insets.right(3)), 1, 1)
                             .child(zBox.margins(Insets.right(3)), 1, 2)
                             .positioning(Positioning.relative(0, 0))
                         )
                         .child(
-                            Containers.horizontalFlow(Sizing.content(), Sizing.fixed(40))
+                            UIContainers.horizontalFlow(Sizing.content(), Sizing.fixed(40))
                                 .child(coordsButton.margins(Insets.right(0)))
                                 .margins(Insets.bottom(6))
                                 .alignment(HorizontalAlignment.RIGHT, VerticalAlignment.BOTTOM)
@@ -131,7 +132,7 @@ public class NewWaypointModal extends Modal<FlowLayout> {
                     .margins(Insets.horizontal(4).withTop(4))
             )
             .child(
-                Containers.horizontalFlow(Sizing.fill(), Sizing.fixed(24))
+                UIContainers.horizontalFlow(Sizing.fill(), Sizing.fixed(24))
                     .child(doneButton.horizontalSizing(Sizing.fixed(93)).margins(Insets.right(4).withTop(1)))
                     .child(colourBox)
                     .child(colourPicker.margins(Insets.top(1).withLeft(2)))
@@ -165,11 +166,11 @@ public class NewWaypointModal extends Modal<FlowLayout> {
     }
 
     @Override
-    public boolean mouseClicked(double d, double e, int i) {
+    public boolean mouseClicked(MouseButtonEvent event, boolean bl) {
         if (!visible) {
             return false;
         }
-        return this.colourPicker.mouseClicked(d, e, i) || super.mouseClicked(d, e, i);
+        return this.colourPicker.mouseClicked(event, bl) || super.mouseClicked(event, bl);
     }
 
     @Override
@@ -181,14 +182,14 @@ public class NewWaypointModal extends Modal<FlowLayout> {
     }
 
     @Override
-    public boolean mouseDragged(double d, double e, int i, double f, double g) {
+    public boolean mouseDragged(MouseButtonEvent event, double f, double g) {
         if (!visible) {
             return false;
         }
-        if (this.colourPicker.mouseDragged(d, e, i, f, g)) {
+        if (this.colourPicker.mouseDragged(event, f, g)) {
             return true;
         }
-        return super.mouseDragged(d, e, i, f, g);
+        return super.mouseDragged(event, f, g);
     }
 
     public void updateDone() {

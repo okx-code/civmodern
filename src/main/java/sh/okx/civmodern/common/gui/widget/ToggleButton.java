@@ -6,9 +6,11 @@ import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.network.chat.Component;
 import org.apache.commons.lang3.function.BooleanConsumer;
+import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.input.InputWithModifiers;
 import org.jetbrains.annotations.NotNull;
 
-public class ToggleButton extends Button {
+public class ToggleButton extends Button.Plain {
     public static final int DEFAULT_BUTTON_WIDTH = 150;
     public static final CreateNarration DEFAULT_NARRATION = Button.DEFAULT_NARRATION;
 
@@ -45,8 +47,14 @@ public class ToggleButton extends Button {
     }
 
     @Override
-    public void onPress() {
+    public void onPress(InputWithModifiers input) {
         this.valueSetter.accept(!this.valueGetter.getAsBoolean());
         setMessage(generateLabel());
+    }
+
+    @Override
+    protected void renderContents(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
+        super.renderContents(guiGraphics, mouseX, mouseY, partialTick);
+        renderDefaultLabel(guiGraphics.textRendererForWidget(this, GuiGraphics.HoveredTextEffects.NONE));
     }
 }

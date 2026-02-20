@@ -4,7 +4,7 @@ import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderPipelines;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import org.joml.Matrix4f;
 import sh.okx.civmodern.common.rendering.CivModernRenderTypes;
 
@@ -27,7 +27,7 @@ public record Waypoint(String name, int x, int y, int z, String icon, int colour
         guiGraphics.blit(RenderPipelines.GUI_TEXTURED, resourceLocation(), -8, -8, 0, 0, 16, 16, 16, 16, transparency << 24 | colour());
     }
 
-    public ResourceLocation resourceLocation() {
-        return ResourceLocation.fromNamespaceAndPath("civmodern", "map/" + this.icon + ".png");
+    public Identifier resourceLocation() {
+        return Identifier.fromNamespaceAndPath("civmodern", "map/" + this.icon + ".png");
     }
 }

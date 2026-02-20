@@ -1,43 +1,43 @@
 package sh.okx.civmodern.common.gui.widget;
 
-import com.mojang.blaze3d.opengl.GlCommandEncoder;
 import com.mojang.blaze3d.opengl.GlTexture;
 import com.mojang.blaze3d.platform.NativeImage;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.textures.AddressMode;
+import com.mojang.blaze3d.textures.FilterMode;
+import com.mojang.blaze3d.textures.GpuSampler;
 import com.mojang.blaze3d.textures.GpuTextureView;
 import com.mojang.blaze3d.textures.TextureFormat;
-import io.wispforest.owo.ui.core.OwoUIPipelines;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.client.gui.render.TextureSetup;
 import net.minecraft.client.gui.render.state.BlitRenderState;
+import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.util.Mth;
 import org.joml.Matrix3x2f;
 import sh.okx.civmodern.common.gui.Texture;
-import sh.okx.civmodern.common.rendering.CivModernPipelines;
 
+import java.util.OptionalDouble;
 import java.util.function.Consumer;
 
 public class HsbColourPicker extends AbstractWidget {
 
-    private static final ResourceLocation COLOUR_PICKER_ICON = ResourceLocation.fromNamespaceAndPath("civmodern", "gui/colour.png");
+    private static final Identifier COLOUR_PICKER_ICON = Identifier.fromNamespaceAndPath("civmodern", "gui/colour.png");
 
     private final GlTexture hueSelector;
     private final GpuTextureView hueSelectorTextureView;
     private final GlTexture saturationBrightnessTexture;
     private final GpuTextureView saturationBrightnessTextureView;
+    private final GpuSampler sampler;
     private final Consumer<Integer> colourConsumer;
     private final Consumer<Integer> previewConsumer;
 
     private int hue = 0; // [0, 360]
-    //private int saturation = 0; // [0, 100]
-    //private int brightness = 0; // [0, 100]
 
     private boolean mouseOverGrid = false;
 
@@ -61,6 +61,7 @@ public class HsbColourPicker extends AbstractWidget {
         this.hueSelectorTextureView = RenderSystem.getDevice().createTextureView(this.hueSelector);
         this.saturationBrightnessTexture = (GlTexture) RenderSystem.getDevice().createTexture("satb", 5, TextureFormat.RGBA8, 101, 101, 1, 1);
         this.saturationBrightnessTextureView = RenderSystem.getDevice().createTextureView(this.saturationBrightnessTexture);
+        this.sampler = RenderSystem.getDevice().createSampler(AddressMode.CLAMP_TO_EDGE, AddressMode.CLAMP_TO_EDGE, FilterMode.NEAREST, FilterMode.NEAREST, 1, OptionalDouble.empty());
         this.colourConsumer = colourConsumer;
         this.previewConsumer = previewConsumer;
     }
@@ -94,7 +95,7 @@ public class HsbColourPicker extends AbstractWidget {
                 .submitGuiElement(
                     new BlitRenderState(
                         RenderPipelines.GUI_TEXTURED,
-                        TextureSetup.singleTexture(this.saturationBrightnessTextureView),
+                        TextureSetup.singleTexture(this.saturationBrightnessTextureView, this.sampler),
                         new Matrix3x2f(guiGraphics.pose()), 0, 0, 101, 101, 0, 1f, 0, 1f, -1, guiGraphics.scissorStack.peek()
                     )
                 );
@@ -103,7 +104,7 @@ public class HsbColourPicker extends AbstractWidget {
                 .submitGuiElement(
                     new BlitRenderState(
                         RenderPipelines.GUI_TEXTURED,
-                        TextureSetup.singleTexture(this.hueSelectorTextureView),
+                        TextureSetup.singleTexture(this.hueSelectorTextureView, this.sampler),
                         new Matrix3x2f(guiGraphics.pose()), 106, 0, 116, 101, 0, 1, 0, 1, -1, guiGraphics.scissorStack.peek()
                     )
                 );
@@ -131,7 +132,7 @@ public class HsbColourPicker extends AbstractWidget {
     }
 
     @Override
-    public void onClick(double mouseX, double mouseY) {
+    public void onClick(MouseButtonEvent event, boolean bl) {
         if (!showPalette) {
             closeable.run();
         }
@@ -139,9 +140,9 @@ public class HsbColourPicker extends AbstractWidget {
     }
 
     @Override
-    protected void onDrag(double mouseX, double mouseY, double dragX, double dragY) {
+    protected void onDrag(MouseButtonEvent event, double dragX, double dragY) {
         if (this.hueMouseDown) {
-            setHue(mouseX, mouseY, 0, true);
+            setHue(event.x(), event.y(), event.button(), true);
         }
     }
 
@@ -154,15 +155,15 @@ public class HsbColourPicker extends AbstractWidget {
     }
 
     @Override
-    public void onRelease(double d, double e) {
+    public void onRelease(MouseButtonEvent event) {
         this.hueMouseDown = false;
     }
 
     @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int button) {
-        return selectColour(mouseX, mouseY, button)
-            || setHue(mouseX, mouseY, button, false)
-            || super.mouseClicked(mouseX, mouseY, button);
+    public boolean mouseClicked(MouseButtonEvent event, boolean bl) {
+        return selectColour(event.x(), event.y(), event.button())
+            || setHue(event.x(), event.y(), event.button(), false)
+            || super.mouseClicked(event, bl);
     }
 
     @Override
@@ -215,8 +216,6 @@ public class HsbColourPicker extends AbstractWidget {
                 n.setPixel(saturation, brightness, 0xff << 24 | rgb);
             }
         }
-        saturationBrightnessTexture.setAddressMode(AddressMode.CLAMP_TO_EDGE);
-        saturationBrightnessTexture.setUseMipmaps(false);
         RenderSystem.getDevice().createCommandEncoder().writeToTexture(saturationBrightnessTexture, n);
     }
 

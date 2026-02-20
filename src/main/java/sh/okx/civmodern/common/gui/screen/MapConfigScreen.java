@@ -8,7 +8,7 @@ import net.minecraft.client.gui.components.Renderable;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import org.jetbrains.annotations.NotNull;
 import sh.okx.civmodern.common.CivMapConfig;
 import sh.okx.civmodern.common.ColourProvider;
@@ -26,7 +26,7 @@ import java.util.regex.Pattern;
 
 public class MapConfigScreen extends AbstractConfigScreen {
 
-    public static final ResourceLocation ROLLBACK_ICON = ResourceLocation.fromNamespaceAndPath("civmodern", "gui/rollback.png");
+    public static final Identifier ROLLBACK_ICON = Identifier.fromNamespaceAndPath("civmodern", "gui/rollback.png");
     private int chevronColourY;
 
     private final ColourProvider colourProvider;

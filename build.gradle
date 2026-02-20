@@ -52,6 +52,7 @@ repositories {
         }
     }
     maven { url 'https://maven.wispforest.io/releases/' }
+    maven { url 'https://jitpack.io' }
 }
 
 tasks.withType(JavaCompile).configureEach {

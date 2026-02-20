@@ -4,6 +4,9 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.client.renderer.RenderPipelines;
+import net.minecraft.client.renderer.rendertype.RenderTypes;
+import net.minecraft.resources.Identifier;
 import net.minecraft.util.Mth;
 import net.minecraft.world.scores.DisplaySlot;
 import net.minecraft.world.scores.Objective;
@@ -141,6 +144,7 @@ public class Minimap {
 
         matrices.translate(-2, -2);
         graphics.fill(0, 0, (int) (size + 4), (int) (size + 4), 0xff000000 | provider.getBorderColour());
+//        graphics.blit(RenderPipelines.GUI_TEXTURED, Identifier.fromNamespaceAndPath("civmodern", "maptex"), 0, 0, 0,  0, RegionAtlasTexture.SIZE, RegionAtlasTexture.SIZE, translateX + config.getMinimapSize(), translateY + config.getMinimapSize());
         graphics.guiRenderState.submitPicturesInPictureState(new BlitRenderState(graphics, 0, 0, translateX + config.getMinimapSize(), translateY + config.getMinimapSize(), matrices,
             ((source, stack) -> renderers.forEach(r -> r.render(source, stack)))));
 

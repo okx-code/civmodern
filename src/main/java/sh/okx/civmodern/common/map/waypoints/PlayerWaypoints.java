@@ -56,7 +56,7 @@ public class PlayerWaypoints {
             return;
         }
 
-        if (playerName.equals(Minecraft.getInstance().player.getGameProfile().getName())) {
+        if (playerName.equals(Minecraft.getInstance().player.getGameProfile().name())) {
             return;
         }
 
@@ -73,7 +73,7 @@ public class PlayerWaypoints {
 
         PlayerInfo player = null;
         for (PlayerInfo info : Minecraft.getInstance().player.connection.getOnlinePlayers()) {
-            String name = info.getProfile().getName();
+            String name = info.getProfile().name();
             if (!name.equals(playerName)) {
                 continue;
             }
@@ -82,7 +82,7 @@ public class PlayerWaypoints {
         if (player == null) {
             unfilledWaypoints.put(playerName, new PlayerWaypoint(playerName, null, x, y, z, null, Instant.now()));
         } else {
-            waypoints.put(player.getProfile().getId(), new PlayerWaypoint(player.getProfile().getName(), player.getProfile().getId(), x, y, z, player.getSkin().texture(), Instant.now()));
+            waypoints.put(player.getProfile().id(), new PlayerWaypoint(player.getProfile().name(), player.getProfile().id(), x, y, z, player.getSkin().body().texturePath(), Instant.now()));
         }
     }
 
@@ -96,10 +96,10 @@ public class PlayerWaypoints {
             }
 
             for (PlayerInfo info : Minecraft.getInstance().player.connection.getOnlinePlayers()) {
-                String name = info.getProfile().getName();
+                String name = info.getProfile().name();
                 if (name.equals(waypoint.getKey())) {
                     PlayerWaypoint value = waypoint.getValue();
-                    waypoints.put(info.getProfile().getId(), new PlayerWaypoint(info.getProfile().getName(), info.getProfile().getId(), value.x(), value.y(), value.z(), info.getSkin().texture(), value.timestamp()));
+                    waypoints.put(info.getProfile().id(), new PlayerWaypoint(info.getProfile().name(), info.getProfile().id(), value.x(), value.y(), value.z(), info.getSkin().body().texturePath(), value.timestamp()));
                     it.remove();
                 }
             }

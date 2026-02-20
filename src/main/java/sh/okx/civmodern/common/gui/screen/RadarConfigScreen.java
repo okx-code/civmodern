@@ -12,7 +12,7 @@ import net.minecraft.client.gui.components.Renderable;
 import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import org.jetbrains.annotations.NotNull;
 import sh.okx.civmodern.common.CivMapConfig;
 import sh.okx.civmodern.common.ColourProvider;
@@ -27,7 +27,7 @@ import sh.okx.civmodern.common.gui.widget.ToggleButton;
 import sh.okx.civmodern.common.mixins.ScreenAccessor;
 
 final class RadarConfigScreen extends AbstractConfigScreen {
-    public static final ResourceLocation ROLLBACK_ICON = ResourceLocation.tryBuild("civmodern", "gui/rollback.png");
+    public static final Identifier ROLLBACK_ICON = Identifier.tryBuild("civmodern", "gui/rollback.png");
 
     private final ColourProvider colourProvider;
 

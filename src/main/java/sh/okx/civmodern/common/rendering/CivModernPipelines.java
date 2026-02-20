@@ -8,21 +8,21 @@ import com.mojang.blaze3d.shaders.UniformType;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import net.minecraft.client.renderer.RenderPipelines;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 public class CivModernPipelines {
     public static final RenderPipeline GUI_TRIANGLE_STRIP_BLEND = RenderPipelines.register(RenderPipeline.builder(RenderPipelines.GUI_SNIPPET)
-        .withLocation(ResourceLocation.fromNamespaceAndPath("owo", "pipeline/gui_triangle_strip2"))
+        .withLocation(Identifier.fromNamespaceAndPath("owo", "pipeline/gui_triangle_strip2"))
         .withVertexFormat(DefaultVertexFormat.POSITION_COLOR, VertexFormat.Mode.TRIANGLE_STRIP)
         .build());
     public static final RenderPipeline GUI_QUADS = RenderPipeline.builder(RenderPipelines.GUI_SNIPPET)
-        .withLocation(ResourceLocation.fromNamespaceAndPath("civmodern", "pipeline/gui_quads2"))
+        .withLocation(Identifier.fromNamespaceAndPath("civmodern", "pipeline/gui_quads2"))
         .withVertexFormat(DefaultVertexFormat.POSITION_COLOR, VertexFormat.Mode.QUADS)
         .build();
 
     public static final RenderPipeline TEXT = RenderPipeline.builder(RenderPipelines.TEXT_SNIPPET, RenderPipelines.FOG_SNIPPET)
             .withDepthTestFunction(DepthTestFunction.NO_DEPTH_TEST)
-            .withLocation(ResourceLocation.fromNamespaceAndPath("civmodern", "pipeline/text"))
+            .withLocation(Identifier.fromNamespaceAndPath("civmodern", "pipeline/text"))
             .withVertexShader("core/rendertype_text")
             .withFragmentShader("core/rendertype_text")
             .withSampler("Sampler0")

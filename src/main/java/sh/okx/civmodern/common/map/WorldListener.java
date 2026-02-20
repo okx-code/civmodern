@@ -7,7 +7,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.toasts.SystemToast;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.chunk.LevelChunk;
 import sh.okx.civmodern.common.AbstractCivModernMod;
@@ -56,7 +56,7 @@ public class WorldListener {
         this.config = config;
         this.provider = colourProvider;
 
-        HudElementRegistry.attachElementBefore(VanillaHudElements.CHAT, ResourceLocation.fromNamespaceAndPath("civmodern", "minimap"), (context, tickCounter) -> {
+        HudElementRegistry.attachElementBefore(VanillaHudElements.CHAT, Identifier.fromNamespaceAndPath("civmodern", "minimap"), (context, tickCounter) -> {
             if (this.minimap != null) {
                 this.minimap.onRender(new PostRenderGameOverlayEvent(context, tickCounter.getGameTimeDeltaPartialTick(true)));
             }
@@ -85,7 +85,7 @@ public class WorldListener {
         }
 
         ClientLevel level = Minecraft.getInstance().level;
-        String dimension = level.dimension().location().getPath();
+        String dimension = level.dimension().identifier().getPath();
 
         Path civmapFolder = Minecraft.getInstance().gameDirectory.toPath().resolve("civmap");
         File mapDirectory = civmapFolder.resolve(type).resolve(name.replace(":", "_")).resolve(dimension).resolve(String.valueOf(seed)).toFile();

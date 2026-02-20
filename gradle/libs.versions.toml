@@ -1,13 +1,13 @@
 [versions]
-minecraft = "1.21.8"
+minecraft = "1.21.11"
 # https://fabricmc.net/versions.html
-fabricLoom = "1.11-SNAPSHOT"
-fabricLoader = "0.17.2"
-fabricApi = "0.134.0+1.21.8"
+fabricLoom = "1.15-SNAPSHOT"
+fabricLoader = "0.18.4"
+fabricApi = "0.141.3+1.21.11"
 # https://modrinth.com/mod/owo-lib/versions?l=fabric
-owo = "0.12.23+1.21.8"
+owo = "0.13.0+1.21.11"
 # https://modrinth.com/mod/modmenu/versions?l=fabric
-modMenu = "am1Siv7F"
+modMenu = "JWQVh32x"
 # https://mvnrepository.com/artifact/org.xerial/sqlite-jdbc
 sqlite = "3.49.1.0"
 # https://mvnrepository.com/artifact/com.github.luben/zstd-jni

@@ -1,34 +1,16 @@
 package sh.okx.civmodern.common.map.waypoints;
 
-import com.mojang.blaze3d.buffers.GpuBuffer;
-import com.mojang.blaze3d.buffers.GpuBufferSlice;
-import com.mojang.blaze3d.opengl.GlStateManager;
-import com.mojang.blaze3d.systems.RenderPass;
-import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.textures.GpuTextureView;
-import com.mojang.blaze3d.vertex.BufferBuilder;
-import com.mojang.blaze3d.vertex.DefaultVertexFormat;
-import com.mojang.blaze3d.vertex.MeshData;
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.Tesselator;
-import com.mojang.blaze3d.vertex.VertexFormat;
 import com.mojang.math.Axis;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
-import net.fabricmc.fabric.api.renderer.v1.Renderer;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.RenderPipelines;
-import net.minecraft.client.renderer.RenderStateShard;
-import net.minecraft.client.renderer.RenderType;
-import net.minecraft.client.renderer.texture.AbstractTexture;
-import net.minecraft.client.renderer.texture.TextureManager;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.util.Mth;
-import net.minecraft.util.TriState;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
@@ -49,11 +31,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-import java.util.OptionalDouble;
 import java.util.OptionalInt;
-
-import static net.minecraft.client.renderer.RenderStateShard.*;
-import static org.lwjgl.opengl.GL11.*;
 
 public class Waypoints {
 
@@ -190,7 +168,7 @@ public class Waypoints {
 
         Camera camera = Minecraft.getInstance().gameRenderer.getMainCamera();
         PoseStack matrices = event.stack();
-        Vec3 pos = camera.getPosition();
+        Vec3 pos = camera.position();
         for (Waypoint waypoint : nearbyWaypoints) {
             double x = waypoint.x() + 0.5 - pos.x;
             double y = waypoint.y() + 0.5 - pos.y;
@@ -211,14 +189,11 @@ public class Waypoints {
             matrices.translate(x, y, z);
 
             adjustedDistance = (adjustedDistance * 0.1f + 1) * 0.0266f;
-            matrices.mulPose(Axis.YP.rotationDegrees(-camera.getYRot()));
-            matrices.mulPose(Axis.XP.rotationDegrees(camera.getXRot()));
+            matrices.mulPose(Axis.YP.rotationDegrees(-camera.yRot()));
+            matrices.mulPose(Axis.XP.rotationDegrees(camera.xRot()));
             matrices.scale(-adjustedDistance, -adjustedDistance, -adjustedDistance);
 
             int k = (int) (getTransparency(distance, 0.11f) * 255.0F) << 24;
-            TextureManager textureManager = Minecraft.getInstance().getTextureManager();
-            AbstractTexture abstractTexture = textureManager.getTexture(waypoint.resourceLocation());
-            abstractTexture.setFilter(true, true);
             waypoint.render(event.source(), matrices.last().pose(), 8, k);
             matrices.popPose();
         }
@@ -250,8 +225,8 @@ public class Waypoints {
             matrices.translate(x, y, z);
 
             adjustedDistance = (adjustedDistance * 0.1f + 1) * 0.0266f;
-            matrices.mulPose(Axis.YP.rotationDegrees(-camera.getYRot()));
-            matrices.mulPose(Axis.XP.rotationDegrees(camera.getXRot()));
+            matrices.mulPose(Axis.YP.rotationDegrees(-camera.yRot()));
+            matrices.mulPose(Axis.XP.rotationDegrees(camera.xRot()));
             matrices.scale(-adjustedDistance, -adjustedDistance, -adjustedDistance);
 
             Font font = Minecraft.getInstance().font;

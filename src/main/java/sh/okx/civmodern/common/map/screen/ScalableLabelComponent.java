@@ -1,10 +1,10 @@
 package sh.okx.civmodern.common.map.screen;
 
-import io.wispforest.owo.ui.base.BaseComponent;
+import io.wispforest.owo.ui.base.BaseUIComponent;
 import io.wispforest.owo.ui.core.AnimatableProperty;
 import io.wispforest.owo.ui.core.Color;
 import io.wispforest.owo.ui.core.HorizontalAlignment;
-import io.wispforest.owo.ui.core.OwoUIDrawContext;
+import io.wispforest.owo.ui.core.OwoUIGraphics;
 import io.wispforest.owo.ui.core.Size;
 import io.wispforest.owo.ui.core.Sizing;
 import io.wispforest.owo.ui.core.VerticalAlignment;
@@ -23,7 +23,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 
-public class ScalableLabelComponent extends BaseComponent {
+public class ScalableLabelComponent extends BaseUIComponent {
 
     protected final Font textRenderer = Minecraft.getInstance().font;
 
@@ -185,7 +185,7 @@ public class ScalableLabelComponent extends BaseComponent {
     }
 
     @Override
-    public void draw(OwoUIDrawContext context, int mouseX, int mouseY, float partialTicks, float delta) {
+    public void draw(OwoUIGraphics context, int mouseX, int mouseY, float partialTicks, float delta) {
         var matrices = context.pose();
 
         matrices.pushMatrix();
@@ -245,7 +245,7 @@ public class ScalableLabelComponent extends BaseComponent {
     }
 
     @Override
-    public void drawTooltip(OwoUIDrawContext context, int mouseX, int mouseY, float partialTicks, float delta) {
+    public void drawTooltip(OwoUIGraphics context, int mouseX, int mouseY, float partialTicks, float delta) {
         super.drawTooltip(context, mouseX, mouseY, partialTicks, delta);
         context.renderComponentHoverEffect(this.textRenderer, this.styleAt(mouseX - this.x, mouseY - this.y), mouseX, mouseY);
     }
@@ -285,7 +285,8 @@ public class ScalableLabelComponent extends BaseComponent {
     }
 
     protected Style styleAt(int mouseX, int mouseY) {
-        return this.textRenderer.getSplitter().componentStyleAtWidth(this.wrappedText.get(Math.min(mouseY / (this.lineHeight() + this.lineSpacing()), this.wrappedText.size() - 1)), mouseX);
+        // componentStyleAtWidth was removed in 1.21.11; style hover effects are no longer supported here
+        return null;
     }
 
     @Override

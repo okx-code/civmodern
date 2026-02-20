@@ -9,7 +9,7 @@ import net.minecraft.core.Holder;
 import net.minecraft.core.Registry;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.core.registries.Registries;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.util.Mth;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.block.Block;
@@ -86,12 +86,12 @@ public class RegionRenderer {
                         if (blockId == 0) {
                             color = 0;
                         } else {
-                            Optional<Holder.Reference<Block>> holder = registryAccess.lookupOrThrow(Registries.BLOCK).get(ResourceLocation.parse(blockLookup.getName(blockId - 1)));
+                            Optional<Holder.Reference<Block>> holder = registryAccess.lookupOrThrow(Registries.BLOCK).get(Identifier.parse(blockLookup.getName(blockId - 1)));
                             if (holder.isEmpty()) {
                                 color = 0;
                             } else {
                                 Holder.Reference<Block> blockHolder = holder.get();
-                                String key = blockHolder.key().location().toString();
+                                String key = blockHolder.key().identifier().toString();
                                 Integer getColour = ColoursConfig.BLOCK_COLOURS.get(key);
                                 if (getColour == null) {
                                     color = blockHolder.value().defaultMapColor().col;
@@ -100,10 +100,10 @@ public class RegionRenderer {
                                 }
 
                                 if (ColoursConfig.BLOCKS_GRASS.contains(key)) {
-                                    Biome biome = registry.getValue(ResourceLocation.parse(biomeLookup.getName(biomeId)));
+                                    Biome biome = registry.getValue(Identifier.parse(biomeLookup.getName(biomeId)));
                                     color = mix(biome.getGrassColor(0, 0), color);
                                 } else if (ColoursConfig.BLOCKS_FOLIAGE.contains(key)) {
-                                    Biome biome = registry.getValue(ResourceLocation.parse(biomeLookup.getName(biomeId)));
+                                    Biome biome = registry.getValue(Identifier.parse(biomeLookup.getName(biomeId)));
                                     color = mix(biome.getFoliageColor(), color);
                                 }
                                 blockCache.put(blockBiomeId, color);
@@ -116,7 +116,7 @@ public class RegionRenderer {
                     if (waterDepth > 0) {
                         int fluidColor = biomeCache.getOrDefault(biomeId, -1);
                         if (fluidColor == -1) {
-                            Biome biome = registry.getValue(ResourceLocation.parse(biomeLookup.getName(biomeId)));
+                            Biome biome = registry.getValue(Identifier.parse(biomeLookup.getName(biomeId)));
                             fluidColor = fancyFluids(biome.getWaterColor(), 0.05F);
                             biomeCache.put(biomeId, fluidColor);
                         }

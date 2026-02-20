@@ -11,13 +11,15 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Renderable;
 import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.input.KeyEvent;
+import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.client.renderer.texture.AbstractTexture;
 import net.minecraft.client.renderer.texture.TextureManager;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.util.Mth;
 import net.minecraft.world.phys.Vec2;
 import org.joml.Matrix3x2f;
@@ -106,7 +108,7 @@ public class MapScreen extends Screen {
 
     @Override
     protected void init() {
-        ImageButton boatButton = new ImageButton(10, 10, 20, 20, ResourceLocation.fromNamespaceAndPath("civmodern", "gui/boat.png"), imbg -> {
+        ImageButton boatButton = new ImageButton(10, 10, 20, 20, Identifier.fromNamespaceAndPath("civmodern", "gui/boat.png"), imbg -> {
             this.boating = !boating;
         });
         boatButton.setTooltip(Tooltip.create(Component.translatable("civmodern.map.boat.tooltip")));
@@ -124,7 +126,7 @@ public class MapScreen extends Screen {
         positionContextMenu = new PositionContextMenu(this.waypoints, newWaypointModal);
         addRenderableWidget(positionContextMenu);
 
-        openWaypointButton = new ImageButton(this.width / 2 - 22, 10, 20, 20, ResourceLocation.fromNamespaceAndPath("civmodern", "gui/new.png"), imbg -> {
+        openWaypointButton = new ImageButton(this.width / 2 - 22, 10, 20, 20, Identifier.fromNamespaceAndPath("civmodern", "gui/new.png"), imbg -> {
             if (editWaypointModal.isTargeting()) {
                 return;
             }
@@ -137,7 +139,7 @@ public class MapScreen extends Screen {
         openWaypointButton.setTooltip(Tooltip.create(Component.translatable("civmodern.map.newwaypoint.tooltip")));
         addRenderableWidget(openWaypointButton);
 
-        ImageButton targetButton = new ImageButton(this.width / 2 + 2, 10, 20, 20, ResourceLocation.fromNamespaceAndPath("civmodern", "gui/target.png"), imbg -> {
+        ImageButton targetButton = new ImageButton(this.width / 2 + 2, 10, 20, 20, Identifier.fromNamespaceAndPath("civmodern", "gui/target.png"), imbg -> {
             this.waypoints.setTarget(null);
             targeting = !targeting;
         });
@@ -147,20 +149,20 @@ public class MapScreen extends Screen {
         addRenderableWidget(newWaypointModal);
         addRenderableWidget(editWaypointModal);
 
-        ResourceLocation togglePlayersImage;
+        Identifier togglePlayersImage;
         if (config.isPlayerWaypointsEnabled()) {
-            togglePlayersImage = ResourceLocation.fromNamespaceAndPath("civmodern", "gui/toggleplayersoff.png");
+            togglePlayersImage = Identifier.fromNamespaceAndPath("civmodern", "gui/toggleplayersoff.png");
         } else {
-            togglePlayersImage = ResourceLocation.fromNamespaceAndPath("civmodern", "gui/toggleplayers.png");
+            togglePlayersImage = Identifier.fromNamespaceAndPath("civmodern", "gui/toggleplayers.png");
         }
         ImageButton togglePlayers = new ImageButton(this.width - 30, 10, 20, 20, togglePlayersImage, imbg -> {
             // TODO use world config
             config.setPlayerWaypointsEnabled(!config.isPlayerWaypointsEnabled());
             changedConfig = true;
             if (config.isPlayerWaypointsEnabled()) {
-                imbg.setImage(ResourceLocation.fromNamespaceAndPath("civmodern", "gui/toggleplayersoff.png"));
+                imbg.setImage(Identifier.fromNamespaceAndPath("civmodern", "gui/toggleplayersoff.png"));
             } else {
-                imbg.setImage(ResourceLocation.fromNamespaceAndPath("civmodern", "gui/toggleplayers.png"));
+                imbg.setImage(Identifier.fromNamespaceAndPath("civmodern", "gui/toggleplayers.png"));
             }
         });
         togglePlayers.setTooltip(Tooltip.create(Component.translatable("civmodern.map.players.tooltip")));
@@ -229,7 +231,6 @@ public class MapScreen extends Screen {
                 matrices.popMatrix();
                 TextureManager textureManager = Minecraft.getInstance().getTextureManager();
                 AbstractTexture abstractTexture = textureManager.getTexture(waypoint.resourceLocation());
-                abstractTexture.setFilter(true, true);
             }
 
             for (Waypoint waypoint : waypointGroup) {
@@ -291,7 +292,6 @@ public class MapScreen extends Screen {
             Waypoint targetWaypoint = new Waypoint("", 0, 0, 0, targeting ? "target" : "waypoint", 0xFF0000);
             int transparency = newWaypointModal.isTargeting() ? 0x7F : 0xFF;
             AbstractTexture abstractTexture = Minecraft.getInstance().getTextureManager().getTexture(targetWaypoint.resourceLocation());
-            abstractTexture.setFilter(true, true);
             targetWaypoint.render2D(guiGraphics, transparency);
 
             matrices.popMatrix();
@@ -310,7 +310,6 @@ public class MapScreen extends Screen {
 
                 matrices.popMatrix();
                 AbstractTexture abstractTexture = Minecraft.getInstance().getTextureManager().getTexture(targetWaypoint.resourceLocation());
-                abstractTexture.setFilter(true, true);
             } catch (NumberFormatException ignored) {
             }
         }
@@ -322,8 +321,7 @@ public class MapScreen extends Screen {
             matrices.translate((float) ((x - this.x) / scale), (float) ((z - this.y) / scale));
 
             AbstractTexture abstractTexture = Minecraft.getInstance().getTextureManager().getTexture(hoveredWaypoint.resourceLocation());
-            abstractTexture.setFilter(true, true);
-            guiGraphics.blit(RenderPipelines.GUI_TEXTURED, ResourceLocation.fromNamespaceAndPath("civmodern", "map/focus.png"), -8, -8, 0, 0, 16, 16, 16, 16, -1);
+            guiGraphics.blit(RenderPipelines.GUI_TEXTURED, Identifier.fromNamespaceAndPath("civmodern", "map/focus.png"), -8, -8, 0, 0, 16, 16, 16, 16, -1);
 
             matrices.popMatrix();
         } else if (!targeting && !editWaypointModal.isTargeting() && !newWaypointModal.isTargeting()) {
@@ -333,7 +331,7 @@ public class MapScreen extends Screen {
 
             matrices.scale(1 / scale, 1 / scale);
             int size = 1;
-            guiGraphics.blit(RenderPipelines.GUI_TEXTURED, ResourceLocation.fromNamespaceAndPath("civmodern", "map/focus.png"), 0, 0, 0, 0, size, size, size, size, -1);
+            guiGraphics.blit(RenderPipelines.GUI_TEXTURED, Identifier.fromNamespaceAndPath("civmodern", "map/focus.png"), 0, 0, 0, 0, size, size, size, size, -1);
             matrices.popMatrix();
         }
 
@@ -349,7 +347,6 @@ public class MapScreen extends Screen {
 
             Waypoint targetWaypoint = new Waypoint("", 0, 0, 0, editWaypointModal.getWaypoint().icon(), editWaypointModal.getPreviewColour());
             AbstractTexture abstractTexture = Minecraft.getInstance().getTextureManager().getTexture(targetWaypoint.resourceLocation());
-            abstractTexture.setFilter(true, true);
             if (editWaypointModal.getPreviewColour() != editWaypointModal.getColour()) {
                 targetWaypoint.render2D(guiGraphics);
             } else {
@@ -446,14 +443,18 @@ public class MapScreen extends Screen {
     }
 
     @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int button) {
-        if (super.mouseClicked(mouseX, mouseY, button)) {
+    public boolean mouseClicked(MouseButtonEvent event, boolean bl) {
+        if (super.mouseClicked(event, bl)) {
             return true;
         }
 
         // 0 = left click
         // 1 = right click
         // 2 = middle click
+
+        double mouseX = event.x();
+        double mouseY = event.y();
+        int button = event.button();
 
         Window window = Minecraft.getInstance().getWindow();
         float scale = (float) window.getGuiScale() * zoom;
@@ -487,9 +488,9 @@ public class MapScreen extends Screen {
         if (boating && button == 1) {
             double mouseWorldX = (mouseX * scale + x);
             double mouseWorldY = (mouseY * scale + y);
-            if (Screen.hasShiftDown()) {
+            if (event.hasShiftDown()) {
                 this.navigation.getDestinations().pollLast();
-            } else if (Screen.hasControlDown()) {
+            } else if (event.hasControlDown()) {
                 this.navigation.reset();
             } else {
                 this.navigation.addDestination(new Vec2((float) mouseWorldX, (float) mouseWorldY));
@@ -509,10 +510,14 @@ public class MapScreen extends Screen {
     }
 
     @Override
-    public boolean mouseReleased(double x, double y, int button) {
-        if (super.mouseReleased(x, y, button)) {
+    public boolean mouseReleased(MouseButtonEvent event) {
+        if (super.mouseReleased(event)) {
             return true;
         }
+
+        double x = event.x();
+        double y = event.y();
+        int button = event.button();
 
         Window window = Minecraft.getInstance().getWindow();
         float scale = (float) window.getGuiScale() * zoom;
@@ -607,10 +612,14 @@ public class MapScreen extends Screen {
     }
 
     @Override
-    public boolean mouseDragged(double x, double y, int button, double changeX, double changeY) {
-        if (super.mouseDragged(x, y, button, changeX, changeY)) {
+    public boolean mouseDragged(MouseButtonEvent event, double changeX, double changeY) {
+        if (super.mouseDragged(event, changeX, changeY)) {
             return true;
         }
+
+        double x = event.x();
+        double y = event.y();
+        int button = event.button();
 
         if (positionContextMenu.isVisible() && !positionContextMenu.isMouseOver(x, y)) {
             positionContextMenu.setVisible(false);
@@ -666,11 +675,11 @@ public class MapScreen extends Screen {
     }
 
     @Override
-    public boolean keyPressed(int i, int j, int k) {
-        if (this.key.matches(i, j) && !newWaypointModal.isVisible() && !editWaypointModal.isVisible()) {
+    public boolean keyPressed(KeyEvent event) {
+        if (this.key.matches(event) && !newWaypointModal.isVisible() && !editWaypointModal.isVisible()) {
             Minecraft.getInstance().setScreen(null);
             return true;
         }
-        return super.keyPressed(i, j, k);
+        return super.keyPressed(event);
     }
 }

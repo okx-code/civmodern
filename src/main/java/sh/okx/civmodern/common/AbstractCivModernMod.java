@@ -1,6 +1,7 @@
 package sh.okx.civmodern.common;
 
 import com.google.common.eventbus.Subscribe;
+import com.mojang.blaze3d.platform.InputConstants;
 import com.mojang.blaze3d.platform.InputConstants.Type;
 
 import java.io.File;
@@ -14,17 +15,13 @@ import java.util.Properties;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.builder.RequiredArgumentBuilder;
-import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
 import net.fabricmc.fabric.api.client.rendering.v1.SpecialGuiElementRegistry;
-import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
-import net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements;
-import net.fabricmc.fabric.impl.client.rendering.hud.HudLayer;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.Options;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.multiplayer.ClientSuggestionProvider;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -49,6 +46,8 @@ public abstract class AbstractCivModernMod {
     private static AbstractCivModernMod INSTANCE;
     public static final Logger LOGGER = LogManager.getLogger();
 
+    private static final KeyMapping.Category CIVMODERN_CATEGORY = KeyMapping.Category.register(Identifier.fromNamespaceAndPath("civmodern", "category"));
+
     private final KeyMapping configBinding;
     private final KeyMapping holdLeftBinding;
     private final KeyMapping holdRightBinding;
@@ -72,43 +71,43 @@ public abstract class AbstractCivModernMod {
             "key.civmodern.config",
             Type.KEYSYM,
             GLFW.GLFW_KEY_R,
-            "category.civmodern"
+            CIVMODERN_CATEGORY
         );
         this.holdLeftBinding = new KeyMapping(
             "key.civmodern.left",
             Type.KEYSYM,
             GLFW.GLFW_KEY_MINUS,
-            "category.civmodern"
+            CIVMODERN_CATEGORY
         );
         this.holdRightBinding = new KeyMapping(
             "key.civmodern.right",
             Type.KEYSYM,
             GLFW.GLFW_KEY_EQUAL,
-            "category.civmodern"
+            CIVMODERN_CATEGORY
         );
         this.iceRoadBinding = new KeyMapping(
             "key.civmodern.ice",
             Type.KEYSYM,
             GLFW.GLFW_KEY_BACKSPACE,
-            "category.civmodern"
+            CIVMODERN_CATEGORY
         );
         this.attackBinding = new KeyMapping(
             "key.civmodern.attack",
             Type.KEYSYM,
             GLFW.GLFW_KEY_0,
-            "category.civmodern"
+            CIVMODERN_CATEGORY
         );
         this.mapBinding = new KeyMapping(
             "key.civmodern.map",
             Type.KEYSYM,
             GLFW.GLFW_KEY_M,
-            "category.civmodern"
+            CIVMODERN_CATEGORY
         );
         this.minimapZoomBinding = new KeyMapping(
             "key.civmodern.minimapzoom",
             Type.KEYSYM,
             GLFW.GLFW_KEY_KP_DIVIDE,
-            "category.civmodern"
+            CIVMODERN_CATEGORY
         );
 
 
@@ -170,7 +169,7 @@ public abstract class AbstractCivModernMod {
                 "target",
                 0xFF0000
             );
-            if (!Screen.hasControlDown()) {
+            if (!InputConstants.isKeyDown(Minecraft.getInstance().getWindow(), GLFW.GLFW_KEY_LEFT_CONTROL)) {
                 this.worlds.getWaypoints().setTarget(waypoint);
             } else {
                 MapScreen screen = new MapScreen(this, this.mapBinding, config, worlds.getCache(), autoNavigation, worlds.getWaypoints(), worlds.getPlayerWaypoints());

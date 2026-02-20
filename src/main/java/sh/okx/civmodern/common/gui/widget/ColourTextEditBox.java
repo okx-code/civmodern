@@ -4,7 +4,6 @@ import java.util.function.IntConsumer;
 import java.util.function.IntSupplier;
 import java.util.regex.Pattern;
 
-import io.wispforest.owo.mixin.ui.access.TextFieldWidgetAccessor;
 import io.wispforest.owo.ui.core.CursorStyle;
 import io.wispforest.owo.ui.core.Sizing;
 import net.minecraft.client.Minecraft;
@@ -26,18 +25,6 @@ public class ColourTextEditBox extends EditBox {
         this.sizing(horizontalSizing, Sizing.content());
         setColourFromInt(colourGetter.getAsInt());
         this.moveCursorToStart(false);
-    }
-
-    @Override
-    public void updateX(int x) {
-        super.updateX(x);
-        ((TextFieldWidgetAccessor) this).owo$updateTextPosition();
-    }
-
-    @Override
-    public void updateY(int y) {
-        super.updateY(y);
-        ((TextFieldWidgetAccessor) this).owo$updateTextPosition();
     }
 
     protected CursorStyle owo$preferredCursorStyle() {

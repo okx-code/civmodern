@@ -1,14 +1,17 @@
 package sh.okx.civmodern.common.map.screen;
 
 import io.wispforest.owo.ui.core.OwoUIAdapter;
-import io.wispforest.owo.ui.core.ParentComponent;
+import io.wispforest.owo.ui.core.ParentUIComponent;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Renderable;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.narration.NarratableEntry;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
+import net.minecraft.client.input.CharacterEvent;
+import net.minecraft.client.input.KeyEvent;
+import net.minecraft.client.input.MouseButtonEvent;
 
-public abstract class Modal<T extends ParentComponent> implements Renderable, GuiEventListener, NarratableEntry {
+public abstract class Modal<T extends ParentUIComponent> implements Renderable, GuiEventListener, NarratableEntry {
     protected final OwoUIAdapter<T> layout;
     protected boolean visible = false;
 
@@ -42,27 +45,27 @@ public abstract class Modal<T extends ParentComponent> implements Renderable, Gu
     }
 
     @Override
-    public boolean mouseClicked(double d, double e, int i) {
+    public boolean mouseClicked(MouseButtonEvent event, boolean bl) {
         if (!visible) {
             return false;
         }
-        return this.layout.mouseClicked(d - this.layout.x(), e - this.layout.y(), i);
+        return this.layout.mouseClicked(new MouseButtonEvent(event.x() - this.layout.x(), event.y() - this.layout.y(), event.buttonInfo()), bl);
     }
 
     @Override
-    public boolean mouseReleased(double d, double e, int i) {
+    public boolean mouseReleased(MouseButtonEvent event) {
         if (!visible) {
             return false;
         }
-        return this.layout.mouseReleased(d - this.layout.x(), e - this.layout.y(), i);
+        return this.layout.mouseReleased(new MouseButtonEvent(event.x() - this.layout.x(), event.y() - this.layout.y(), event.buttonInfo()));
     }
 
     @Override
-    public boolean mouseDragged(double d, double e, int i, double f, double g) {
+    public boolean mouseDragged(MouseButtonEvent event, double f, double g) {
         if (!visible) {
             return false;
         }
-        return this.layout.mouseDragged(d - this.layout.x(), e - this.layout.y(), i, f, g);
+        return this.layout.mouseDragged(new MouseButtonEvent(event.x() - this.layout.x(), event.y() - this.layout.y(), event.buttonInfo()), f, g);
     }
 
     @Override
@@ -82,19 +85,19 @@ public abstract class Modal<T extends ParentComponent> implements Renderable, Gu
     }
 
     @Override
-    public boolean keyPressed(int i, int j, int k) {
+    public boolean keyPressed(KeyEvent event) {
         if (!visible) {
             return false;
         }
-        return this.layout.keyPressed(i, j, k);
+        return this.layout.keyPressed(event);
     }
 
     @Override
-    public boolean charTyped(char c, int i) {
+    public boolean charTyped(CharacterEvent event) {
         if (!visible) {
             return false;
         }
-        return this.layout.charTyped(c, i);
+        return this.layout.charTyped(event);
     }
 
     @Override

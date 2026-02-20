@@ -15,15 +15,15 @@ public record ChevronRenderState(
     int colour
 ) implements GuiElementRenderState {
     @Override
-    public void buildVertices(VertexConsumer vertices, float depth) {
-        vertices.addVertexWith2DPose(pose, -1, -1.5f, depth).setColor(colour);
-        vertices.addVertexWith2DPose(pose, -1, -1f, depth).setColor(colour);
-        vertices.addVertexWith2DPose(pose, 0, -0.5f, depth).setColor(colour);
-        vertices.addVertexWith2DPose(pose, 0, 0f, depth).setColor(colour);
-        vertices.addVertexWith2DPose(pose, 0, -0.5f, depth).setColor(colour);
-        vertices.addVertexWith2DPose(pose, 1, -1f, depth).setColor(colour);
-        vertices.addVertexWith2DPose(pose, 1, -1.5f, depth).setColor(colour);
-        vertices.addVertexWith2DPose(pose, 1, -1.5f, depth).setColor(colour);
+    public void buildVertices(VertexConsumer vertices) {
+        vertices.addVertexWith2DPose(pose, -1, -1.5f).setColor(colour);
+        vertices.addVertexWith2DPose(pose, -1, -1f).setColor(colour);
+        vertices.addVertexWith2DPose(pose, 0, -0.5f).setColor(colour);
+        vertices.addVertexWith2DPose(pose, 0, 0f).setColor(colour);
+        vertices.addVertexWith2DPose(pose, 0, -0.5f).setColor(colour);
+        vertices.addVertexWith2DPose(pose, 1, -1f).setColor(colour);
+        vertices.addVertexWith2DPose(pose, 1, -1.5f).setColor(colour);
+        vertices.addVertexWith2DPose(pose, 1, -1.5f).setColor(colour);
     }
 
     @Override

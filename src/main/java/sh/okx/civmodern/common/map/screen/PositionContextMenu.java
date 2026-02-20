@@ -1,7 +1,7 @@
 package sh.okx.civmodern.common.map.screen;
 
-import io.wispforest.owo.ui.component.Components;
-import io.wispforest.owo.ui.container.Containers;
+import io.wispforest.owo.ui.component.UIComponents;
+import io.wispforest.owo.ui.container.UIContainers;
 import io.wispforest.owo.ui.container.FlowLayout;
 import io.wispforest.owo.ui.core.Color;
 import io.wispforest.owo.ui.core.Insets;
@@ -9,6 +9,7 @@ import io.wispforest.owo.ui.core.OwoUIAdapter;
 import io.wispforest.owo.ui.core.Sizing;
 import io.wispforest.owo.ui.core.Surface;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
 import sh.okx.civmodern.common.map.waypoints.Waypoint;
 import sh.okx.civmodern.common.map.waypoints.Waypoints;
@@ -23,7 +24,7 @@ public class PositionContextMenu extends Modal<FlowLayout> {
     private final List<ScalableLabelComponent> options = new ArrayList<>();
 
     public PositionContextMenu(Waypoints waypoints, NewWaypointModal newWaypointModal) {
-        super(OwoUIAdapter.createWithoutScreen(0, 0, 80, 46, Containers::verticalFlow));
+        super(OwoUIAdapter.createWithoutScreen(0, 0, 80, 46, UIContainers::verticalFlow));
         this.waypoints = waypoints;
         this.newWaypointModal = newWaypointModal;
     }
@@ -60,11 +61,11 @@ public class PositionContextMenu extends Modal<FlowLayout> {
         options.add(copyToClipboard);
         this.layout.rootComponent
             .child(createWaypoint.textHeight(7).margins(Insets.of(1, 0, 2, 2)))
-            .child(Components.box(Sizing.expand(), Sizing.fixed(1)).color(Color.ofRgb(0x60605f)).margins(Insets.of(1, 2, 0, 0)))
+            .child(UIComponents.box(Sizing.expand(), Sizing.fixed(1)).color(Color.ofRgb(0x60605f)).margins(Insets.of(1, 2, 0, 0)))
             .child(teleportHere.hoverEffect(targetY != null).textHeight(7).margins(Insets.horizontal(2)))
-            .child(Components.box(Sizing.expand(), Sizing.fixed(1)).color(Color.ofRgb(0x60605f)).margins(Insets.of(1, 2, 0, 0)))
+            .child(UIComponents.box(Sizing.expand(), Sizing.fixed(1)).color(Color.ofRgb(0x60605f)).margins(Insets.of(1, 2, 0, 0)))
             .child(highlightPosition.textHeight(7).margins(Insets.horizontal(2)))
-            .child(Components.box(Sizing.expand(), Sizing.fixed(1)).color(Color.ofRgb(0x60605f)).margins(Insets.of(1, 2, 0, 0)))
+            .child(UIComponents.box(Sizing.expand(), Sizing.fixed(1)).color(Color.ofRgb(0x60605f)).margins(Insets.of(1, 2, 0, 0)))
             .child(copyToClipboard.hoverEffect(targetY != null).textHeight(7).margins(Insets.horizontal(2)))
             .padding(Insets.both(2, 3))
             .surface(Surface.TOOLTIP);
@@ -73,15 +74,15 @@ public class PositionContextMenu extends Modal<FlowLayout> {
     }
 
     @Override
-    public boolean mouseClicked(double d, double e, int i) {
+    public boolean mouseClicked(MouseButtonEvent event, boolean bl) {
         if (!visible) {
             return false;
         }
         for (ScalableLabelComponent component : options) {
-            if (component.onMouseClick(d, e, i)) {
+            if (component.onMouseClick(event.x(), event.y(), event.button())) {
                 return true;
             }
         }
-        return super.mouseClicked(d, e, i);
+        return super.mouseClicked(event, bl);
     }
 }

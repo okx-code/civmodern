@@ -3,22 +3,23 @@ package sh.okx.civmodern.common.gui.widget;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
+import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 public class ImageButton extends AbstractWidget {
 
-    private ResourceLocation image;
+    private Identifier image;
     private final OnPress onPress;
 
-    public ImageButton(int x, int y, int width, int height, ResourceLocation image, OnPress onPress) {
+    public ImageButton(int x, int y, int width, int height, Identifier image, OnPress onPress) {
         super(x, y, width, height, Component.empty());
         this.image = image;
         this.onPress = onPress;
     }
 
-    public void setImage(ResourceLocation image) {
+    public void setImage(Identifier image) {
         this.image = image;
     }
 
@@ -29,7 +30,7 @@ public class ImageButton extends AbstractWidget {
     }
 
     @Override
-    public void onClick(double d, double e) {
+    public void onClick(MouseButtonEvent event, boolean bl) {
         this.onPress.onPress(this);
     }
 
