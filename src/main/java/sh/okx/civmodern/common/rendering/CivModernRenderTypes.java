@@ -13,8 +13,15 @@ public class CivModernRenderTypes {
             "text",
             RenderSetup.builder(CivModernPipelines.TEXT)
                 .withTexture("Sampler0", resourceLocation)
-                .useLightmap()
-                .bufferSize(786432)
+                .createRenderSetup()
+        )
+    );
+
+    public static final Function<Identifier, RenderType> TEXT2 = Util.memoize(
+        resourceLocation -> RenderType.create(
+            "text2",
+            RenderSetup.builder(CivModernPipelines.TEXT2)
+                .withTexture("Sampler0", resourceLocation)
                 .createRenderSetup()
         )
     );

@@ -149,7 +149,7 @@ public class Radar {
         final @NotNull PostRenderGameOverlayEvent event
     ) {
         Minecraft mc = Minecraft.getInstance();
-        if (mc.options.hideGui || mc.getDebugOverlay().showDebugScreen()) {
+        if (mc.options.hideGui || mc.debugEntries.isOverlayVisible()) {
             return;
         }
 

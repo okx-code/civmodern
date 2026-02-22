@@ -9,18 +9,14 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.resources.Identifier;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
-import org.joml.Matrix3x2f;
-import org.joml.Matrix3x2fStack;
 import org.joml.Matrix4f;
-import org.joml.Vector3f;
-import org.joml.Vector4f;
-import sh.okx.civmodern.common.events.PostRenderGameOverlayEvent;
+import sh.okx.civmodern.common.AbstractCivModernMod;
 import sh.okx.civmodern.common.events.WorldRenderLastEvent;
+import sh.okx.civmodern.common.rendering.CivModernRenderTypes;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -31,7 +27,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-import java.util.OptionalInt;
 
 public class Waypoints {
 
@@ -157,6 +152,10 @@ public class Waypoints {
     }
 
     public void onRender(WorldRenderLastEvent event) { // TODO separate this into its own class
+        if (!AbstractCivModernMod.getInstance().getConfig().isWaypointRenderingEnabled()) {
+            return;
+        }
+
         LocalPlayer player = Minecraft.getInstance().player;
         List<Waypoint> nearbyWaypoints = getWaypoints(player.getBlockX(), player.getBlockY(), player.getBlockZ(), 2000);
         if (getTarget() != null) {
@@ -178,7 +177,7 @@ public class Waypoints {
                 continue;
             }
             matrices.pushPose();
-            float maxDistance = (Minecraft.getInstance().options.getEffectiveRenderDistance() * 16 * 4) - 2;
+            float maxDistance = (Minecraft.getInstance().options.simulationDistance().get() * 16) - 2;
             float adjustedDistance = distance;
             if (distance > maxDistance) {
                 x = x / distance * maxDistance;
@@ -194,7 +193,8 @@ public class Waypoints {
             matrices.scale(-adjustedDistance, -adjustedDistance, -adjustedDistance);
 
             int k = (int) (getTransparency(distance, 0.11f) * 255.0F) << 24;
-            waypoint.render(event.source(), matrices.last().pose(), 8, k);
+            waypoint.render(CivModernRenderTypes.TEXT, event.source(), matrices.last().pose(), 8, k);
+            waypoint.render(CivModernRenderTypes.TEXT2, event.source(), matrices.last().pose(), 8, k);
             matrices.popPose();
         }
         MultiBufferSource source = event.source();

@@ -223,7 +223,7 @@ public class MapScreen extends Screen {
                 }
             }
         }
-        guiGraphics.guiRenderState.submitPicturesInPictureState(new BlitRenderState(guiGraphics, 0, 0, (int) (window.getWidth()), (int) (window.getHeight()), guiGraphics.pose(),
+        guiGraphics.guiRenderState.submitPicturesInPictureState(new BlitRenderState(guiGraphics, 0, 0, window.getGuiScaledWidth(), window.getGuiScaledHeight(), guiGraphics.pose(),
             ((source, stack) -> renderers.forEach(r -> r.render(source, stack)))));
 
         matrices.pushMatrix();
@@ -336,7 +336,6 @@ public class MapScreen extends Screen {
             double z = hoveredWaypoint.z() + 0.5;
             matrices.translate((float) ((x - this.x) / scale), (float) ((z - this.y) / scale));
 
-            AbstractTexture abstractTexture = Minecraft.getInstance().getTextureManager().getTexture(hoveredWaypoint.resourceLocation());
             guiGraphics.blit(RenderPipelines.GUI_TEXTURED, Identifier.fromNamespaceAndPath("civmodern", "map/focus.png"), -8, -8, 0, 0, 16, 16, 16, 16, -1);
 
             matrices.popMatrix();
@@ -398,7 +397,7 @@ public class MapScreen extends Screen {
 
         Queue<Vec2> dests = navigation.getDestinations();
         if (boating || !dests.isEmpty()) {
-
+            guiGraphics.guiRenderState.nextStratum();
             List<Vec2> points = new ArrayList<>();
             float px;
             float pz;

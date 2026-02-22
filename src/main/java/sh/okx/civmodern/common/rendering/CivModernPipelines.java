@@ -3,14 +3,13 @@ package sh.okx.civmodern.common.rendering;
 import com.mojang.blaze3d.pipeline.BlendFunction;
 import com.mojang.blaze3d.pipeline.RenderPipeline;
 import com.mojang.blaze3d.platform.DepthTestFunction;
-import com.mojang.blaze3d.platform.PolygonMode;
+import com.mojang.blaze3d.platform.DestFactor;
+import com.mojang.blaze3d.platform.SourceFactor;
 import com.mojang.blaze3d.shaders.UniformType;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.resources.Identifier;
-
-import static net.minecraft.client.renderer.RenderPipelines.GUI_TEXTURED_SNIPPET;
 
 public class CivModernPipelines {
     public static final RenderPipeline GUI_TRIANGLE_STRIP_BLEND = RenderPipelines.register(RenderPipeline.builder(RenderPipelines.GUI_SNIPPET)
@@ -22,14 +21,18 @@ public class CivModernPipelines {
         .withVertexFormat(DefaultVertexFormat.POSITION_COLOR, VertexFormat.Mode.QUADS)
         .build();
 
-    public static final RenderPipeline TEXT = RenderPipeline.builder(RenderPipelines.TEXT_SNIPPET, RenderPipelines.FOG_SNIPPET)
-            .withDepthTestFunction(DepthTestFunction.NO_DEPTH_TEST)
-            .withLocation(Identifier.fromNamespaceAndPath("civmodern", "pipeline/text"))
-            .withVertexShader("core/rendertype_text")
-            .withFragmentShader("core/rendertype_text")
-            .withSampler("Sampler0")
-            .withSampler("Sampler2")
-            .build();
+    public static final RenderPipeline TEXT2 = RenderPipeline.builder(RenderPipelines.GUI_TEXTURED_SNIPPET)
+        .withDepthTestFunction(DepthTestFunction.LEQUAL_DEPTH_TEST)
+        .withBlend(new BlendFunction(SourceFactor.SRC_ALPHA, DestFactor.ONE_MINUS_SRC_ALPHA, SourceFactor.ONE, DestFactor.ONE_MINUS_SRC_ALPHA))
+        .withDepthWrite(true)
+        .withLocation(Identifier.fromNamespaceAndPath("civmodern", "pipeline/text"))
+        .build();
+    public static final RenderPipeline TEXT = RenderPipeline.builder(RenderPipelines.GUI_TEXTURED_SNIPPET)
+        .withDepthTestFunction(DepthTestFunction.NO_DEPTH_TEST)
+        .withBlend(new BlendFunction(SourceFactor.SRC_ALPHA, DestFactor.ONE_MINUS_SRC_ALPHA, SourceFactor.ONE, DestFactor.ONE_MINUS_SRC_ALPHA))
+        .withDepthWrite(true)
+        .withLocation(Identifier.fromNamespaceAndPath("civmodern", "pipeline/text"))
+        .build();
 
     public static final RenderPipeline.Snippet MATRICES_PROJECTION_SNIPPET = RenderPipeline.builder().withUniform("DynamicTransforms", UniformType.UNIFORM_BUFFER).withUniform("Projection", UniformType.UNIFORM_BUFFER).buildSnippet();
     public static final RenderPipeline.Snippet COLOR_WRITE = RenderPipeline.builder().withColorWrite(true).withDepthWrite(false).buildSnippet();
@@ -39,6 +42,7 @@ public class CivModernPipelines {
     public static void register() {
         RenderPipelines.register(GUI_QUADS);
         RenderPipelines.register(TEXT);
+        RenderPipelines.register(TEXT2);
         RenderPipelines.register(REGION_DEFAULT_RENDER_PIPELINE);
     }
 }
