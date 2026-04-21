@@ -85,15 +85,28 @@ final class RadarConfigScreen extends AbstractConfigScreen {
         );
 
         addRenderableWidget(new ToggleButton(
-            this.centreX - (Button.DEFAULT_WIDTH / 2),
+            leftSideX,
             offsetY,
-            Button.DEFAULT_WIDTH,
+            ToggleButton.DEFAULT_BUTTON_WIDTH,
             Component.translatable("civmodern.screen.radar.enabled"),
             this.config::isRadarEnabled,
             this.config::setRadarEnabled,
             Tooltip.create(Component.translatable("civmodern.screen.radar.enabled.tooltip")),
             ToggleButton.DEFAULT_NARRATION
         ));
+        addRenderableWidget(
+            Button
+                .builder(
+                    Component.translatable("civmodern.screen.radar.alignment", this.config.getAlignment().toString()),
+                        (button) -> {
+                            final Alignment next = this.config.getAlignment().next();
+                            this.config.setAlignment(next);
+                            button.setMessage(Component.translatable("civmodern.screen.radar.alignment", next.toString()));
+                        }
+                )
+                .pos(rightSideX, offsetY)
+                .build()
+        );
         offsetY += Button.DEFAULT_HEIGHT + 4;
 
         addRenderableWidget(new ToggleButton(
@@ -118,27 +131,24 @@ final class RadarConfigScreen extends AbstractConfigScreen {
         ));
         offsetY += Button.DEFAULT_HEIGHT + 4;
 
-        addRenderableWidget(
-            Button
-                .builder(
-                    Component.translatable("civmodern.screen.radar.alignment", this.config.getAlignment().toString()),
-                    (button) -> {
-                        final Alignment next = this.config.getAlignment().next();
-                        this.config.setAlignment(next);
-                        button.setMessage(Component.translatable("civmodern.screen.radar.alignment", next.toString()));
-                    }
-                )
-                .pos(leftSideX, offsetY)
-                .build()
-        );
         addRenderableWidget(new ToggleButton(
-            rightSideX,
+            leftSideX,
             offsetY,
             ToggleButton.DEFAULT_BUTTON_WIDTH,
             Component.translatable("civmodern.screen.radar.items"),
             this.config::isShowItems,
             this.config::setShowItems,
             Tooltip.create(Component.translatable("civmodern.screen.radar.items.tooltip")),
+            ToggleButton.DEFAULT_NARRATION
+        ));
+        addRenderableWidget(new ToggleButton(
+            rightSideX,
+            offsetY,
+            ToggleButton.DEFAULT_BUTTON_WIDTH,
+            Component.translatable("civmodern.screen.radar.vehicles"),
+            this.config::isShowVehicles,
+            this.config::setShowVehicles,
+            Tooltip.create(Component.translatable("civmodern.screen.radar.vehicles.tooltip")),
             ToggleButton.DEFAULT_NARRATION
         ));
         offsetY += Button.DEFAULT_HEIGHT + 4;
