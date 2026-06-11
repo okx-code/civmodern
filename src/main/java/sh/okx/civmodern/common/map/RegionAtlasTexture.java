@@ -3,7 +3,7 @@ package sh.okx.civmodern.common.map;
 import com.mojang.blaze3d.opengl.GlStateManager;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.renderer.rendertype.RenderSetup;
 import net.minecraft.client.renderer.rendertype.RenderType;
 import org.lwjgl.opengl.GL;
@@ -79,15 +79,15 @@ public class RegionAtlasTexture {
         glGenerateMipmap(GL_TEXTURE_2D);
     }
 
-    public BlitRenderState.Renderer draw(GuiGraphics graphics, float x, float y, float scale) {
+    public BlitRenderState.Renderer draw(GuiGraphicsExtractor graphics, float x, float y, float scale) {
         return draw(graphics, x, y, false, scale, 0, 0, SIZE, SIZE, SIZE, SIZE, 0, 0);
     }
 
-    public BlitRenderState.Renderer drawLinear(GuiGraphics graphics, float x, float y, float scale, float xOff, float yOff, float xSize, float ySize, float width, float height, int translateX, int translateY) {
+    public BlitRenderState.Renderer drawLinear(GuiGraphicsExtractor graphics, float x, float y, float scale, float xOff, float yOff, float xSize, float ySize, float width, float height, int translateX, int translateY) {
         return draw(graphics, x, y, true, scale, xOff, yOff, xSize, ySize, width, height, translateX, translateY);
     }
 
-    private BlitRenderState.Renderer draw(GuiGraphics graphics, float x, float y, boolean linear, float scale, float xOff, float yOff, float xSize, float ySize, float width, float height, int translateX, int translateY) {
+    private BlitRenderState.Renderer draw(GuiGraphicsExtractor graphics, float x, float y, boolean linear, float scale, float xOff, float yOff, float xSize, float ySize, float width, float height, int translateX, int translateY) {
         return blit(graphics, (x / scale), (y / scale), linear, xOff / scale, yOff / scale, (width / scale), (height / scale), xSize / scale, ySize / scale, translateX, translateY);
     }
 
@@ -97,18 +97,18 @@ public class RegionAtlasTexture {
         });
     }
 
-    private BlitRenderState.Renderer blit(GuiGraphics graphics, float renderX, float renderY, boolean linear, float textureXoffset, float texureYoffset, float renderWidth, float renderHeight, float textureWidth, float textureHeight, int translateX, int translateY) {
+    private BlitRenderState.Renderer blit(GuiGraphicsExtractor graphics, float renderX, float renderY, boolean linear, float textureXoffset, float texureYoffset, float renderWidth, float renderHeight, float textureWidth, float textureHeight, int translateX, int translateY) {
         return innerBlit(graphics, renderX, renderX + renderWidth, renderY, renderY + renderHeight, linear, renderWidth, renderHeight, textureXoffset, texureYoffset, textureWidth, textureHeight, translateX, translateY);
     }
 
-    private BlitRenderState.Renderer innerBlit(GuiGraphics graphics, float i, float j, float k, float l, boolean linear, float n, float o, float f, float g, float p, float q, int translateX, int translateY) {
+    private BlitRenderState.Renderer innerBlit(GuiGraphicsExtractor graphics, float i, float j, float k, float l, boolean linear, float n, float o, float f, float g, float p, float q, int translateX, int translateY) {
         return innerBlit(graphics, i, j, k, l, linear, (f + 0.0f) / p, (f + n) / p, (g + 0.0f) / q, (g + o) / q, translateX, translateY);
     }
 
     public static Map<RenderSetup, RegionAbstractTexture> TEXTURES = new WeakHashMap<>();
     public static Map<RenderSetup, Boolean> LINEAR = new WeakHashMap<>();
 
-    private BlitRenderState.Renderer innerBlit(GuiGraphics graphics, float i, float j, float k, float l, boolean linear, float f, float g, float h, float n, int translateX, int translateY) {
+    private BlitRenderState.Renderer innerBlit(GuiGraphicsExtractor graphics, float i, float j, float k, float l, boolean linear, float f, float g, float h, float n, int translateX, int translateY) {
         return (source, stack) -> {
             if (type == null) {
                 this.texture = new RegionAbstractTexture(this);

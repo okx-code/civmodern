@@ -12,7 +12,7 @@ import io.wispforest.owo.ui.core.Sizing;
 import io.wispforest.owo.ui.core.Surface;
 import io.wispforest.owo.ui.core.VerticalAlignment;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.Component;
@@ -86,7 +86,7 @@ public class EditWaypointModal extends Modal<FlowLayout> {
             builder.append("x:%s,y:%s,z:%s]".formatted(this.waypoint.x(), this.waypoint.y(), this.waypoint.z()));
             Minecraft.getInstance().keyboardHandler.setClipboard(builder.toString());
             Minecraft.getInstance().setScreen(null);
-            Minecraft.getInstance().player.displayClientMessage(Component.translatable("civmodern.map.copy", Component.literal(builder.toString())).withColor(0x379FA3), false);
+            Minecraft.getInstance().player.sendSystemMessage(Component.translatable("civmodern.map.copy", Component.literal(builder.toString())).withColor(0x379FA3));
             Minecraft.getInstance().keyboardHandler.setClipboard(builder.toString());
             this.waypoint = null;
         });
@@ -185,11 +185,11 @@ public class EditWaypointModal extends Modal<FlowLayout> {
     }
 
     @Override
-    public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float delta) {
-        super.render(guiGraphics, mouseX, mouseY, delta);
+    public void extractRenderState(GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY, float delta) {
+        super.extractRenderState(guiGraphics, mouseX, mouseY, delta);
         if (visible) {
             this.colourPicker.setRVisible(true);
-            this.colourPicker.renderWidget(guiGraphics, mouseX, mouseY, delta);
+            this.colourPicker.extractWidgetRenderState(guiGraphics, mouseX, mouseY, delta);
             this.colourPicker.setRVisible(false);
         }
     }

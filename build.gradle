@@ -8,17 +8,14 @@ plugins {
 
 dependencies {
     minecraft(libs.minecraft)
-    mappings(loom.layered() {
-        officialMojangMappings()
-    })
 
-    modImplementation(libs.fabricLoader)
-    modImplementation(libs.fabricApi)
+    implementation(libs.fabricLoader)
+    implementation(libs.fabricApi)
 
-    modImplementation(libs.owoLib)
+    implementation(libs.owoLib)
     include(libs.owoSentinel)
 
-    modImplementation(libs.modMenu)
+    implementation(libs.modMenu)
 
     implementation(libs.sqlite)
     include(libs.sqlite)
@@ -57,7 +54,7 @@ repositories {
 
 tasks.withType(JavaCompile).configureEach {
     options.encoding = "UTF-8"
-    options.release = 21
+    options.release = 25
 }
 
 java {
@@ -100,8 +97,12 @@ tasks.register("cleanJar", Delete) {
 
 tasks.register("copyJar", Copy) {
     dependsOn cleanJar
-    from remapJar
+    from jar
     into "dist"
 }
 
 build.dependsOn copyJar
+
+loom {
+    accessWidenerPath = file("src/main/resources/civmodern.classtweaker")
+}

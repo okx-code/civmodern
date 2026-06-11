@@ -1,9 +1,9 @@
 package sh.okx.civmodern.common.rendering;
 
 import com.mojang.blaze3d.vertex.PoseStack;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.navigation.ScreenRectangle;
-import net.minecraft.client.gui.render.state.pip.PictureInPictureRenderState;
+import net.minecraft.client.renderer.state.gui.pip.PictureInPictureRenderState;
 import net.minecraft.client.renderer.MultiBufferSource;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix3x2f;
@@ -11,7 +11,7 @@ import org.joml.Matrix3x2fStack;
 import sh.okx.civmodern.common.map.RegionAtlasTexture;
 
 public record BlitRenderState(
-    GuiGraphics graphics,
+    GuiGraphicsExtractor graphics,
     int x,
     int y,
     int sizeX,
@@ -21,7 +21,7 @@ public record BlitRenderState(
     Renderer renderer
 ) implements PictureInPictureRenderState {
 	public BlitRenderState(
-		GuiGraphics graphics,
+        GuiGraphicsExtractor graphics,
         int x,
         int y,
         int sizeX,
