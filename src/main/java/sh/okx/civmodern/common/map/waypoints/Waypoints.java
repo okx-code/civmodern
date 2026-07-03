@@ -155,6 +155,9 @@ public class Waypoints {
         if (!AbstractCivModernMod.getInstance().getConfig().isWaypointRenderingEnabled()) {
             return;
         }
+        if (Minecraft.getInstance().options.hideGui) {
+            return;
+        }
 
         LocalPlayer player = Minecraft.getInstance().player;
         List<Waypoint> nearbyWaypoints = getWaypoints(player.getBlockX(), player.getBlockY(), player.getBlockZ(), 2000);
