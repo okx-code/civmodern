@@ -172,7 +172,7 @@ public class RegionMapUpdater {
                     if (updated && x == rx + 15) {
                         renderEastSouth[0] = true;
                     }
-                    if (updated && z == rx + 15) {
+                    if (updated && z == rz + 15) {
                         renderEastSouth[1] = true;
                     }
 
