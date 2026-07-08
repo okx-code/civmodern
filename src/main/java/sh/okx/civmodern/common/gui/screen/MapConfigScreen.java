@@ -1,7 +1,7 @@
 package sh.okx.civmodern.common.gui.screen;
 
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.components.Renderable;
@@ -9,7 +9,6 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
-import org.jetbrains.annotations.NotNull;
 import sh.okx.civmodern.common.CivMapConfig;
 import sh.okx.civmodern.common.ColourProvider;
 import sh.okx.civmodern.common.gui.DoubleValue;
@@ -140,7 +139,8 @@ public class MapConfigScreen extends AbstractConfigScreen {
         widget.setValue("#" + String.format("%06X", colourGet.get()));
         widget.setMaxLength(7);
         Pattern pattern = Pattern.compile("^(#[0-9A-F]{0,6})?$", Pattern.CASE_INSENSITIVE);
-        widget.setFilter(string -> pattern.matcher(string).matches());
+        // TODO: Mojang removed this, couldn't figure out what to do instead, spent more time then I cared to on this
+        // widget.setFilter(string -> pattern.matcher(string).matches());
         widget.setResponder(val -> {
             if (val.length() == 7) {
                 int rgb = Integer.parseInt(val.substring(1), 16);
@@ -191,12 +191,12 @@ public class MapConfigScreen extends AbstractConfigScreen {
     }
 
     @Override
-    public void render(GuiGraphics graphics, int mouseX, int mouseY, float delta) {
-        graphics.drawCenteredString(this.font, this.title, this.width / 2, 15, 0xffffffff);
+    public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float delta) {
+        graphics.centeredText(this.font, this.title, this.width / 2, 15, 0xffffffff);
 
         // Don't call super since we don't want the dark or blurred background to obscure changes to the radar
         for (final Renderable renderable : ((ScreenAccessor) (Object) this).civmodern$getRenderables()) {
-            renderable.render(graphics, mouseX, mouseY, delta);
+            renderable.extractRenderState(graphics, mouseX, mouseY, delta);
         }
     }
 }

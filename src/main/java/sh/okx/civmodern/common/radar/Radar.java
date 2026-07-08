@@ -8,8 +8,8 @@ import io.wispforest.owo.ui.renderstate.LineElementRenderState;
 import io.wispforest.owo.ui.renderstate.RingElementRenderState;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.components.PlayerFaceRenderer;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.components.PlayerFaceExtractor;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.multiplayer.PlayerInfo;
 import net.minecraft.client.player.LocalPlayer;
@@ -101,7 +101,7 @@ public class Radar {
                             "/civmodern_openwaypoint [x:" + pos.getX() + ",y:" + Minecraft.getInstance().player.getBlockY() + ",z:" + pos.getZ() + ",name:"
                                 + player.getScoreboardName() + "]";
 
-                        Minecraft.getInstance().player.displayClientMessage(
+                        Minecraft.getInstance().player.sendSystemMessage(
                             Component.translatable("civmodern.radar.enter",
                                     player.getName(),
                                     Component.literal(pos.getX() + " " + pos.getZ())
@@ -109,8 +109,8 @@ public class Radar {
                                 .setStyle(Style.EMPTY
                                     .withClickEvent(
                                         new ClickEvent.RunCommand(lastWaypointCommand))
-                                    .withHoverEvent(new HoverEvent.ShowText(Component.translatable("civmodern.radar.hover")))),
-                            false);
+                                    .withHoverEvent(new HoverEvent.ShowText(Component.translatable("civmodern.radar.hover"))))
+                            );
                     }
                     if (config.isPingSoundEnabled()) {
                         playPlayerSound("pling", player.getUUID());
@@ -127,7 +127,7 @@ public class Radar {
                     String lastWaypointCommand =
                         "/civmodern_openwaypoint [x:" + pos.getX() + ",y:" + Minecraft.getInstance().player.getBlockY() + ",z:" + pos.getZ() + ",name:"
                             + player.getScoreboardName() + "]";
-                    Minecraft.getInstance().player.displayClientMessage(
+                    Minecraft.getInstance().player.sendSystemMessage(
                         Component.translatable("civmodern.radar.leave",
                                 player.getName(),
                                 Component.literal(pos.getX() + " " + pos.getZ())
@@ -135,8 +135,8 @@ public class Radar {
                             .setStyle(Style.EMPTY
                                 .withClickEvent(
                                     new ClickEvent.RunCommand(lastWaypointCommand))
-                                .withHoverEvent(new HoverEvent.ShowText(Component.translatable("civmodern.radar.hover")))),
-                        false);
+                                .withHoverEvent(new HoverEvent.ShowText(Component.translatable("civmodern.radar.hover"))))
+                        );
                 }
             }
         }
@@ -162,7 +162,7 @@ public class Radar {
         return config.getRadarSize();
     }
 
-    public void render(GuiGraphics guiGraphics, float delta) {
+    public void render(GuiGraphicsExtractor guiGraphics, float delta) {
         bgColour = (colourProvider.getBackgroundColour() & 0xFF_FF_FF) | (int) ((1 - config.getBackgroundTransparency()) * 255) << 24;
         fgColour = (colourProvider.getForegroundColour() & 0xFF_FF_FF) | (int) ((1 - config.getTransparency()) * 255) << 24;
 
@@ -215,7 +215,7 @@ public class Radar {
         guiGraphics.pose().popMatrix();
     }
 
-    private void renderBoatsMinecarts(GuiGraphics guiGraphics, float delta) {
+    private void renderBoatsMinecarts(GuiGraphicsExtractor guiGraphics, float delta) {
         Minecraft minecraft = Minecraft.getInstance();
 
         for (Entity entity : minecraft.level.entitiesForRendering()) {
@@ -227,7 +227,7 @@ public class Radar {
         }
     }
 
-    private void renderItems(GuiGraphics guiGraphics, float delta) {
+    private void renderItems(GuiGraphicsExtractor guiGraphics, float delta) {
         Minecraft minecraft = Minecraft.getInstance();
 
         int i = 0;
@@ -254,7 +254,7 @@ public class Radar {
         return (1 / distance) * ld;
     }
 
-    private void renderEntity(GuiGraphics guiGraphics, Player player, Entity entity, float delta, ItemStack item, float blit, float entityScale) {
+    private void renderEntity(GuiGraphicsExtractor guiGraphics, Player player, Entity entity, float delta, ItemStack item, float blit, float entityScale) {
         double scale = config.getRadarSize() / config.getRange();
 
         double px = player.xOld + (player.getX() - player.xOld) * delta;
@@ -279,11 +279,11 @@ public class Radar {
         }
         guiGraphics.pose().scale(config.getIconSize() * entityScale, config.getIconSize() * entityScale);
 
-        guiGraphics.renderFakeItem(item, -8, -8);
+        guiGraphics.fakeItem(item, -8, -8);
         guiGraphics.pose().popMatrix();
     }
 
-    private void renderPlayers(GuiGraphics guiGraphics, float delta) {
+    private void renderPlayers(GuiGraphicsExtractor guiGraphics, float delta) {
         Minecraft minecraft = Minecraft.getInstance();
 
         for (RemotePlayer player : playersInRange) {
@@ -321,13 +321,13 @@ public class Radar {
             } else {
                 location = Identifier.withDefaultNamespace("textures/entity/steve.png");
             }
-            PlayerFaceRenderer.draw(guiGraphics, location, -4, -4, 8, true, false, -1);
+            PlayerFaceExtractor.extractRenderState(guiGraphics, location, -4, -4, 8, true, false, -1);
             guiGraphics.pose().pushMatrix();
             guiGraphics.pose().translate(0, 4.5f * config.getIconSize());
             guiGraphics.pose().scale(0.6f * config.getTextSize(), 0.6f * config.getTextSize());
             Component component = Component.literal(
                 player.getScoreboardName() + " (" + ((int) Math.round(Math.sqrt(dx * dx + dz * dz))) + ")");
-            guiGraphics.drawCenteredString(minecraft.font, component, 0, 1, -1);
+            guiGraphics.centeredText(minecraft.font, component, 0, 1, -1);
 
             guiGraphics.pose().popMatrix();
             guiGraphics.pose().popMatrix();
@@ -335,8 +335,8 @@ public class Radar {
         }
     }
 
-    private void renderCircleBackground(GuiGraphics graphics) {
-        graphics.guiRenderState.submitGuiElement(new CircleElementRenderState(
+    private void renderCircleBackground(GuiGraphicsExtractor graphics) {
+        graphics.guiRenderState.addGuiElement(new CircleElementRenderState(
             OwoUIPipelines.GUI_TRIANGLE_FAN,
             new Matrix3x2f(graphics.pose()),
             graphics.scissorStack.peek(),
@@ -344,9 +344,9 @@ public class Radar {
         ));
     }
 
-    private void renderCircleBorder(GuiGraphics graphics, float radius) {
+    private void renderCircleBorder(GuiGraphicsExtractor graphics, float radius) {
         float thickness = radius == radius() ? 1f : 0.5f;
-        graphics.guiRenderState.submitGuiElement(new RingElementRenderState(
+        graphics.guiRenderState.addGuiElement(new RingElementRenderState(
             CivModernPipelines.GUI_TRIANGLE_STRIP_BLEND,
             new Matrix3x2f(graphics.pose()),
             graphics.scissorStack.peek(),
@@ -354,7 +354,7 @@ public class Radar {
         ));
     }
 
-    private void renderLines(GuiGraphics graphics) {
+    private void renderLines(GuiGraphicsExtractor graphics) {
         float thickness = 0.5f;
         float radius = radius() + 0.5f;
 
@@ -362,7 +362,7 @@ public class Radar {
         float rotationRadians = (float) Math.PI / numberOfLines;
         graphics.pose().pushMatrix();
         for (int i = 0; i < numberOfLines; i++) {
-            graphics.guiRenderState.submitGuiElement(new LineElementRenderState(
+            graphics.guiRenderState.addGuiElement(new LineElementRenderState(
                 CivModernPipelines.GUI_QUADS,
                 new Matrix3x2f(graphics.pose()),
                 graphics.scissorStack.peek(),

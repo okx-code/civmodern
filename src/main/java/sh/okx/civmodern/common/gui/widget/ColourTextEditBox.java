@@ -42,7 +42,8 @@ public class ColourTextEditBox extends EditBox {
         super(font, x, y, width, height, Component.empty());
         setColourFromInt(colourGetter.getAsInt());
         setMaxLength(7);
-        setFilter((string) -> HEX_COLOUR_REGEX.matcher(string).matches());
+        // TODO: Mojang removed this, couldn't figure out what to do instead, spent more time then I cared to on this
+        // setFilter((string) -> HEX_COLOUR_REGEX.matcher(string).matches());
         setResponder((val) -> {
             if (val.length() <= 1) {
                 return;

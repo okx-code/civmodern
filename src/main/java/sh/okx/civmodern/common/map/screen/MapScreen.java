@@ -7,7 +7,7 @@ import io.wispforest.owo.ui.renderstate.LineElementRenderState;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Renderable;
 import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.screens.Screen;
@@ -192,7 +192,7 @@ public class MapScreen extends Screen {
     }
 
     @Override
-    public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float delta) {
+    public void extractRenderState(GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY, float delta) {
         Matrix3x2fStack matrices = guiGraphics.pose();
 
         float scale = (float) Minecraft.getInstance().getWindow().getGuiScale() * zoom;
@@ -223,7 +223,7 @@ public class MapScreen extends Screen {
                 }
             }
         }
-        guiGraphics.guiRenderState.submitPicturesInPictureState(new BlitRenderState(guiGraphics, 0, 0, window.getGuiScaledWidth(), window.getGuiScaledHeight(), guiGraphics.pose(),
+        guiGraphics.guiRenderState.addPicturesInPictureState(new BlitRenderState(guiGraphics, 0, 0, window.getGuiScaledWidth(), window.getGuiScaledHeight(), guiGraphics.pose(),
             ((source, stack) -> renderers.forEach(r -> r.render(source, stack)))));
 
         matrices.pushMatrix();
@@ -265,7 +265,7 @@ public class MapScreen extends Screen {
 
                     matrices.translate(0, -16);//, -10);
                     MutableComponent comp = Component.literal(str);
-                    guiGraphics.drawString(font, comp, -font.width(comp) / 2, 0, -1, false);//, false, last, Font.DisplayMode.NORMAL, 0, 15728880, true);
+                    guiGraphics.text(font, comp, -font.width(comp) / 2, 0, -1, false);//, false, last, Font.DisplayMode.NORMAL, 0, 15728880, true);
                     guiGraphics.fill(-font.width(comp) / 2, -1, font.width(comp) / 2, 9, 1056964608);
                     matrices.popMatrix();
                 }
@@ -293,9 +293,9 @@ public class MapScreen extends Screen {
                 matrices.translate(0, -16);
                 if (zoom <= 2) {
                     MutableComponent comp = Component.literal(str);
-                    guiGraphics.drawString(font, comp, (int) (-font.width(comp) / 2f), 0, colour, true);
+                    guiGraphics.text(font, comp, (int) (-font.width(comp) / 2f), 0, colour, true);
                     MutableComponent comp2 = Component.literal("(" + getAgo(waypoint.timestamp()) + ")");
-                    guiGraphics.drawString(font, comp2, (int) (-font.width(comp2) / 2f), 24, colour, true);
+                    guiGraphics.text(font, comp2, (int) (-font.width(comp2) / 2f), 24, colour, true);
                 }
                 matrices.popMatrix();
             }
@@ -373,7 +373,7 @@ public class MapScreen extends Screen {
             if (!str.isBlank()) {
                 matrices.translate(0, -16);
                 Component comp = Component.literal(str);
-                guiGraphics.drawString(font, comp, -font.width(comp) / 2, 0, -1);
+                guiGraphics.text(font, comp, -font.width(comp) / 2, 0, -1);
                 guiGraphics.fill(-font.width(comp) / 2, -1, font.width(comp) / 2, 9, 1056964608);
             }
             matrices.popMatrix();
@@ -387,7 +387,7 @@ public class MapScreen extends Screen {
         matrices.translate(prx, pry);
         matrices.scale(4, 4);
         matrices.rotate((float) Math.toRadians(player.getViewYRot(delta) % 360f));
-        guiGraphics.guiRenderState.submitGuiElement(new ChevronRenderState(
+        guiGraphics.guiRenderState.addGuiElement(new ChevronRenderState(
             CivModernPipelines.GUI_TRIANGLE_STRIP_BLEND,
             new Matrix3x2f(guiGraphics.pose()),
             guiGraphics.scissorStack.peek(),
@@ -425,7 +425,7 @@ public class MapScreen extends Screen {
                 matrices.pushMatrix();
                 matrices.translate((float) ((to.x - x) / scale), (float) ((to.y - y) / scale));
                 guiGraphics.pose().rotate(((float) Mth.atan2(dx, -dy)));
-                guiGraphics.guiRenderState.submitGuiElement(new LineElementRenderState(
+                guiGraphics.guiRenderState.addGuiElement(new LineElementRenderState(
                     CivModernPipelines.GUI_QUADS,
                     new Matrix3x2f(guiGraphics.pose()),
                     guiGraphics.scissorStack.peek(),
@@ -447,12 +447,12 @@ public class MapScreen extends Screen {
             mapCache.addReference(key);
         }
         Short y = mapCache.getYLevel(px, pz);
-        guiGraphics.drawCenteredString(font, "(%d, %s, %d)".formatted(px, y == null ? "?" : Short.toString(y), pz), (int) (this.width / 2 / textScale), (int) ((this.height - 16) / textScale), -1);
+        guiGraphics.centeredText(font, "(%d, %s, %d)".formatted(px, y == null ? "?" : Short.toString(y), pz), (int) (this.width / 2 / textScale), (int) ((this.height - 16) / textScale), -1);
 
         matrices.popMatrix();
 
         for (Renderable renderable : ((ScreenAccessor) this).civmodern$getRenderables()) {
-            renderable.render(guiGraphics, mouseX, mouseY, delta);
+            renderable.extractRenderState(guiGraphics, mouseX, mouseY, delta);
         }
     }
 

@@ -8,8 +8,9 @@ import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.message.v1.ClientReceiveMessageEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
-import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
-import net.fabricmc.fabric.api.client.rendering.v1.world.WorldRenderEvents;
+import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
+import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderEvents;
+import net.minecraft.resources.Identifier;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientSuggestionProvider;
 import org.apache.logging.log4j.LogManager;
@@ -39,16 +40,15 @@ public class FabricCivModernBootstrap implements ClientModInitializer {
         ClientTickEvents.START_CLIENT_TICK.register((client) -> {
             mod.eventBus.post(new ClientTickEvent());
         });
-        HudRenderCallback.EVENT.register((guiGraphics, tickDelta) -> {
+        HudElementRegistry.addLast(Identifier.fromNamespaceAndPath("civmodern", "main"), (guiGraphics, tickDelta) -> {
             mod.eventBus.post(new PostRenderGameOverlayEvent(guiGraphics, tickDelta.getGameTimeDeltaPartialTick(true)));
         });
 
         ClientPlayConnectionEvents.JOIN.register((handler, sender, client) -> mod.eventBus.post(new JoinEvent()));
         ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> mod.eventBus.post(new LeaveEvent()));
-        HudRenderCallback.EVENT.register(((matrixStack, tickDelta) -> mod.eventBus.post(new PostRenderGameOverlayEvent(matrixStack, tickDelta.getGameTimeDeltaPartialTick(true)))));
         ClientChunkEvents.CHUNK_LOAD.register((level, chunk) -> mod.eventBus.post(new ChunkLoadEvent(level, chunk)));
-        WorldRenderEvents.END_MAIN.register(context -> {
-            mod.eventBus.post(new WorldRenderLastEvent(context.matrices(), context.consumers(), Minecraft.getInstance().getDeltaTracker().getGameTimeDeltaPartialTick(true)));
+        LevelRenderEvents.END_MAIN.register(context -> {
+            mod.eventBus.post(new WorldRenderLastEvent(context.poseStack(), context.bufferSource(), Minecraft.getInstance().getDeltaTracker().getGameTimeDeltaPartialTick(true)));
         });
 
         ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) -> mod.eventBus.post(new CommandRegistration((CommandDispatcher<ClientSuggestionProvider>) (CommandDispatcher<?>) dispatcher, registryAccess)));

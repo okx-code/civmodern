@@ -9,11 +9,11 @@ import com.mojang.blaze3d.textures.GpuSampler;
 import com.mojang.blaze3d.textures.GpuTextureView;
 import com.mojang.blaze3d.textures.TextureFormat;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.client.gui.render.TextureSetup;
-import net.minecraft.client.gui.render.state.BlitRenderState;
+import net.minecraft.client.renderer.state.gui.BlitRenderState;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.network.chat.Component;
@@ -71,7 +71,7 @@ public class HsbColourPicker extends AbstractWidget {
     }
 
     @Override
-    public void renderWidget(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTicks) {
+    public void extractWidgetRenderState(GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY, float partialTicks) {
         if (!rvisible) {
             return;
         }
@@ -92,7 +92,7 @@ public class HsbColourPicker extends AbstractWidget {
 
             guiGraphics.pose().translate(this.getX(), this.renderY + height);
             guiGraphics.guiRenderState
-                .submitGuiElement(
+                .addBlitToCurrentLayer(
                     new BlitRenderState(
                         RenderPipelines.GUI_TEXTURED,
                         TextureSetup.singleTexture(this.saturationBrightnessTextureView, this.sampler),
@@ -101,7 +101,7 @@ public class HsbColourPicker extends AbstractWidget {
                 );
 
             guiGraphics.guiRenderState
-                .submitGuiElement(
+                .addBlitToCurrentLayer(
                     new BlitRenderState(
                         RenderPipelines.GUI_TEXTURED,
                         TextureSetup.singleTexture(this.hueSelectorTextureView, this.sampler),

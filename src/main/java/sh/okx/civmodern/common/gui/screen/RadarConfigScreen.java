@@ -6,7 +6,7 @@ import java.util.function.Consumer;
 import java.util.function.IntConsumer;
 import java.util.function.IntSupplier;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.Renderable;
 import net.minecraft.client.gui.components.Tooltip;
@@ -454,15 +454,15 @@ final class RadarConfigScreen extends AbstractConfigScreen {
     }
 
     @Override
-    public void render(
-        final @NotNull GuiGraphics guiGraphics,
+    public void extractRenderState(
+        final @NotNull GuiGraphicsExtractor guiGraphics,
         final int mouseX,
         final int mouseY,
         final float partialTick
     ) {
         // Don't call super since we don't want the dark or blurred background to obscure changes to the radar
         for (final Renderable renderable : ((ScreenAccessor) (Object) this).civmodern$getRenderables()) {
-            renderable.render(guiGraphics, mouseX, mouseY, partialTick);
+            renderable.extractRenderState(guiGraphics, mouseX, mouseY, partialTick);
         }
     }
 

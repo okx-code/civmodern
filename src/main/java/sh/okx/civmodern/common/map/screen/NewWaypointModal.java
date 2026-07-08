@@ -12,9 +12,8 @@ import io.wispforest.owo.ui.core.Sizing;
 import io.wispforest.owo.ui.core.Surface;
 import io.wispforest.owo.ui.core.VerticalAlignment;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
-import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
@@ -146,11 +145,11 @@ public class NewWaypointModal extends Modal<FlowLayout> {
     }
 
     @Override
-    public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float delta) {
-        super.render(guiGraphics, mouseX, mouseY, delta);
+    public void extractRenderState(GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY, float delta) {
+        super.extractRenderState(guiGraphics, mouseX, mouseY, delta);
         if (visible) {
             this.colourPicker.setRVisible(true);
-            this.colourPicker.renderWidget(guiGraphics, mouseX, mouseY, delta);
+            this.colourPicker.extractWidgetRenderState(guiGraphics, mouseX, mouseY, delta);
             this.colourPicker.setRVisible(false);
         }
     }

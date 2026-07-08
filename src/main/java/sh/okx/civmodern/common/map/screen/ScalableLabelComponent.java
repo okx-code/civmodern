@@ -236,7 +236,7 @@ public class ScalableLabelComponent extends BaseUIComponent {
             if (hover && cx >= left && cx <= right && cy >= top - 2 && cy <= bottom + (2)) {
                 context.fill((int) left, (int) top - 1, (int) right, (int) bottom + 1, 0xffa09f9b);
             }
-            context.drawString(this.textRenderer, renderText, (int) sx, (int) sy, this.color.get().argb(), this.shadow);
+            context.text(this.textRenderer, renderText, (int) sx, (int) sy, this.color.get().argb(), this.shadow);
 
             context.pop();
         }
@@ -247,13 +247,7 @@ public class ScalableLabelComponent extends BaseUIComponent {
     @Override
     public void drawTooltip(OwoUIGraphics context, int mouseX, int mouseY, float partialTicks, float delta) {
         super.drawTooltip(context, mouseX, mouseY, partialTicks, delta);
-        context.renderComponentHoverEffect(this.textRenderer, this.styleAt(mouseX - this.x, mouseY - this.y), mouseX, mouseY);
-    }
-
-    @Override
-    public boolean shouldDrawTooltip(double mouseX, double mouseY) {
-        var hoveredStyle = this.styleAt((int) (mouseX - this.x), (int) (mouseY - this.y));
-        return super.shouldDrawTooltip(mouseX, mouseY) || (hoveredStyle != null && hoveredStyle.getHoverEvent() != null && this.isInBoundingBox(mouseX, mouseY));
+        context.setTooltipForNextFrame(this.textRenderer, text, mouseX, mouseY, null);
     }
 
     public boolean onMouseClick(double mouseX, double mouseY, int button) {
@@ -282,11 +276,6 @@ public class ScalableLabelComponent extends BaseUIComponent {
             return true;
         }
         return false;
-    }
-
-    protected Style styleAt(int mouseX, int mouseY) {
-        // componentStyleAtWidth was removed in 1.21.11; style hover effects are no longer supported here
-        return null;
     }
 
     @Override
