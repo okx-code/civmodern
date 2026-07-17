@@ -15,11 +15,9 @@ public abstract class ItemRepairMixin {
     @ModifyReturnValue(at = @At("RETURN"), method = "getTooltipLines")
     protected List<Component> handle(List<Component> original) {
         ItemStack itemStack = (ItemStack) (Object) this;
-        if (AbstractCivModernMod.getInstance().getConfig().isShowRepairCost() && itemStack.get(DataComponents.REPAIRABLE) != null) {
-            Integer repairCost = itemStack.get(DataComponents.REPAIR_COST);
-            if (repairCost != null) {
-                original.add(1, Component.translatable("civmodern.repaircost", repairCost + 2).withColor(0x379fa3));
-            }
+        Integer repairCost = itemStack.get(DataComponents.REPAIR_COST);
+        if (AbstractCivModernMod.getInstance().getConfig().isShowRepairCost() && repairCost != null && repairCost != 0) {
+            original.add(1, Component.translatable("civmodern.repaircost", repairCost + 2).withColor(0x379fa3));
         }
         return original;
     }
