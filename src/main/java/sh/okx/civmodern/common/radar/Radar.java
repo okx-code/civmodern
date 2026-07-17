@@ -209,7 +209,9 @@ public class Radar {
         if (config.isShowItems()) {
             renderItems(guiGraphics, delta);
         }
-        renderBoatsMinecarts(guiGraphics, delta);
+        if (config.isShowVehicles()) {
+            renderBoatsMinecarts(guiGraphics, delta);
+        }
         renderPlayers(guiGraphics, delta);
 
         guiGraphics.pose().popMatrix();

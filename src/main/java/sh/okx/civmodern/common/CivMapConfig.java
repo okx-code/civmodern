@@ -37,6 +37,7 @@ public class CivMapConfig {
     private boolean iceRoadAutoEat;
     private boolean iceRoadStop;
     private boolean showItems;
+    private boolean showVehicles;
     private boolean northUp;
     private int chevronColour;
     private boolean minimapEnabled;
@@ -77,6 +78,7 @@ public class CivMapConfig {
         this.iceRoadStop = Boolean.parseBoolean(properties.getProperty("ice_road_stop", "true"));
         this.bgTransparency = Float.parseFloat(properties.getProperty("bg_transparency", String.valueOf(this.transparency)));
         this.showItems = Boolean.parseBoolean(properties.getProperty("show_items", "true"));
+        this.showVehicles = Boolean.parseBoolean(properties.getProperty("show_vehicles", "true"));
         this.northUp = Boolean.parseBoolean(properties.getProperty("north_up", "false"));
         this.chevronColour = Integer.parseInt(properties.getProperty("chevron_colour", Integer.toString(DEFAULT_CHEVRON_COLOUR)));
         this.minimapEnabled = Boolean.parseBoolean(properties.getProperty("minimap_enabled", "true"));
@@ -119,6 +121,7 @@ public class CivMapConfig {
             properties.setProperty("ice_road_auto_eat", Boolean.toString(iceRoadAutoEat));
             properties.setProperty("ice_road_stop", Boolean.toString(iceRoadStop));
             properties.setProperty("show_items", Boolean.toString(showItems));
+            properties.setProperty("show_vehicles", Boolean.toString(showVehicles));
             properties.setProperty("north_up", Boolean.toString(northUp));
             properties.setProperty("chevron_colour", Integer.toString(chevronColour));
             properties.setProperty("minimap_enabled", Boolean.toString(minimapEnabled));
@@ -150,6 +153,14 @@ public class CivMapConfig {
 
     public void setShowItems(boolean showItems) {
         this.showItems = showItems;
+    }
+
+    public boolean isShowVehicles() {
+        return showVehicles;
+    }
+
+    public void setShowVehicles(boolean showVehicles) {
+        this.showVehicles = showVehicles;
     }
 
     public int getColour() {
