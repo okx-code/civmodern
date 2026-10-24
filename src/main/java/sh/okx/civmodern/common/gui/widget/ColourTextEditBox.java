@@ -12,7 +12,7 @@ import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.network.chat.Component;
 import org.jetbrains.annotations.NotNull;
 
-public class ColourTextEditBox extends EditBox {
+public class ColourTextEditBox extends FilteredEditBox {
     private static final Pattern HEX_COLOUR_REGEX = Pattern.compile("^(#[0-9A-F]{0,6})?$", Pattern.CASE_INSENSITIVE);
 
     public ColourTextEditBox(
@@ -42,7 +42,7 @@ public class ColourTextEditBox extends EditBox {
         super(font, x, y, width, height, Component.empty());
         setColourFromInt(colourGetter.getAsInt());
         setMaxLength(7);
-        setFilter((string) -> HEX_COLOUR_REGEX.matcher(string).matches());
+        setInputFilter((string) -> HEX_COLOUR_REGEX.matcher(string).matches());
         setResponder((val) -> {
             if (val.length() <= 1) {
                 return;

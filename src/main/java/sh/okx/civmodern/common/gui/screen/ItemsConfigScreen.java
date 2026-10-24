@@ -2,7 +2,7 @@ package sh.okx.civmodern.common.gui.screen;
 
 import java.util.List;
 import java.util.Objects;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.input.MouseButtonEvent;
@@ -154,16 +154,16 @@ final class ItemsConfigScreen extends AbstractConfigScreen {
     }
 
     @Override
-    public void render(
-        final @NotNull GuiGraphics guiGraphics,
+    public void extractRenderState(
+        final @NotNull GuiGraphicsExtractor guiGraphics,
         final int mouseX,
         final int mouseY,
         final float delta
     ) {
-        super.render(guiGraphics, mouseX, mouseY, delta);
+        super.extractRenderState(guiGraphics, mouseX, mouseY, delta);
 
-        guiGraphics.renderItem(ITEM, this.itemX, this.itemY);
-        guiGraphics.renderItemDecorations(this.font, ITEM, this.itemX, this.itemY);
+        guiGraphics.item(ITEM, this.itemX, this.itemY);
+        guiGraphics.itemDecorations(this.font, ITEM, this.itemX, this.itemY);
 
         if (isCursorOverItem(mouseX, mouseY)) {
 //            guiGraphics.renderTooltip(this.font, ITEM, mouseX, mouseY);

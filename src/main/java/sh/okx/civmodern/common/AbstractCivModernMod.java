@@ -15,7 +15,7 @@ import java.util.Properties;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.builder.RequiredArgumentBuilder;
-import net.fabricmc.fabric.api.client.rendering.v1.SpecialGuiElementRegistry;
+import net.fabricmc.fabric.api.client.rendering.v1.PictureInPictureRendererRegistry;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.Options;
@@ -118,7 +118,7 @@ public abstract class AbstractCivModernMod {
     }
 
     public final void init() {
-        SpecialGuiElementRegistry.register(ctx -> new BlitRenderer(ctx.vertexConsumers()));
+        PictureInPictureRendererRegistry.register(ctx -> new BlitRenderer(ctx.bufferSource()));
         CivModernPipelines.register();
 
         registerKeyBinding(this.configBinding);

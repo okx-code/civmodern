@@ -2,7 +2,7 @@ package sh.okx.civmodern.common.map;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.client.renderer.rendertype.RenderTypes;
@@ -21,6 +21,7 @@ import sh.okx.civmodern.common.map.waypoints.PlayerWaypoints;
 import sh.okx.civmodern.common.map.waypoints.Waypoint;
 import sh.okx.civmodern.common.map.waypoints.Waypoints;
 import sh.okx.civmodern.common.rendering.BlitRenderState;
+import sh.okx.civmodern.common.rendering.GuiStateAccess;
 import sh.okx.civmodern.common.rendering.ChevronRenderState;
 import sh.okx.civmodern.common.rendering.CivModernPipelines;
 
@@ -64,7 +65,7 @@ public class Minimap {
         Scoreboard scoreboard = mc.level.getScoreboard();
         Objective objective = scoreboard.getDisplayObjective(DisplaySlot.LIST);
         if (mc.options.hideGui || mc.debugEntries.isOverlayVisible() || !(!mc.options.keyPlayerList.isDown() || mc.isLocalServer() && mc.player.connection.getListedOnlinePlayers().size() <= 1 && objective == null)) {
-            event.guiGraphics().guiRenderState.submitPicturesInPictureState(new BlitRenderState(event.guiGraphics(), 0, 0, 0, 0, event.guiGraphics().pose(),
+            GuiStateAccess.of(event.guiGraphics()).addPicturesInPictureState(new BlitRenderState(event.guiGraphics(), 0, 0, 0, 0, event.guiGraphics().pose(),
                 ((source, stack) -> {})));
             return;
         }
@@ -73,7 +74,7 @@ public class Minimap {
 
         float size = config.getMinimapSize();
 
-        GuiGraphics graphics = event.guiGraphics();
+        GuiGraphicsExtractor graphics = event.guiGraphics();
         Matrix3x2fStack matrices = graphics.pose();
 
         matrices.pushMatrix();
@@ -144,11 +145,11 @@ public class Minimap {
 
         matrices.translate(-2, -2);
         graphics.fill(0, 0, (int) (size + 4), (int) (size + 4), 0xff000000 | provider.getBorderColour());
-        graphics.guiRenderState.submitPicturesInPictureState(new BlitRenderState(graphics, 0, 0, translateX + config.getMinimapSize(), translateY + config.getMinimapSize(), matrices,
+        GuiStateAccess.of(graphics).addPicturesInPictureState(new BlitRenderState(graphics, 0, 0, translateX + config.getMinimapSize(), translateY + config.getMinimapSize(), matrices,
             ((source, stack) -> renderers.forEach(r -> r.render(source, stack)))));
 
         if (config.isShowMinimapCoords()) {
-            event.guiGraphics().drawCenteredString(mc.font, "%d, %s, %d".formatted(playerBX, playerBY, playerBZ), (int) (size / 2), (int) size + 6, -1);
+            event.guiGraphics().centeredText(mc.font, "%d, %s, %d".formatted(playerBX, playerBY, playerBZ), (int) (size / 2), (int) size + 6, -1);
         }
         if (config.isPlayerWaypointsEnabled()) {
             // TODO fix the player rendering above the chevron
@@ -204,7 +205,7 @@ public class Minimap {
         matrices.scale(4, 4);
         int chevronColour = provider.getChevronColour() | 0xFF000000;
         matrices.translate(0, 0.75f);
-        graphics.guiRenderState.submitGuiElement(new ChevronRenderState(
+        GuiStateAccess.of(graphics).addGuiElement(new ChevronRenderState(
             CivModernPipelines.GUI_TRIANGLE_STRIP_BLEND,
             new Matrix3x2f(graphics.pose()),
             graphics.scissorStack.peek(),

@@ -8,17 +8,18 @@ plugins {
 
 dependencies {
     minecraft(libs.minecraft)
-    mappings(loom.layered() {
-        officialMojangMappings()
-    })
 
-    modImplementation(libs.fabricLoader)
-    modImplementation(libs.fabricApi)
+    implementation(libs.fabricLoader)
+    implementation(libs.fabricApi)
 
-    modImplementation(libs.owoLib)
+    implementation(libs.owoLib)
     include(libs.owoSentinel)
 
-    modImplementation(libs.modMenu)
+    implementation(libs.modMenu)
+
+    // endec ships inside owo-lib as a JiJ, but the bare Modrinth-maven POM does
+    // not declare it, and CompoundTag's hierarchy needs it on the compile classpath
+    compileOnly(files("libs/endec-0.1.12.jar"))
 
     implementation(libs.sqlite)
     include(libs.sqlite)
@@ -57,7 +58,7 @@ repositories {
 
 tasks.withType(JavaCompile).configureEach {
     options.encoding = "UTF-8"
-    options.release = 21
+    options.release = 25
 }
 
 java {
@@ -100,7 +101,7 @@ tasks.register("cleanJar", Delete) {
 
 tasks.register("copyJar", Copy) {
     dependsOn cleanJar
-    from remapJar
+    from jar
     into "dist"
 }
 

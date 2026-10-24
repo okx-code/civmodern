@@ -2,7 +2,7 @@ package sh.okx.civmodern.common.map.screen;
 
 import io.wispforest.owo.ui.core.OwoUIAdapter;
 import io.wispforest.owo.ui.core.ParentUIComponent;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Renderable;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.narration.NarratableEntry;
@@ -20,9 +20,9 @@ public abstract class Modal<T extends ParentUIComponent> implements Renderable, 
     }
 
     @Override
-    public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float delta) {
+    public void extractRenderState(GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY, float delta) {
         if (visible) {
-            this.layout.render(guiGraphics, mouseX, mouseY, delta);
+            this.layout.extractRenderState(guiGraphics, mouseX, mouseY, delta);
         }
     }
 

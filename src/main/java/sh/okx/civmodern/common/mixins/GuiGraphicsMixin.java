@@ -1,7 +1,7 @@
 package sh.okx.civmodern.common.mixins;
 
 import com.llamalad7.mixinextras.sugar.Local;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
@@ -12,9 +12,9 @@ import org.spongepowered.asm.mixin.injection.ModifyVariable;
 import sh.okx.civmodern.common.AbstractCivModernMod;
 import sh.okx.civmodern.common.features.ExtendedItemStack;
 
-@Mixin(GuiGraphics.class)
+@Mixin(GuiGraphicsExtractor.class)
 public abstract class GuiGraphicsMixin {
-    @ModifyVariable(method = "renderItemCount", at = @At("HEAD"), argsOnly = true)
+    @ModifyVariable(method = "itemCount", at = @At("HEAD"), argsOnly = true)
     protected @Nullable String civmodern$showCompactedItem(String value, @Local(argsOnly = true) ItemStack item) {
         if (value != null) {
             return value;
@@ -25,7 +25,7 @@ public abstract class GuiGraphicsMixin {
         }
     }
 
-    @ModifyConstant(method = "renderItemCount", constant = @Constant(intValue = -1))
+    @ModifyConstant(method = "itemCount", constant = @Constant(intValue = -1))
     protected int civmodern$colourCompactedItem(int itemColour, @Local(argsOnly = true) ItemStack item) {
         if (((ExtendedItemStack) (Object) item).isMarkedAsCompacted()) {
             return 0xff000000 | AbstractCivModernMod.getInstance().getColourProvider().getCompactedColour();

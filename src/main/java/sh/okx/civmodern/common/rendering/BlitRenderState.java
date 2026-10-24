@@ -1,17 +1,15 @@
 package sh.okx.civmodern.common.rendering;
 
 import com.mojang.blaze3d.vertex.PoseStack;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.navigation.ScreenRectangle;
-import net.minecraft.client.gui.render.state.pip.PictureInPictureRenderState;
 import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.state.gui.pip.PictureInPictureRenderState;
 import org.jetbrains.annotations.Nullable;
-import org.joml.Matrix3x2f;
 import org.joml.Matrix3x2fStack;
-import sh.okx.civmodern.common.map.RegionAtlasTexture;
 
 public record BlitRenderState(
-    GuiGraphics graphics,
+    GuiGraphicsExtractor graphics,
     int x,
     int y,
     int sizeX,
@@ -21,7 +19,7 @@ public record BlitRenderState(
     Renderer renderer
 ) implements PictureInPictureRenderState {
 	public BlitRenderState(
-		GuiGraphics graphics,
+		GuiGraphicsExtractor graphics,
         int x,
         int y,
         int sizeX,
@@ -29,7 +27,10 @@ public record BlitRenderState(
         Matrix3x2fStack pose,
         Renderer renderer
 	) {
-		this(graphics, x, y, sizeX, sizeY, getBounds(graphics.scissorStack.peek(), pose, x, y, sizeX, sizeY), graphics.scissorStack.peek(), renderer);
+        // The scissor stack is no longer exposed by GuiGraphicsExtractor in 26.1,
+        // so states are submitted without a scissor area (they were previously
+        // only ever clipped by the active screen-level scissor).
+		this(graphics, x, y, sizeX, sizeY, getBounds(null, pose, x, y, sizeX, sizeY), null, renderer);
 	}
 
     @Override
