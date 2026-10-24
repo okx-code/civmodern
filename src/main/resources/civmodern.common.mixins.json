@@ -16,8 +16,8 @@
     "ScreenAccessor",
     "StorageSourceAccessor",
     "ItemRepairMixin",
-    "PolygonSmoothMixin",
-    "RenderSetupMixin"
+    "RenderSetupMixin",
+    "GuiGraphicsExtractorAccessor"
   ],
   "server": [],
   "injectors": {

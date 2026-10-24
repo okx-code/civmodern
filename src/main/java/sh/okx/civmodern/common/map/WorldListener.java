@@ -168,7 +168,7 @@ public class WorldListener {
                                 this.minimap = new Minimap(this.waypoints, this.playerWaypoints, this.cache, this.config, this.provider);
 
                                 for (ChunkPos chunk : this.loadedChunks) {
-                                    LevelChunk levelChunk = level.getChunk(chunk.x, chunk.z);
+                                    LevelChunk levelChunk = level.getChunk(chunk.x(), chunk.z());
                                     if (levelChunk != null) {
                                         this.cache.updateChunk(levelChunk);
                                     }

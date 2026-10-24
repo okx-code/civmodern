@@ -236,7 +236,7 @@ public class ScalableLabelComponent extends BaseUIComponent {
             if (hover && cx >= left && cx <= right && cy >= top - 2 && cy <= bottom + (2)) {
                 context.fill((int) left, (int) top - 1, (int) right, (int) bottom + 1, 0xffa09f9b);
             }
-            context.drawString(this.textRenderer, renderText, (int) sx, (int) sy, this.color.get().argb(), this.shadow);
+            context.text(this.textRenderer, renderText, (int) sx, (int) sy, this.color.get().argb(), this.shadow);
 
             context.pop();
         }
@@ -247,7 +247,7 @@ public class ScalableLabelComponent extends BaseUIComponent {
     @Override
     public void drawTooltip(OwoUIGraphics context, int mouseX, int mouseY, float partialTicks, float delta) {
         super.drawTooltip(context, mouseX, mouseY, partialTicks, delta);
-        context.renderComponentHoverEffect(this.textRenderer, this.styleAt(mouseX - this.x, mouseY - this.y), mouseX, mouseY);
+        // renderComponentHoverEffect was removed in 26.1; per-style hover tooltips for scaled labels are dropped for now
     }
 
     @Override

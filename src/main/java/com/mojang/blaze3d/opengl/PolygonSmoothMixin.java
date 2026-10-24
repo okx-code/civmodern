@@ -1,6 +1,5 @@
-package sh.okx.civmodern.common.mixins;
+package com.mojang.blaze3d.opengl;
 
-import com.mojang.blaze3d.opengl.GlCommandEncoder;
 import com.mojang.blaze3d.pipeline.RenderPipeline;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -10,10 +9,12 @@ import sh.okx.civmodern.common.rendering.CivModernPipelines;
 
 import static org.lwjgl.opengl.GL11.*;
 
+// GlCommandEncoder is package-private in 26.1, so this mixin has to live
+// in the same package; it is registered through civmodern.blaze3d.mixins.json.
 @Mixin(GlCommandEncoder.class)
 public abstract class PolygonSmoothMixin {
     @Inject(method = "applyPipelineState(Lcom/mojang/blaze3d/pipeline/RenderPipeline;)V", at = @At(value = "TAIL"))
-    public void modify(RenderPipeline renderPipeline, CallbackInfo info) {
+    public void civmodern$modify(RenderPipeline renderPipeline, CallbackInfo info) {
         if (renderPipeline == CivModernPipelines.GUI_TRIANGLE_STRIP_BLEND || renderPipeline == CivModernPipelines.GUI_QUADS) {
             glEnable(GL_POLYGON_SMOOTH);
         } else {

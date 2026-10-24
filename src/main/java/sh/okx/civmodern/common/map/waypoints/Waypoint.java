@@ -1,7 +1,7 @@
 package sh.okx.civmodern.common.map.waypoints;
 
 import com.mojang.blaze3d.vertex.VertexConsumer;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.client.renderer.rendertype.RenderType;
@@ -21,11 +21,11 @@ public record Waypoint(String name, int x, int y, int z, String icon, int colour
         buffer.addVertex(pose, -f, -f, 0).setLight(0xff).setUv(0, 0).setColor(colour);
     }
 
-    public void render2D(GuiGraphics guiGraphics) {
+    public void render2D(GuiGraphicsExtractor guiGraphics) {
         render2D(guiGraphics, 0xff);
     }
 
-    public void render2D(GuiGraphics guiGraphics, int transparency) {
+    public void render2D(GuiGraphicsExtractor guiGraphics, int transparency) {
         guiGraphics.blit(RenderPipelines.GUI_TEXTURED, resourceLocation(), -8, -8, 0, 0, 16, 16, 16, 16, transparency << 24 | colour());
     }
 

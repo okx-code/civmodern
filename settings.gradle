@@ -5,6 +5,13 @@ pluginManagement {
         maven { url "https://maven.minecraftforge.net/" }
         gradlePluginPortal()
     }
+    resolutionStrategy {
+        eachPlugin {
+            if (requested.id.id == "net.fabricmc.fabric-loom") {
+                useModule("net.fabricmc:fabric-loom:${requested.version}")
+            }
+        }
+    }
 }
 
 rootProject.name = "civmodern"

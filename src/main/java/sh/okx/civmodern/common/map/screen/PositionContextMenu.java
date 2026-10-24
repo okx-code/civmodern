@@ -54,7 +54,7 @@ public class PositionContextMenu extends Modal<FlowLayout> {
             if (targetY != null) {
                 Minecraft.getInstance().setScreen(null);
                 String copied = "[x:%s,y:%s,z:%s]".formatted(targetX, targetY, targetZ);
-                Minecraft.getInstance().player.displayClientMessage(Component.translatable("civmodern.map.copy", Component.literal(copied)).withColor(0x379FA3), false);
+                Minecraft.getInstance().player.sendSystemMessage(Component.translatable("civmodern.map.copy", Component.literal(copied)).withColor(0x379FA3));
                 Minecraft.getInstance().keyboardHandler.setClipboard(copied);
             }
         });

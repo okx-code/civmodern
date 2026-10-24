@@ -26,6 +26,7 @@
         "fabric": "*"
     },
     "mixins": [
-        "civmodern.common.mixins.json"
+        "civmodern.common.mixins.json",
+        "civmodern.blaze3d.mixins.json"
     ]
 }

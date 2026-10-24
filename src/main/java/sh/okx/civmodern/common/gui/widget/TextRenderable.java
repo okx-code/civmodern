@@ -2,7 +2,7 @@ package sh.okx.civmodern.common.gui.widget;
 
 import java.util.Objects;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Renderable;
 import net.minecraft.network.chat.Component;
 import org.jetbrains.annotations.NotNull;
@@ -45,8 +45,8 @@ public sealed abstract class TextRenderable implements Renderable {
             super(font, x, y, text, colour);
         }
         @Override
-        public void render(@NotNull GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-            guiGraphics.drawString(this.font, this.text, this.x, this.y, this.colour);
+        public void extractRenderState(@NotNull GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY, float partialTick) {
+            guiGraphics.text(this.font, this.text, this.x, this.y, this.colour);
         }
     }
 
@@ -58,8 +58,8 @@ public sealed abstract class TextRenderable implements Renderable {
             super(font, x, y, text, colour);
         }
         @Override
-        public void render(@NotNull GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-            guiGraphics.drawCenteredString(this.font, this.text, this.x, this.y, this.colour);
+        public void extractRenderState(@NotNull GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY, float partialTick) {
+            guiGraphics.centeredText(this.font, this.text, this.x, this.y, this.colour);
         }
     }
 
@@ -71,8 +71,8 @@ public sealed abstract class TextRenderable implements Renderable {
             super(font, x, y, text, colour);
         }
         @Override
-        public void render(@NotNull GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-            guiGraphics.drawString(this.font, this.text, this.x - this.font.width(this.text), this.y, this.colour);
+        public void extractRenderState(@NotNull GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY, float partialTick) {
+            guiGraphics.text(this.font, this.text, this.x - this.font.width(this.text), this.y, this.colour);
         }
     }
 }
